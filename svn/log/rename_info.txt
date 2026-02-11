@@ -1,0 +1,16 @@
+2026-02-02T22:01:43 CET
+Same hostname Oliver - all is fine.
+Test access to SSID DTUdevice
+no DTUdevice SSID found
+2026-02-04T08:13:25 CET
+Same hostname Oliver - all is fine.
+Test access to SSID DTUdevice
+We are not connected, trying to connect to DTUdevice
+2026-02-06T15:41:45 CET
+Same hostname Oliver - all is fine.
+Test access to SSID DTUdevice
+We are not connected, trying to connect to DTUdevice
+2026-02-10T09:27:31 CET
+Same hostname Oliver - all is fine.
+Test access to SSID DTUdevice
+We are not connected, trying to connect to DTUdevice
