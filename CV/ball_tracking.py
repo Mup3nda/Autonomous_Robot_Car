@@ -6,6 +6,11 @@ import argparse  # Command-line argument parsing
 import cv2  
 import imutils  # Convenience functions for OpenCV
 import time  
+from picamera2 import Picamera2
+import logging
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Set up command-line argument parser
 ap = argparse.ArgumentParser()
@@ -15,12 +20,18 @@ ap.add_argument("-b", "--buffer", type=int, default=32,
                 help="add buffer size - max number of tracked points")
 args = vars(ap.parse_args())  # Convert to dictionary for easy access
 
+picam2 = Picamera2()
+camera_config = picam2.create_preview_configuration(main={"size": (640, 480), "format": "RGB888"})
+picam2.configure(camera_config)
+picam2.start()
+
 # Define HSV color ranges for red detection
 # Red wraps around the HSV spectrum, so we need two ranges
-red_lower1 = (0, 200, 120)      # Lower red: H(0-10), S(min 200), V(min 120)
+red_lower1 = (0, 245, 150)      # Lower red: H(0-10), S(min), V(min)
 red_upper1 = (10, 255, 255)     # H(0-10), S(max), V(max)
-red_lower2 = (170, 200, 120)    # Upper red: H(170-180), S(min 200), V(min 120)
+red_lower2 = (170, 245, 150)    # Upper red: H(170-180), S(min), V(min)
 red_upper2 = (180, 255, 255)    # H(170-180), S(max), V(max)
+
 
 # Initialize tracking variables
 pts = deque(maxlen=args["buffer"])  # Queue to store last N points (max 32)
@@ -39,14 +50,22 @@ time.sleep(2.0)
 # Main processing loop
 while True:
     # Read frame from video source
-    frame = vs.read()
+    if  args.get("video", False):
+        ret, frame = vs.read()
+        if not ret:
+            break
+    else:
+        frame = picam2.capture_array()
     
     # Handle different return formats (VideoStream vs VideoCapture)
     frame = frame[1] if args.get("video", False) else frame
     
     # Preprocessing
     frame = imutils.resize(frame, width=600)  # Resize for faster processing
+    frame_bgr = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+    # NOT NECCASSARY TO CONVERT TO BRG - WON'T WORK
     blurred = cv2.GaussianBlur(frame, (11,11), 0)  # Reduce noise
+    #blurred = cv2.GaussianBlur(frame_bgr, (11,11), 0)  # Reduce noise
     hsv = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)  # Convert BGR to HSV color space
     
     # Create masks for red color detection
@@ -55,6 +74,9 @@ while True:
     mask = cv2.bitwise_or(mask1, mask2)  # Combine both masks
     mask = cv2.erode(mask, None, iterations=2)  # Remove small noise blobs
     mask = cv2.dilate(mask, None, iterations=2)  # Restore object size
+    
+    cv2.imshow("Mask",mask)
+    
     
     # Find contours in the mask
     cnts = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -79,6 +101,7 @@ while True:
             cv2.circle(frame, (int(x), int(y)), int(radius), (0,255,255), 2)
             # Draw red dot at centroid
             cv2.circle(frame, center, 5, (0, 0, 255), -1)
+            logger.info(f" Ball detected at (x: {x:.2f}, y: {y:.2f}) - Radius: {radius:.2f}")
     
     # Update tracking queue (add most recent point at left)
     pts.appendleft(center)
@@ -107,6 +130,7 @@ if not args.get("video", False):
 else:
     vs.release()  # Release video file
 
+picam2.stop()
 cv2.destroyAllWindows()  
 
 
