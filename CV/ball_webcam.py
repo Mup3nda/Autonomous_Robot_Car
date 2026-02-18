@@ -100,10 +100,7 @@ def draw_ball_detection(frame, contour_center, circle_center, radius, circularit
     # Draw red dot at centroid
     cv2.circle(frame, contour_center, 3, (0, 0, 255), -1)
     
-    # Display circularity and radius
-    cv2.putText(frame, f"C:{circularity:.2f} R:{radius}",
-                (circle_center[0]-50, circle_center[1] - radius - 10),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+    cv2.putText(frame, f"x: {circle_center[0]:.2f}, y: {circle_center[1]:.2f}", (10,40), cv2.FONT_HERSHEY_SIMPLEX, 0.8,(0, 0, 255), 2)
 
 def draw_tracking_trail(frame, pts, buffer_size):  # Fixed typo: tail -> trail
     """Draw tracking trail"""
