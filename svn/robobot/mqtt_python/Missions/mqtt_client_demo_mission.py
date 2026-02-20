@@ -1,0 +1,64 @@
+#!/usr/bin/env python3
+
+import os
+import sys
+import time as t
+from datetime import datetime
+import numpy as np
+from setproctitle import setproctitle
+
+THIS_DIR = os.path.dirname(os.path.abspath(__file__))
+ROOT_DIR = os.path.dirname(THIS_DIR)
+MQTT_PY_DIR = os.path.join(ROOT_DIR, "mqtt_python")
+if THIS_DIR not in sys.path:
+    sys.path.insert(0, THIS_DIR)
+if MQTT_PY_DIR not in sys.path:
+    sys.path.insert(0, MQTT_PY_DIR)
+
+from spose import pose
+from sir import ir
+from scam import cam
+from sedge import edge
+from sgpio import gpio
+from uservice import service
+
+from mission_runner import MissionRunner
+from objective import Objective
+from robot_actions import RobotActions
+from mission_context import MissionContext
+
+from Objectives.drive_turn_pi_objective import DriveTurnPiObjective
+from Objectives.line_turn_image_objective import LineTurnImageObjective
+from Objectives.drive_to_line_objective import DriveToLineObjective
+from Objectives.drive_one_meter_objective import DriveOneMeterObjective
+
+# This is a demo mission that can be used to test the robot and MQTT connection.
+def build_objectives():
+    if service.args.meter:
+        return [DriveOneMeterObjective()]
+    if service.args.pi:
+        return [DriveTurnPiObjective()]
+    if service.args.edge:
+        return [DriveToLineObjective()]
+    return [LineTurnImageObjective()]
+
+
+if __name__ == "__main__":
+    if service.process_running("mqtt-client-mission"):
+        print("% mqtt-client-mission is already running - terminating")
+        print("%   if it is partially crashed in the background, then try:")
+        print("%     pkill mqtt-client-mission")
+        print("%   or, if that fails use the most brutal kill")
+        print("%     pkill -9 mqtt-client-mission")
+    else:
+        setproctitle("mqtt-client-mission")
+        print("% Starting")
+        service.setup("localhost")
+        if service.connected:
+            actions = RobotActions(service, gpio, cam, edge)
+            ctx = MissionContext(actions)
+            objectives = build_objectives()
+            runner = MissionRunner(objectives, ctx)
+            runner.run()
+        service.terminate()
+    print("% Main Terminated")
