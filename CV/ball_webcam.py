@@ -5,8 +5,11 @@ import argparse  # Command-line argument parsing
 import cv2  
 import imutils  # Convenience functions for OpenCV
 import time  
+from flask import Flask, Response
 
 CIRCULARITY_THRESHOLD = 0.65  # Changed from 0.2 to be more strict
+BUFFER_SIZE = 32
+args_global = {}
 
 # WORKING
 red_lower1 = (0, 170, 40)      # Lower red: H(0-10), S(min 170), V(min 40)
@@ -19,9 +22,18 @@ def parse_arguments():
     ap = argparse.ArgumentParser()
     ap.add_argument("-v","--video", 
                     help="add path to video (optional)")
-    ap.add_argument("-b", "--buffer", type=int, default=32,
-                    help="add buffer size - max number of tracked points")
-    args = vars(ap.parse_args())  # Convert to dictionary for easy access
+    ap.add_argument("--stream", action="store_true",
+                    help="Serve a live MJPEG stream in a browser (no cv2.imshow)")
+    ap.add_argument("--host", default="0.0.0.0",
+                    help="Host/IP to bind the MJPEG server (default: 0.0.0.0)")
+    ap.add_argument("--port", type=int, default=5000,
+                    help="Port to serve the MJPEG stream on (default: 5000)")
+    ap.add_argument("--jpeg-quality", type=int, default=70,
+                    help="JPEG quality for MJPEG stream (1-100, default: 70)")
+    ap.add_argument("--mask", action="store_true",
+                    help="Show the red mask alongside the camera feed")
+    args = vars(ap.parse_args())
+    args["buffer"] = BUFFER_SIZE
     return args
 
 def initialize_camera(args):
@@ -52,7 +64,9 @@ def create_red_mask(hsv):
     mask = cv2.erode(mask, None, iterations=2)
     mask = cv2.dilate(mask, None, iterations=4)
     
-    cv2.imshow("After morphology", mask)
+    # Only show cv2 mask window in local GUI mode
+    if not args_global.get("stream", False) and args_global.get("mask", False):
+        cv2.imshow("Mask", mask)
     
     return mask
     
@@ -114,6 +128,9 @@ def draw_tracking_trail(frame, pts, buffer_size):  # Fixed typo: tail -> trail
 
 def detect_ball(vs, pts, args):
     """Main ball detection function"""
+    global args_global
+    args_global = args
+
     frame = vs.read()
     frame = frame[1] if args.get("video", False) else frame
     
@@ -123,30 +140,39 @@ def detect_ball(vs, pts, args):
     # Preprocessing
     frame = imutils.resize(frame, width=600)
     blurred = cv2.GaussianBlur(frame, (11, 11), 0)
-    hsv = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)  
+    hsv = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
     
     # Create mask
     mask = create_red_mask(hsv)
-    cv2.imshow("Mask", mask)
-    
+
     # Find contour
-    contour, area, circularity = find_ball_contour(mask)  # Fixed function name
+    contour, area, circularity = find_ball_contour(mask)
     contour_center = None
     
     # Process contour if found
     if contour is not None:
         contour_center, circle_center, radius = calculate_ball_position(contour)
-        
-        # Only draw if radius is large enough
-        if radius > 10:  # Fixed: moved inside the if contour block
+        if radius > 10:
             draw_ball_detection(frame, contour_center, circle_center, radius, circularity)
     
     # Update tracking points
     pts.appendleft(contour_center)
     
     # Draw trail
-    draw_tracking_trail(frame, pts, args['buffer'])  # Fixed function name
-        
+    draw_tracking_trail(frame, pts, args['buffer'])
+
+    # If streaming, optionally combine frame + mask side by side
+    if args.get("stream", False):
+        if args.get("mask", False):
+            mask_bgr = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
+            mask_bgr = cv2.resize(mask_bgr, (frame.shape[1], frame.shape[0]))
+
+            # Add labels
+            cv2.putText(frame,    "Camera", (10, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+            cv2.putText(mask_bgr, "Mask",   (10, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+
+            return np.hstack([frame, mask_bgr])
+
     return frame
 
 def cleanup_resources(vs, args):
@@ -158,32 +184,76 @@ def cleanup_resources(vs, args):
         
     cv2.destroyAllWindows()
 
+def run_mjpeg_stream(video_stream, points, args):
+    """Run MJPEG streaming mode - view in browser"""
+    app = Flask(__name__)
+
+    def generate():
+        while True:
+            frame = detect_ball(video_stream, points, args)
+            if frame is None:
+                break
+
+            # Encode as JPEG (compression reduces bandwidth)
+            ok, buffer = cv2.imencode(
+                '.jpg',
+                frame,
+                [int(cv2.IMWRITE_JPEG_QUALITY), int(args.get('jpeg_quality', 70))]
+            )
+            if not ok:
+                continue
+
+            yield (
+                b'--frame\r\n'
+                b'Content-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n'
+            )
+
+    @app.route('/')
+    def index():
+        return '<html><body><h3>MJPEG stream</h3><img src="/video" /></body></html>'
+
+    @app.route('/video')
+    def video():
+        return Response(generate(), mimetype='multipart/x-mixed-replace; boundary=frame')
+
+    try:
+        app.run(host=str(args.get('host', '0.0.0.0')),
+                port=int(args.get('port', 5000)),
+                threaded=True)
+    finally:
+        cleanup_resources(video_stream, args)
+
+
+def run_local_gui(video_stream, points, args):
+    """Run local GUI mode - view with cv2.imshow"""
+    try:
+        while True:
+            frame = detect_ball(video_stream, points, args)
+
+            if frame is None:
+                break
+
+            cv2.imshow("Frame", frame)
+
+            # Check for 'q' key press to exit
+            key = cv2.waitKey(1) & 0xFF
+            if key == ord('q'):
+                break
+    finally:
+        cleanup_resources(video_stream, args)
+
+
 if __name__ == '__main__':
-    
+
     # Parse command-line arguments
     args = parse_arguments()
 
     # Initialize camera and tracking
     video_stream, points = initialize_camera(args)
-    
-    # Main loop
-    while True:
-        frame = detect_ball(video_stream, points, args)
-        
-        if frame is None:
-            break
-        
-        cv2.imshow("Frame", frame)
-        
-        # Check for 'q' key press to exit
-        key = cv2.waitKey(1) & 0xFF  # Wait 1ms for key press
-        if key == ord('q'):
-            break
 
-    # Cleanup
-    cleanup_resources(video_stream, args)
-
-
-
-
-
+    # MJPEG streaming mode (view in browser)
+    if args.get("stream", False):
+        run_mjpeg_stream(video_stream, points, args)
+    # Local GUI mode (cv2.imshow)
+    else:
+        run_local_gui(video_stream, points, args)
