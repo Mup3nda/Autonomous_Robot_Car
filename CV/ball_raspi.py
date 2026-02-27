@@ -31,7 +31,7 @@ def parse_arguments():
     ap = argparse.ArgumentParser()
     ap.add_argument("-v", "--video", metavar="PATH",  help="Path to video file (optional, default: Pi camera)")
     ap.add_argument("-s", "--stream", action="store_true", help="Serve MJPEG stream in browser instead of cv2.imshow")
-    ap.add_argument("-h", "--host", default="0.0.0.0", metavar="IP",  help="Host/IP to bind the MJPEG server        (default: 0.0.0.0)")
+    ap.add_argument("-H", "--host", default="0.0.0.0", metavar="IP",  help="Host/IP to bind the MJPEG server        (default: 0.0.0.0)")
     ap.add_argument("-p", "--port", type=int, default=5000,   metavar="PORT", help="Port to serve the MJPEG stream on       (default: 5000)")
     ap.add_argument("-q", "--jpeg-quality", type=int, default=70, metavar="1-100",  help="JPEG compression quality for streaming  (default: 70)")
     ap.add_argument("-m", "--mask", action="store_true", help="Show red mask: side-by-side in browser, window in GUI")
@@ -247,10 +247,10 @@ def run_mjpeg_stream(picam2, vs, points, args):
         return Response(generate(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
     try:
-        # Log both local and network URLs for easy access
-        local_ip = socket.gethostbyname(socket.gethostname())
-        logger.info(f"  → Local:   http://127.0.0.1:{args['port']}")
-        logger.info(f"  → Network: http://{local_ip}:{args['port']}\n")
+        # # Log both local and network URLs for easy access
+        # local_ip = socket.gethostbyname(socket.gethostname())
+        # logger.info(f"  → Local:   http://127.0.0.1:{args['port']}")
+        # logger.info(f"  → Network: http://{local_ip}:{args['port']}\n")
         app.run(host=args['host'],
                 port=args['port'],
                 threaded=True)      # threaded=True allows multiple browser clients
