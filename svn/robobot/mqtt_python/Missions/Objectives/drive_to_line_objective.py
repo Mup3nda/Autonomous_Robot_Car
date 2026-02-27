@@ -49,7 +49,7 @@ class DriveToLineObjective(Objective):
                 self.state = 99  # Mark as done
         elif self.state == 10:
             # State 10: Following line - check if line is still valid
-            if not ctx.actions.edge.is_line_valid(confidence=2):
+            if not ctx.actions.edge.is_line_valid(confidence=2) and ctx.actions.edge.last_seen_time_passed() > 1.0:
                 # Lost the line - stop and try to recover
                 ctx.actions.edge.stop_following()
                 ctx.actions.drive.stop()

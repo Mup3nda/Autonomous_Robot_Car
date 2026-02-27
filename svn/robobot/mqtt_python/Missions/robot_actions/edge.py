@@ -103,3 +103,12 @@ class EdgeActions:
             float: Right edge position
         """
         return self.edge.posRight
+
+    def last_seen_time_passed(self):
+        """Get time in seconds since line was last seen with sufficient confidence.
+        
+        Returns:
+            float: Time in seconds since line was last detected
+        """
+        from datetime import datetime
+        return (datetime.now() - self.edge.lineLastSeenTime).total_seconds() 

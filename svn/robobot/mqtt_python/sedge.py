@@ -56,6 +56,7 @@ class SEdge:
     refPosition = 0.0 # distance from detected edge
     lineValid = False
     lineValidCnt = 0 # a value up to 20 for most confident line detect
+    lineLastSeenTime = datetime.now() # timestamp of last valid line detection
     crossingLine = False
     crossingLineCnt = 0  # a value up to 20 for most confident crossing line
     average = 0
@@ -68,7 +69,7 @@ class SEdge:
     # follow line controller
     lineCtrl = False # private
     # try with a P-Lead controller
-    lineKp = 1.0 # 5  (rad/s per sensor value)
+    lineKp = 0.75 # 5  (rad/s per sensor value)
     lineTauZ = 0.8 # 0.8 (second)
     lineTauP = 0.25 # 0.15 (second)
     # Lead pre-calculated factors
@@ -318,6 +319,9 @@ class SEdge:
       #
       if self.lineValid and self.lineValidCnt < 20:
         self.lineValidCnt += 1
+        # Update last seen timestamp when line is valid with confidence >= 2
+        if self.lineValidCnt >= 2:
+          self.lineLastSeenTime = datetime.now()
       elif not self.lineValid:
         if self.lineValidCnt > 0:
           self.lineValidCnt -= 1
