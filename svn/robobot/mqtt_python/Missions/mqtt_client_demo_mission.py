@@ -9,11 +9,10 @@ from setproctitle import setproctitle
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 ROOT_DIR = os.path.dirname(THIS_DIR)
-MQTT_PY_DIR = os.path.join(ROOT_DIR, "mqtt_python")
 if THIS_DIR not in sys.path:
     sys.path.insert(0, THIS_DIR)
-if MQTT_PY_DIR not in sys.path:
-    sys.path.insert(0, MQTT_PY_DIR)
+if ROOT_DIR not in sys.path:
+    sys.path.insert(0, ROOT_DIR)
 
 from spose import pose
 from sir import ir

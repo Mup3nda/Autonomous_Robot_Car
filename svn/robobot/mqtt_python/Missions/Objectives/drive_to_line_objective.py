@@ -15,11 +15,11 @@ class DriveToLineObjective(Objective):
 
     def tick(self, ctx):
         if self.state == 0:
-            if ctx.ir.ir[0] < 0.2:
-                ctx.actions.drive.rc(0.2, 0.0)
-                ctx.actions.drive.lognow(3)
-                ctx.actions.drive.servo(1, -800, 300)
-                self.state = 1
+            # Start immediately without IR check
+            ctx.actions.drive.rc(0.2, 0.0)
+            ctx.actions.drive.lognow(3)
+            ctx.actions.drive.servo(1, -800, 300)
+            self.state = 1
         elif self.state == 1:
             if ctx.pose.tripB > 1.0 or ctx.pose.tripBtimePassed() > 15:
                 ctx.actions.drive.stop()
