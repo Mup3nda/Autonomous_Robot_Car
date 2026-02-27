@@ -320,8 +320,12 @@ class SEdge:
       if self.lineValid and self.lineValidCnt < 20:
         self.lineValidCnt += 1
         # Update last seen timestamp when line is valid with confidence >= 2
-        if self.lineValidCnt >= 2:
-          self.lineLastSeenTime = datetime.now()
+        #if self.lineValidCnt >= 2:
+        #  self.lineLastSeenTime = datetime.now()
+        
+        # Update last seen timestamp whenever the line is detected.
+        # This avoids stale timestamps after brief reacquisitions.
+        self.lineLastSeenTime = datetime.now()
       elif not self.lineValid:
         if self.lineValidCnt > 0:
           self.lineValidCnt -= 1
