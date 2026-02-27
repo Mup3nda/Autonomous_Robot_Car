@@ -31,7 +31,6 @@ import time as t
 from threading import Thread
 import cv2 as cv
 import numpy as np
-import imutils
 
 class SBall:
     """Ball detection and tracking with automatic following control."""
@@ -189,8 +188,9 @@ class SBall:
         mask = cv.dilate(mask, None, iterations=2)
         
         # Find contours
-        cnts = cv.findContours(mask.copy(), cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
-        cnts = imutils.grab_contours(cnts)
+        # Handle different OpenCV versions: older returns (img, cnts, hier), newer returns (cnts, hier)
+        result = cv.findContours(mask.copy(), cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
+        cnts = result[-2] if len(result) == 3 else result[0]
         
         # Process detected contours
         old_valid = self.ball_valid
