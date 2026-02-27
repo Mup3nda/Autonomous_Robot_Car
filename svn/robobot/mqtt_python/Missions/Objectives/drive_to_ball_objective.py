@@ -1,7 +1,16 @@
 """Drive to Ball Objective - Search for, approach, and center on a ball."""
 
+from enum import IntEnum
+
 from mission_context import MissionContext
 from objective import Objective
+
+
+class DriveToBallState(IntEnum):
+    SEARCHING = 0
+    APPROACHING = 1
+    STOPPING = 2
+    DONE = 99
 
 
 class DriveToBallObjective(Objective):
@@ -65,21 +74,21 @@ class DriveToBallObjective(Objective):
     
     def start(self, ctx: MissionContext):
         """Initialize ball tracking objective."""
-        self.state = 0
+        self.state = DriveToBallState.SEARCHING
         print(f"% Objective: Drive to Ball (v={self.velocity}, target={self.target_distance}m)")
     
     def tick(self, ctx: MissionContext):
         """Execute one iteration of the ball tracking state machine."""
         
         # State 0: SEARCHING - Wait for ball detection
-        if self.state == 0:
+        if self.state == DriveToBallState.SEARCHING:
             if ctx.actions.ball.is_ball_visible(confidence=self.min_confidence):
                 print(f"% Ball detected! Approaching...")
                 ctx.actions.ball.start_following(
                     velocity=self.velocity,
                     target_distance=self.target_distance
                 )
-                self.state = 1
+                self.state = DriveToBallState.APPROACHING
             else:
                 # Optional: Could add rotation search behavior here
                 # For now, just wait for ball to appear
@@ -87,7 +96,7 @@ class DriveToBallObjective(Objective):
                     print(f"% Searching for ball... (confidence={ctx.actions.ball.get_ball_confidence()})")
         
         # State 1: APPROACHING - Move toward ball
-        elif self.state == 1:
+        elif self.state == DriveToBallState.APPROACHING:
             # Check if we've reached target position
             if ctx.actions.ball.is_ball_visible(confidence=self.min_confidence):
                 is_centered = ctx.actions.ball.is_centered(tolerance=self.centering_tolerance)
@@ -102,19 +111,20 @@ class DriveToBallObjective(Objective):
                 # Check if we've reached the goal
                 if is_centered and at_distance:
                     print(f"% Target reached! Stopping...")
-                    self.state = 2
+                    self.state = DriveToBallState.STOPPING
             else:
                 # Lost sight of ball
                 print(f"% Ball lost! Stopping and re-searching...")
                 ctx.actions.ball.stop_following()
                 ctx.actions.drive.stop()
-                self.state = 0
+                self.state = DriveToBallState.SEARCHING
         
         # State 2: STOPPING - Clean up and finish
-        elif self.state == 2:
+        elif self.state == DriveToBallState.STOPPING:
             ctx.actions.ball.stop_following()
             ctx.actions.drive.stop()
-            self.state = self.DONE
+            self.state = DriveToBallState.DONE
+            self._done = True
             print(f"% Drive to Ball objective complete!")
     
     def stop(self, ctx: MissionContext):
