@@ -38,6 +38,7 @@ add_executable(teensy_interface
       src/main.cpp
       src/mjoy.cpp
       src/mvelocity.cpp
+      src/test_servo_arm.cpp
       src/scurrent.cpp
       src/sdistforce.cpp
       src/sedge.cpp
