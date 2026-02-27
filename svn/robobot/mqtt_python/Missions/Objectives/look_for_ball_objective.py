@@ -1,7 +1,14 @@
 """Look For Ball Objective - Rotate in place until ball is detected."""
 
+from enum import IntEnum
+
 from mission_context import MissionContext
 from objective import Objective
+
+
+class LookForBallState(IntEnum):
+    SEARCHING = 0
+    DONE = 99
 
 
 class LookForBallObjective(Objective):
@@ -56,7 +63,7 @@ class LookForBallObjective(Objective):
     
     def start(self, ctx: MissionContext):
         """Initialize ball search objective."""
-        self.state = 0
+        self.state = LookForBallState.SEARCHING
         print(f"% Objective: Look For Ball (omega={self.angular_velocity}, timeout={self.timeout_seconds}s)")
         print(f"% Robot will rotate in place to search for ball...")
     
@@ -64,7 +71,7 @@ class LookForBallObjective(Objective):
         """Execute one iteration of the ball search state machine."""
         
         # State 0: SEARCHING - Rotate and look for ball
-        if self.state == 0:
+        if self.state == LookForBallState.SEARCHING:
             # Apply continuous rotation
             ctx.actions.drive.turn(self.angular_velocity)
             
@@ -75,7 +82,8 @@ class LookForBallObjective(Objective):
                 print(f"% Ball position: x={status['x']:.0f}, y={status['y']:.0f}, " +
                       f"r={status['radius']:.0f}px, conf={status['confidence']}")
                 ctx.actions.drive.stop()
-                self.state = self.DONE
+                self.state = LookForBallState.DONE
+                self._done = True
                 print(f"% Look for Ball objective complete!")
             
             # Periodic status output
@@ -88,7 +96,8 @@ class LookForBallObjective(Objective):
             if self.ticks >= self.max_ticks:
                 print(f"% Timeout: Ball not found after {self.timeout_seconds}s")
                 ctx.actions.drive.stop()
-                self.state = self.DONE
+                self.state = LookForBallState.DONE
+                self._done = True
                 print(f"% Look for Ball objective failed (timeout)")
     
     def stop(self, ctx: MissionContext):
