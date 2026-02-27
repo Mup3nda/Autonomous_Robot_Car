@@ -5,7 +5,12 @@ import argparse  # Command-line argument parsing
 import cv2  
 import imutils  # Convenience functions for OpenCV
 import time  
+import socket
 from flask import Flask, Response
+import logging
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 CIRCULARITY_THRESHOLD = 0.65  # Changed from 0.2 to be more strict
 BUFFER_SIZE = 32
@@ -20,7 +25,7 @@ red_upper2 = (180, 255, 255)    # H(170-180), S(max), V(max)
 def parse_arguments():
     """Set up command-line argument parser"""
     ap = argparse.ArgumentParser()
-    ap.add_argument("-v","--video", 
+    ap.add_argument("--video", 
                     help="add path to video (optional)")
     ap.add_argument("--stream", action="store_true",
                     help="Serve a live MJPEG stream in a browser (no cv2.imshow)")
@@ -198,7 +203,8 @@ def run_mjpeg_stream(video_stream, points, args):
             ok, buffer = cv2.imencode(
                 '.jpg',
                 frame,
-                [int(cv2.IMWRITE_JPEG_QUALITY), int(args.get('jpeg_quality', 70))]
+                #[int(cv2.IMWRITE_JPEG_QUALITY), int(args.get('jpeg_quality', 70))]
+                [int(cv2.IMWRITE_JPEG_QUALITY), args['jpeg_quality']]
             )
             if not ok:
                 continue
@@ -217,9 +223,17 @@ def run_mjpeg_stream(video_stream, points, args):
         return Response(generate(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
     try:
-        app.run(host=str(args.get('host', '0.0.0.0')),
-                port=int(args.get('port', 5000)),
+        local_ip = socket.gethostbyname(socket.gethostname())
+        logger.info(f"  → Local:   http://127.0.0.1:{args['port']}")
+        logger.info(f"  → Network: http://{local_ip}:{args['port']}\n")
+        
+        # app.run(host=str(args.get('host', '0.0.0.0')),
+        #         port=int(args.get('port', 5000)),
+        #         threaded=True)
+        app.run(host=args['host'],
+                port=args['port'],
                 threaded=True)
+
     finally:
         cleanup_resources(video_stream, args)
 
