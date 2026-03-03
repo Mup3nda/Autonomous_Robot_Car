@@ -74,7 +74,6 @@ class LookForBallObjective(Objective):
         if self.state == LookForBallState.SEARCHING:
             # Apply continuous rotation (0 forward, angular_velocity for turn)
             ctx.actions.drive.rc(0, self.angular_velocity)
-            
             # Check if ball is visible
             if ctx.actions.ball.is_ball_visible(confidence=self.min_confidence):
                 print(f"% Ball found at tick {self.ticks}!")

@@ -46,7 +46,7 @@ class BallActions:
         Returns:
             bool: True if ball is detected with required confidence
         """
-        return self.ball.ball_valid and self.ball.ball_confidence >= confidence
+        return self.ball.ball_valid #and self.ball.ball_confidence >= confidence
     
     def get_ball_position(self):
         """Get ball position in image coordinates.
@@ -108,49 +108,22 @@ class BallActions:
         """
         return self.ball.ball_confidence
     
-    def set_color_range(self, color_name='red'):
+    def set_color(self, color_name='red'):
         """Set the color to track.
         
         Args:
-            color_name: Color to track ('red', 'blue', 'green', 'yellow')
+            color_name: Color to track ('red', 'blue', 'white')
         """
-        # Predefined HSV ranges for common colors
-        color_ranges = {
-            'red': {
-                'lower1': (0, 245, 150),
-                'upper1': (10, 255, 255),
-                'lower2': (170, 245, 150),
-                'upper2': (180, 255, 255)
-            },
-            'blue': {
-                'lower1': (100, 150, 100),
-                'upper1': (130, 255, 255),
-                'lower2': (100, 150, 100),  # Blue doesn't wrap
-                'upper2': (130, 255, 255)
-            },
-            'green': {
-                'lower1': (40, 100, 100),
-                'upper1': (80, 255, 255),
-                'lower2': (40, 100, 100),  # Green doesn't wrap
-                'upper2': (80, 255, 255)
-            },
-            'yellow': {
-                'lower1': (20, 100, 100),
-                'upper1': (40, 255, 255),
-                'lower2': (20, 100, 100),  # Yellow doesn't wrap
-                'upper2': (40, 255, 255)
-            }
-        }
+        self.ball.set_color(color_name)
+    
+    def set_focal_length_mm(self, focal_length_mm, sensor_width_mm=3.68):
+        """Convert focal length from mm to pixels.
         
-        if color_name in color_ranges:
-            ranges = color_ranges[color_name]
-            self.ball.color_lower1 = ranges['lower1']
-            self.ball.color_upper1 = ranges['upper1']
-            self.ball.color_lower2 = ranges['lower2']
-            self.ball.color_upper2 = ranges['upper2']
-            print(f"% Ball: Color set to {color_name}")
-        else:
-            print(f"% Ball: Unknown color '{color_name}', keeping current settings")
+        Args:
+            focal_length_mm: Focal length in millimeters (e.g., 3.6mm)
+            sensor_width_mm: Camera sensor width (default 3.68mm for Pi Camera v2)
+        """
+        self.ball.set_focal_length_mm(focal_length_mm, sensor_width_mm)
     
     def get_status(self):
         """Get full ball tracking status for debugging.
