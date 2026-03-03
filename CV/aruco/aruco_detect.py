@@ -1,6 +1,7 @@
 
 
 from picamera2 import Picamera2
+from collections import deque
 from imutils.video import VideoStream  # Threaded video stream (used for optional video file)
 from imutils.video import VideoStream  # Threaded video stream (used for optional video file)
 import numpy as np                  # Numerical operations
@@ -18,10 +19,23 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
  
- 
-marker_length = 0.026   
-camera_config = 'calibration.yaml'
-ARUCO_4X4_50 = cv2.aruco.DICT_4X4_50
+CUBE_MARKER_LENGHT = 0.0350
+PLATFORM_MARKER_LENGHT = 0.0350
+DROP_AREA_MARKER_LENGHT = 0.100
+STOP_AREA_MARKER_LENGHT = 0.154
+
+# TEST
+PHONE_MARKER_LENGHT = 0.026 
+
+#marker_length = CUBE_LENGHT 
+marker_length = DROP_AREA_MARKER_LENGHT
+#marker_length = PHONE_MARKER_LENGHT  
+
+
+distance_buffer = deque(maxlen=5)
+camera_config = 'oliver_calibration.yaml'
+#ARUCO_DICT = cv2.aruco.DICT_4X4_50
+ARUCO_DICT = cv2.aruco.DICT_4X4_100
 
 def parse_arguments():
     """Set up command-line argument parser"""
@@ -48,7 +62,7 @@ def initialize_aruco_detector():
     """
     parameters are the default detection parameters.
     """
-    aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
+    aruco_dict = cv2.aruco.getPredefinedDictionary(ARUCO_DICT)
     parameters = cv2.aruco.DetectorParameters()
     detector = cv2.aruco.ArucoDetector(aruco_dict, parameters)
     
@@ -66,6 +80,8 @@ def intiatialize_camera():
     picam2.configure(camera_config)
     picam2.start()
     
+    time.sleep(2)
+    
     return picam2    
 
 def get_object_points():
@@ -79,17 +95,18 @@ def get_object_points():
     
     return obj_points
 
-def display_text(frame, image_points, x , y, distance):
+def display_text(frame, image_points, x , y, z, distance):
     
-    text_x = int(image_points[0][0])
-    text_y = int(image_points[0][1]) - 10
+    org = (20, 90)
+    # text_x = int(image_points[0][0])
+    # text_y = int(image_points[0][1]) - 10
     
     # Display on frame with different colors
     font = cv2.FONT_HERSHEY_SIMPLEX
-    cv2.putText(frame, f"X={x:.3f}", (text_x, text_y), font, 0.5, (0, 255, 0), 2, cv2.LINE_AA)
-    cv2.putText(frame, f"Y={y:.3f}", (text_x, text_y+20), font, 0.5, (0, 0, 255), 2, cv2.LINE_AA)
-    cv2.putText(frame, f"Z(Depth)={z:.3f}", (text_x, text_y+40), font, 0.5, (255, 0, 0), 2,cv2.LINE_AA)
-    cv2.putText(frame, f"Distance={distance:.3f}", (text_x, text_y+60), font, 0.5, (200, 255, 0), 2,cv2.LINE_AA)
+    cv2.putText(frame, f"X={x:.3f}", (org[0], org[1]), font, 0.7, (0, 255, 0), 1, cv2.LINE_AA)
+    cv2.putText(frame, f"Y={y:.3f}", (org[0], org[1]+20), font, 0.7, (0, 0, 255), 1, cv2.LINE_AA)
+    cv2.putText(frame, f"Z={z:.3f}", (org[0], org[1]+40), font, 0.7, (255, 0, 0), 1,cv2.LINE_AA)
+    cv2.putText(frame, f"Distance={distance:.3f}", (org[0], org[1]+60), font, 0.7, (200, 100, 0), 1,cv2.LINE_AA)
 
 def detect_markers(picam2, detector, camera_matrix, dist_coeffs):
     frame = picam2.capture_array()
@@ -131,8 +148,8 @@ def detect_markers(picam2, detector, camera_matrix, dist_coeffs):
                 # Print to terminal
                 print(f"X={x:.3f} m, Y={y:.3f} m, Z(depth)={z:.3f} m, Distance={distance:.3f} m")
             
-                display_text(frame, image_points, x, y, distance)
-        return frame
+                display_text(frame, image_points, x, y, z, distance)
+    return frame
  
 def run_mjpeg_stream(picam2, detector, camera_matrix, dist_coeffs, args):
     app = Flask(__name__)
@@ -144,8 +161,8 @@ def run_mjpeg_stream(picam2, detector, camera_matrix, dist_coeffs, args):
             if frame is None:
                 break
             
-            ok, buffer = cv2.imdecode(
-                '.jpeg',
+            ok, buffer = cv2.imencode(
+                '.jpg',
                 frame,
                 [int(cv2.IMWRITE_JPEG_QUALITY), args['jpeg_quality']]
             )
