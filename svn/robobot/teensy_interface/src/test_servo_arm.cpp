@@ -18,10 +18,10 @@
 // -------------------------------------------------------
 // Arm configuration - tune these to your physical setup
 // -------------------------------------------------------
-#define ARM_UP_POSITION      400      // Upright / resting position
-#define ARM_DOWN_POSITION    0    // Down / deployed position
-#define ARM_90_DOWN_POSITION -250   // 90 degrees downward - tune this
-#define ARM_90_UP_POSITION   250 
+#define ARM_UP_POSITION      400    // Upright / resting position
+#define ARM_DOWN_POSITION    0      // Down / deployed position
+#define ARM_90_UP_POSITION   250    // 90 degrees UP - tune this
+#define ARM_90_DOWN_POSITION -250   // 90 degrees DOWN - tune this
 #define ARM_SERVO_NUM        1      // Servo number the arm is attached to
 #define ARM_VELOCITY         200    // Movement speed in servo units/sec
 #define TEENSY_NUM           0      // Teensy 0 confirmed
@@ -100,24 +100,24 @@ void testServoLoop()
         if (input == '\n' or input == '\r')
             continue;
 
-        switch (input)
+         switch (input)
         {
             case 'u':
-                commandArm(false);
+                commandArm(true);   // was false, now true
                 break;
 
             case 'd':
-                commandArm(true);
+                commandArm(false);  // was true, now false
                 break;
 
             case '1':
-                std::cout << "[ARM] Moving to 90 degrees DOWN\n";
-                servo[TEENSY_NUM].setServo(ARM_SERVO_NUM, true, ARM_90_DOWN_POSITION, ARM_VELOCITY);
+                std::cout << "[ARM] Moving to 90 degrees UP\n";
+                servo[TEENSY_NUM].setServo(ARM_SERVO_NUM, true, ARM_90_UP_POSITION, ARM_VELOCITY);
                 break;
 
             case '2':
-                std::cout << "[ARM] Moving to 90 degrees UP\n";
-                servo[TEENSY_NUM].setServo(ARM_SERVO_NUM, true, ARM_90_UP_POSITION, ARM_VELOCITY);
+                std::cout << "[ARM] Moving to 90 degrees DOWN\n";
+                servo[TEENSY_NUM].setServo(ARM_SERVO_NUM, true, ARM_90_DOWN_POSITION, ARM_VELOCITY);
                 break;
 
             case 'q':
