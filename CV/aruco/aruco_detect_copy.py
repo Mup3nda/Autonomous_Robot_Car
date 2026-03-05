@@ -19,40 +19,21 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
  
-CUBE_MARKER_SIZE = 0.0350
-PLATFORM_MARKER_SIZE = 0.0350
-DROP_AREA_MARKER_SIZE = 0.100
-STOP_AREA_MARKER_SIZE = 0.154
-# TEST
-PHONE_MARKER_SIZE = 0.026
-PAD_MARKER_SIZE = 0.073  
+CUBE_MARKER_LENGHT = 0.0350
+PLATFORM_MARKER_LENGHT = 0.0350
+DROP_AREA_MARKER_LENGHT = 0.100
+STOP_AREA_MARKER_LENGHT = 0.154
 
-MARKER_SIZES = {
-    
-    0: PHONE_MARKER_SIZE, #TEst
-    99: PAD_MARKER_SIZE, #TEst
-    #------------------------------
-    5: PLATFORM_MARKER_SIZE, #Platform
-    20: CUBE_MARKER_SIZE, #Cube 1
-    53: CUBE_MARKER_SIZE, #CUBE 2
-    #------------------------------
-    10: DROP_AREA_MARKER_SIZE, #A
-    11: DROP_AREA_MARKER_SIZE, #A
-    12: DROP_AREA_MARKER_SIZE, #B
-    13: DROP_AREA_MARKER_SIZE, #B
-    14: DROP_AREA_MARKER_SIZE, #C
-    15: DROP_AREA_MARKER_SIZE, #C
-    16: DROP_AREA_MARKER_SIZE, #D
-    17: DROP_AREA_MARKER_SIZE, #D
-    #-------------------------------
-    25: DROP_AREA_MARKER_SIZE, #Finish 
-    
-}
+# TEST
+PHONE_MARKER_LENGHT = 0.026 
+
+#marker_length = CUBE_LENGHT 
+marker_length = DROP_AREA_MARKER_LENGHT
+#marker_length = PHONE_MARKER_LENGHT  
 
 
 distance_buffer = deque(maxlen=5)
-#camera_config = 'oliver_calibration.yaml'
-camera_config = 'myraspi_calibration.yaml'
+camera_config = 'oliver_calibration.yaml'
 #ARUCO_DICT = cv2.aruco.DICT_4X4_50
 ARUCO_DICT = cv2.aruco.DICT_4X4_100
 
@@ -103,33 +84,29 @@ def intiatialize_camera():
     
     return picam2    
 
-def get_object_points(marker_size):
+def get_object_points():
     # Define the 3D coordinates of the marker corners in the marker's coordinate system
     obj_points = np.array([
-        [-marker_size / 2,  marker_size / 2, 0],
-        [ marker_size / 2,  marker_size / 2, 0],
-        [ marker_size / 2, -marker_size / 2, 0],
-        [-marker_size / 2, -marker_size / 2, 0]
+        [-marker_length / 2,  marker_length / 2, 0],
+        [ marker_length / 2,  marker_length / 2, 0],
+        [ marker_length / 2, -marker_length / 2, 0],
+        [-marker_length / 2, -marker_length / 2, 0]
     ], dtype=np.float32)
     
     return obj_points
 
 def display_text(frame, image_points, x , y, z, distance):
     
-    #org = (20, 90)
-    text_x = int(image_points[0][0])
-    text_y = int(image_points[0][1]) - 10
+    org = (20, 90)
+    # text_x = int(image_points[0][0])
+    # text_y = int(image_points[0][1]) - 10
     
     # Display on frame with different colors
     font = cv2.FONT_HERSHEY_SIMPLEX
-    cv2.putText(frame, f"X={x:.3f}", (text_x, text_y ), font, 0.5, (0, 255, 0), 1, cv2.LINE_AA)
-    cv2.putText(frame, f"Y={y:.3f}", (text_x, text_y +20), font, 0.5, (0, 0, 255), 1, cv2.LINE_AA)
-    cv2.putText(frame, f"Z={z:.3f}", (text_x, text_y +40), font, 0.5, (255, 0, 0), 1,cv2.LINE_AA)
-    cv2.putText(frame, f"D={distance:.3f}", (text_x, text_y +60), font, 0.5, (200, 100, 0), 1,cv2.LINE_AA)
-    # cv2.putText(frame, f"X={x:.3f}", (org[0], org[1]), font, 0.7, (0, 255, 0), 1, cv2.LINE_AA)
-    # cv2.putText(frame, f"Y={y:.3f}", (org[0], org[1]+20), font, 0.7, (0, 0, 255), 1, cv2.LINE_AA)
-    # cv2.putText(frame, f"Z={z:.3f}", (org[0], org[1]+40), font, 0.7, (255, 0, 0), 1,cv2.LINE_AA)
-    # cv2.putText(frame, f"Distance={distance:.3f}", (org[0], org[1]+60), font, 0.7, (200, 100, 0), 1,cv2.LINE_AA)
+    cv2.putText(frame, f"X={x:.3f}", (org[0], org[1]), font, 0.7, (0, 255, 0), 1, cv2.LINE_AA)
+    cv2.putText(frame, f"Y={y:.3f}", (org[0], org[1]+20), font, 0.7, (0, 0, 255), 1, cv2.LINE_AA)
+    cv2.putText(frame, f"Z={z:.3f}", (org[0], org[1]+40), font, 0.7, (255, 0, 0), 1,cv2.LINE_AA)
+    cv2.putText(frame, f"Distance={distance:.3f}", (org[0], org[1]+60), font, 0.7, (200, 100, 0), 1,cv2.LINE_AA)
 
 def detect_markers(picam2, detector, camera_matrix, dist_coeffs):
     frame = picam2.capture_array()
@@ -148,23 +125,10 @@ def detect_markers(picam2, detector, camera_matrix, dist_coeffs):
         # Draw detected markers on the frame
         cv2.aruco.drawDetectedMarkers(frame, corners, ids)
 
+        obj_points = get_object_points()
         
-        
-        for marker_corners, marker_id in zip(corners, ids):
+        for marker_corners in corners:
             
-            _marker_id = marker_id[0]
-            
-            if _marker_id in MARKER_SIZES:
-                _marker_size = MARKER_SIZES[_marker_id]
-                
-            else:
-                logger.info("Did not find the marker id in he defined list")
-                continue
-        
-        
-            obj_points = get_object_points(_marker_size)
-                
-                
             image_points = marker_corners[0].astype(np.float32)
 
             """
@@ -180,14 +144,9 @@ def detect_markers(picam2, detector, camera_matrix, dist_coeffs):
                 # Extract the translation vector and calculate the distance
                 x, y, z = tvec.flatten()
                 distance = np.linalg.norm(tvec)
-                x_cm = x*100
-                y_cm = y*100
-                z_cm = z*100
-                distance_cm = distance*100
-            
+                
                 # Print to terminal
-                #print(f"{marker_corners[0]}")
-                print(f"ID:{_marker_id}, x={x_cm:.2f} cm, y={y_cm:.2f} cm, z={z_cm:.2f} cm, distance={distance_cm:.2f} cm")
+                print(f"X={x:.3f} m, Y={y:.3f} m, Z(depth)={z:.3f} m, Distance={distance:.3f} m")
             
                 display_text(frame, image_points, x, y, z, distance)
     return frame
@@ -258,8 +217,7 @@ if __name__=='__main__':
     aruco_dict, parameters, detector = initialize_aruco_detector()
     picam2 = intiatialize_camera()
     
-    logger.warning("Make sure you have included comand arguments")
-    logger.info("Make sure you use correctg calibration file")
+    logger.info("Make sure you have included comand arguments")
     
     if args.get("stream", False):
         run_mjpeg_stream(picam2, detector, camera_matrix, dist_coeffs, args)

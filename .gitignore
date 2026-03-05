@@ -1,3 +1,6 @@
+svn
+venv
+CV/test/test.py
 test
 img*
 calib_images
