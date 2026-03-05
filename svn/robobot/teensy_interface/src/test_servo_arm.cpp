@@ -21,6 +21,7 @@
 #define ARM_UP_POSITION      0      // Upright / resting position
 #define ARM_DOWN_POSITION    400    // Down / deployed position
 #define ARM_90_DOWN_POSITION -250   // 90 degrees downward - tune this
+#define ARM_90_UP_POSITION   250 
 #define ARM_SERVO_NUM        1      // Servo number the arm is attached to
 #define ARM_VELOCITY         200    // Movement speed in servo units/sec
 #define TEENSY_NUM           0      // Teensy 0 confirmed
@@ -64,17 +65,16 @@ void testServoLoop()
     std::cout << "\n=============================\n";
     std::cout << " Servo Arm Manual Test\n";
     std::cout << "=============================\n";
-    std::cout << " [u] - Move arm UP\n";
-    std::cout << " [d] - Move arm DOWN\n";
-    std::cout << " [2] - Move arm 90 degrees DOWN\n";
+    std::cout << " [u] - Move arm UP (full)\n";
+    std::cout << " [d] - Move arm DOWN (full)\n";
+    std::cout << " [1] - Move arm 90 degrees DOWN\n";
+    std::cout << " [2] - Move arm 90 degrees UP\n";
     std::cout << " [q] - Quit\n";
     std::cout << "=============================\n\n";
 
     std::cout << "[INIT] Setting arm to UP position\n";
     servo[TEENSY_NUM].setServo(ARM_SERVO_NUM, true, ARM_UP_POSITION, ARM_VELOCITY);
     armIsDown = false;
-
-    bool running = true;
 
     // Open /dev/tty directly to bypass service keyboard handler
     FILE* tty = fopen("/dev/tty", "r");
@@ -83,6 +83,8 @@ void testServoLoop()
         std::cout << "[ERROR] Could not open /dev/tty\n";
         return;
     }
+
+    bool running = true;
 
     while (running and not service.stop)
     {
@@ -108,9 +110,14 @@ void testServoLoop()
                 commandArm(true);
                 break;
 
-            case '2':
+            case '1':
                 std::cout << "[ARM] Moving to 90 degrees DOWN\n";
                 servo[TEENSY_NUM].setServo(ARM_SERVO_NUM, true, ARM_90_DOWN_POSITION, ARM_VELOCITY);
+                break;
+
+            case '2':
+                std::cout << "[ARM] Moving to 90 degrees UP\n";
+                servo[TEENSY_NUM].setServo(ARM_SERVO_NUM, true, ARM_90_UP_POSITION, ARM_VELOCITY);
                 break;
 
             case 'q':
@@ -120,7 +127,7 @@ void testServoLoop()
                 break;
 
             default:
-                std::cout << "[TEST] Unknown command. Use u, d, 2 or q.\n";
+                std::cout << "[TEST] Unknown command. Use u, d, 1, 2 or q.\n";
                 break;
         }
     }
