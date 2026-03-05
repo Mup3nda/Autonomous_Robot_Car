@@ -18,8 +18,8 @@
 // -------------------------------------------------------
 // Arm configuration - tune these to your physical setup
 // -------------------------------------------------------
-#define ARM_UP_POSITION      0      // Upright / resting position
-#define ARM_DOWN_POSITION    400    // Down / deployed position
+#define ARM_UP_POSITION      400      // Upright / resting position
+#define ARM_DOWN_POSITION    0    // Down / deployed position
 #define ARM_90_DOWN_POSITION -250   // 90 degrees downward - tune this
 #define ARM_90_UP_POSITION   250 
 #define ARM_SERVO_NUM        1      // Servo number the arm is attached to
