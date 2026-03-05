@@ -19,17 +19,33 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
  
-CUBE_MARKER_LENGHT = 0.0350
-PLATFORM_MARKER_LENGHT = 0.0350
-DROP_AREA_MARKER_LENGHT = 0.100
-STOP_AREA_MARKER_LENGHT = 0.154
-
+CUBE_MARKER_SIZE = 0.0350
+PLATFORM_MARKER_SIZE = 0.0350
+DROP_AREA_MARKER_SIZE = 0.100
+STOP_AREA_MARKER_SIZE = 0.154
 # TEST
-PHONE_MARKER_LENGHT = 0.026 
+PHONE_MARKER_SIZE = 0.026 
 
-#marker_length = CUBE_LENGHT 
-marker_length = DROP_AREA_MARKER_LENGHT
-#marker_length = PHONE_MARKER_LENGHT  
+MARKER_SIZES = {
+    
+    0: PHONE_MARKER_SIZE, #TEst
+    #------------------------------
+    5: PLATFORM_MARKER_SIZE, #Platform
+    20: CUBE_MARKER_SIZE, #Cube 1
+    53: CUBE_MARKER_SIZE, #CUBE 2
+    #------------------------------
+    10: DROP_AREA_MARKER_SIZE, #A
+    11: DROP_AREA_MARKER_SIZE, #A
+    12: DROP_AREA_MARKER_SIZE, #B
+    13: DROP_AREA_MARKER_SIZE, #B
+    14: DROP_AREA_MARKER_SIZE, #C
+    15: DROP_AREA_MARKER_SIZE, #C
+    16: DROP_AREA_MARKER_SIZE, #D
+    17: DROP_AREA_MARKER_SIZE, #D
+    #-------------------------------
+    25: DROP_AREA_MARKER_SIZE, #Finish 
+    
+}
 
 
 distance_buffer = deque(maxlen=5)
@@ -84,13 +100,13 @@ def intiatialize_camera():
     
     return picam2    
 
-def get_object_points():
+def get_object_points(marker_size):
     # Define the 3D coordinates of the marker corners in the marker's coordinate system
     obj_points = np.array([
-        [-marker_length / 2,  marker_length / 2, 0],
-        [ marker_length / 2,  marker_length / 2, 0],
-        [ marker_length / 2, -marker_length / 2, 0],
-        [-marker_length / 2, -marker_length / 2, 0]
+        [-marker_size / 2,  marker_size / 2, 0],
+        [ marker_size / 2,  marker_size / 2, 0],
+        [ marker_size / 2, -marker_size / 2, 0],
+        [-marker_size / 2, -marker_size / 2, 0]
     ], dtype=np.float32)
     
     return obj_points
@@ -125,10 +141,23 @@ def detect_markers(picam2, detector, camera_matrix, dist_coeffs):
         # Draw detected markers on the frame
         cv2.aruco.drawDetectedMarkers(frame, corners, ids)
 
-        obj_points = get_object_points()
         
-        for marker_corners in corners:
+        
+        for marker_corners, marker_id in zip(corners, ids):
             
+            _marker_id = marker_id[0]
+            
+            if _marker_id in MARKER_SIZES:
+                _marker_size = MARKER_SIZES[_marker_id]
+                
+            else:
+                logger.info("Did not find the marker id in he defined list")
+                continue
+        
+        
+            obj_points = get_object_points(_marker_size)
+                
+                
             image_points = marker_corners[0].astype(np.float32)
 
             """
