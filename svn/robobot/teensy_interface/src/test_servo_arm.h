@@ -34,10 +34,10 @@
 void testServoLoop();
 
 /**
- * Command the arm to go down or up.
+ * Command the arm to go down, up, or to the middle.
  * This is the function the upper layer (ball detection) will call.
- * \param goDown true = arm down, false = arm up
+ * \param direction 'u' = arm up, 'd' = arm down, 'm' = middle position
  */
-void commandArm(bool goDown);
+void commandArm(char direction);
 
 #endif

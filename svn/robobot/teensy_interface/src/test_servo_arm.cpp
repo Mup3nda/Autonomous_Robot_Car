@@ -18,9 +18,9 @@
 // -------------------------------------------------------
 // Arm configuration - tune these to your physical setup
 // -------------------------------------------------------
-#define ARM_UP_POSITION      400    // Upright / resting position (initial)
-#define ARM_DOWN_POSITION    0      // Down / deployed position
-#define ARM_90_UP_POSITION   250    // 90 degrees UP - tune this
+#define ARM_UP_POSITION      400    // Upright / extreme up position
+#define ARM_DOWN_POSITION    0      // Down / extreme down position
+#define ARM_MID_POSITION     200    // Midpoint / parallel to surface
 #define ARM_SERVO_NUM        1      // Servo number the arm is attached to
 #define ARM_VELOCITY         200    // Movement speed in servo units/sec
 #define TEENSY_NUM           0      // Teensy 0 confirmed
@@ -28,44 +28,33 @@
 // -------------------------------------------------------
 // State tracking
 // -------------------------------------------------------
-static bool armIsDown = false;
+// static bool armIsDown = false; // Note: removed strict state tracking to allow arbitrary transitions between the 3 states
 
 // -------------------------------------------------------
 // commandArm()
 // This is the function the upper layer will eventually call.
 // -------------------------------------------------------
-void commandArm(bool goDown)
+void commandArm(char direction)
 {
-    if (goDown && !armIsDown)
+    if (direction == 'u')
     {
-        std::cout << "[ARM] Moving DOWN\n";
-        servo[TEENSY_NUM].setServo(ARM_SERVO_NUM, true, ARM_DOWN_POSITION, ARM_VELOCITY);
-        armIsDown = true;
-    }
-    else if (!goDown && armIsDown)
-    {
-        std::cout << "[ARM] Moving UP\n";
+        std::cout << "[ARM] Moving UP (extreme)\n";
         servo[TEENSY_NUM].setServo(ARM_SERVO_NUM, true, ARM_UP_POSITION, ARM_VELOCITY);
-        armIsDown = false;
+    }
+    else if (direction == 'd')
+    {
+        std::cout << "[ARM] Moving DOWN (extreme)\n";
+        servo[TEENSY_NUM].setServo(ARM_SERVO_NUM, true, ARM_DOWN_POSITION, ARM_VELOCITY);
+    }
+    else if (direction == 'm')
+    {
+        std::cout << "[ARM] Moving to MID_POINT (parallel)\n";
+        servo[TEENSY_NUM].setServo(ARM_SERVO_NUM, true, ARM_MID_POSITION, ARM_VELOCITY);
     }
     else
     {
-        std::cout << "[ARM] Already in requested position, no movement needed\n";
+        std::cout << "[ARM] Unknown command\n";
     }
-}
-
-// -------------------------------------------------------
-// printServoStatus()
-// -------------------------------------------------------
-void printServoStatus()
-{
-    std::cout << "\n--- Servo Status ---\n";
-    std::cout << "Arm state     : " << (armIsDown ? "DOWN" : "UP")                         << "\n";
-    std::cout << "Servo ref pos : " << servo[TEENSY_NUM].servo_ref[ARM_SERVO_NUM - 1]      << "\n";
-    std::cout << "Servo act pos : " << servo[TEENSY_NUM].servo_position[ARM_SERVO_NUM - 1] << "\n";
-    std::cout << "Servo enabled : " << servo[TEENSY_NUM].servo_enabled[ARM_SERVO_NUM - 1]  << "\n";
-    std::cout << "Update count  : " << servo[TEENSY_NUM].updateCnt                         << "\n";
-    std::cout << "--------------------\n\n";
 }
 
 // -------------------------------------------------------
@@ -78,17 +67,16 @@ void testServoLoop()
     std::cout << "\n=============================\n";
     std::cout << " Servo Arm Manual Test\n";
     std::cout << "=============================\n";
-    std::cout << " [u] - Move arm to initial UP position (" << ARM_UP_POSITION << ")\n";
-    std::cout << " [d] - Move arm DOWN\n";
-    std::cout << " [2] - Move arm 90 degrees UP\n";
-    std::cout << " [s] - Print servo status\n";
+    std::cout << " [u] - Move arm UP (extreme)\n";
+    std::cout << " [d] - Move arm DOWN (extreme)\n";
+    std::cout << " [m] - Move arm to MID POINT (parallel)\n";
+    std::cout << " [s] - Show servo status\n";
     std::cout << " [q] - Quit\n";
     std::cout << "=============================\n\n";
 
     std::cout << "[INIT] Setting arm to UP position\n";
     servo[TEENSY_NUM].setServo(ARM_SERVO_NUM, true, ARM_UP_POSITION, ARM_VELOCITY);
-    armIsDown = false;
-
+    
     // Open /dev/tty directly to bypass service keyboard handler
     FILE* tty = fopen("/dev/tty", "r");
     if (!tty)
@@ -113,29 +101,23 @@ void testServoLoop()
         if (input == '\n' or input == '\r')
             continue;
 
-        switch (input)
+         switch (input)
         {
             case 'u':
-                // Always go back to initial position regardless of current state
-                std::cout << "[ARM] Returning to initial UP position\n";
-                servo[TEENSY_NUM].setServo(ARM_SERVO_NUM, true, ARM_UP_POSITION, ARM_VELOCITY);
-                armIsDown = false;
+                commandArm('u');
                 break;
 
             case 'd':
-                std::cout << "[ARM] Moving DOWN\n";
-                servo[TEENSY_NUM].setServo(ARM_SERVO_NUM, true, ARM_DOWN_POSITION, ARM_VELOCITY);
-                armIsDown = true;
+                commandArm('d');
                 break;
 
-            case '2':
-                std::cout << "[ARM] Moving to 90 degrees UP\n";
-                servo[TEENSY_NUM].setServo(ARM_SERVO_NUM, true, ARM_90_UP_POSITION, ARM_VELOCITY);
-                armIsDown = false; // treat as an intermediate up state
+            case 'm':
+                commandArm('m');
                 break;
 
             case 's':
-                printServoStatus();
+                std::cout << "[STATUS] Servo target: " << servo[TEENSY_NUM].servo_ref[ARM_SERVO_NUM-1] 
+                          << ", Position: " << servo[TEENSY_NUM].servo_position[ARM_SERVO_NUM-1] << "\n";
                 break;
 
             case 'q':
@@ -145,7 +127,7 @@ void testServoLoop()
                 break;
 
             default:
-                std::cout << "[TEST] Unknown command. Use u, d, 2, s or q.\n";
+                std::cout << "[TEST] Unknown command. Use u, d, m, s, or q.\n";
                 break;
         }
     }
