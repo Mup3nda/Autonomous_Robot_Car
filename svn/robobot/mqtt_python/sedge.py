@@ -68,19 +68,17 @@ class SEdge:
     #
     # follow line controller
     lineCtrl = False # private
-    # try with a P-Lead controller
-    lineKp = 0.75 # 5  (rad/s per sensor value)
-    lineTauZ = 0.8 # 0.8 (second)
-    lineTauP = 0.25 # 0.15 (second)
-    # Lead pre-calculated factors
-    tauP2pT = 1.0
-    tauP2mT = 0.0
-    tauZ2pT = 1.0
-    tauZ2mT = 0.0
-    # control values
-    lineE1 = 0.0 # old error * Kp (rad/s)
-    lineY1 = 0.0 # old control output (rad/s)
-    lineY = 0.0  # control output (rad/s)
+    # PID controller parameters
+    lineKp = 0.75  # Proportional gain (rad/s per sensor value)
+    lineKi = 0.2  # Integral gain (rad/s per (sensor value * sec))
+    lineKd = 0.09 # Derivative gain (rad/s per (sensor value / sec)))
+    derivativeAlpha = 0.5  # Low-pass filter for derivative (0-1, lower = more filtering)
+    # PID state variables
+    lineE0 = 0.0      # previous error
+    lineIntegral = 0.0 # accumulated integral error
+    lineDerivFiltered = 0.0  # filtered derivative term
+    lineY = 0.0       # control output (rad/s)
+    maxIntegral = 1.0 # anti-windup limit for integral term
     # management
     # topicRc = ""
     topicCmdT0 = ""
@@ -347,18 +345,18 @@ class SEdge:
       self.followLeft = followLeft
       self.refPosition = refPosition
       # velocity 0 (or negative) is turning off line control
+      wasActive = self.lineCtrl
       self.lineCtrl = velocity > 0.001
+      # Reset PID when starting new control session
+      if self.lineCtrl and not wasActive:
+        self.resetPID()
       pass
 
     ##########################################################
 
     def followLine(self):
       from uservice import service
-      # some parameters depend on sample time, adjust
-      # print(f"LineCtrl:: sample time {self.edge_nInterval}")
-      if abs(self.edge_nInterval - self.edgeIntervalSetup) > 2.0: # ms
-        self.PIDrecalculate()
-        self.edgeIntervalSetup = self.edge_nInterval
+      # Calculate current error
       if self.followLeft:
         e = self.refPosition - self.posLeft
       else:
@@ -368,40 +366,57 @@ class SEdge:
       # To correct we need a negative turn rate (CV),
       # so sign of e is OK
       #
-      # calculate action (P-Lead controller)
-      self.u = self.lineKp * e; # error times Kp
-      # Lead filter
-      self.lineY = (self.u * self.tauZ2pT - self.lineE1 * self.tauZ2mT + self.lineY1 * self.tauP2mT)/self.tauP2pT;
+      # Get sample time in seconds
+      dt = self.edge_nInterval / 1000.0  # convert ms to seconds
+      if dt < 0.001:  # safety check
+        dt = 0.05  # assume 50ms if invalid
       #
+      # PID Controller
+      # Proportional term
+      P = self.lineKp * e
+      #
+      # Integral term (with anti-windup)
+      self.lineIntegral += e * dt
+      # Anti-windup: clamp integral term
+      if self.lineIntegral > self.maxIntegral:
+        self.lineIntegral = self.maxIntegral
+      elif self.lineIntegral < -self.maxIntegral:
+        self.lineIntegral = -self.maxIntegral
+      I = self.lineKi * self.lineIntegral
+      #
+      # Derivative term with low-pass filtering to reduce noise
+      de_raw = (e - self.lineE0) / dt
+      self.lineDerivFiltered = self.derivativeAlpha * de_raw + (1 - self.derivativeAlpha) * self.lineDerivFiltered
+      D = self.lineKd * self.lineDerivFiltered
+      #
+      # Control output
+      self.lineY = P + I + D
+      #
+      # Output saturation
       if self.lineY > 4:
         self.lineY = 4
       elif self.lineY < -4:
         self.lineY = -4
-      # save old values
-      self.lineE1 = self.u;
-      self.lineY1 = self.lineY;
+      #
+      # Save error for next iteration
+      self.lineE0 = e
+      #
       # make response
       par = f"rc {self.velocity:.3f} {self.lineY:.3f} {t.time()}"
-      # debug - no action, go straight
-      #par = f"{self.velocity:.3f} 0 {t.time()}"
-      # debug end
       service.send("robobot/cmd/ti", par) # send new turn command, maintaining velocity
       # debug print
       if True: # self.edge_nUpdCnt % 20 == 0:
-        print(f"% Edge::followLine: ctrl: e={e:.3f}, u={self.u:.3f}, y={self.lineY:.3f}, cnt {self.lineValidCnt}, -> {par}")
+        print(f"% Edge::followLine PID: e={e:.3f}, P={P:.3f}, I={I:.3f}, D={D:.3f}, y={self.lineY:.3f} -> {par}")
 
     ##########################################################
 
-    def PIDrecalculate(self):
-      print(f"LineCtrl:: PIDrecalculate: T={self.edgeIntervalSetup:.2f} -> {self.edge_nInterval:.2f} ms")
-      Tsec = self.edge_nInterval/1000
-      self.tauP2pT = self.lineTauP * 2.0 + Tsec
-      self.tauP2mT = self.lineTauP * 2.0 - Tsec
-      self.tauZ2pT = self.lineTauZ * 2.0 + Tsec
-      self.tauZ2mT = self.lineTauZ * 2.0 - Tsec
-      # debug
-      print(f"%% Lead: tauZ {self.lineTauZ:.3f} sec, tauP = {self.lineTauP:.3f} sec, T = {self.edge_nInterval:.3f} ms\n")
-      print(f"%%       tauZ2pT = {self.tauZ2pT:.4f}, tauZ2mT = {self.tauZ2mT:.4f}, tauP2pT = {self.tauP2pT:.4f}, tauP2mT = {self.tauP2pT:.4f}")
+    def resetPID(self):
+      """Reset PID controller state (call when starting new line following)"""
+      self.lineE0 = 0.0
+      self.lineIntegral = 0.0
+      self.lineDerivFiltered = 0.0
+      self.lineY = 0.0
+      print("% LineCtrl:: PID controller reset")
 
 
     ##########################################################
