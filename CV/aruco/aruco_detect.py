@@ -56,6 +56,8 @@ camera_config = 'myraspi_calibration.yaml'
 #ARUCO_DICT = cv2.aruco.DICT_4X4_50
 ARUCO_DICT = cv2.aruco.DICT_4X4_100
 
+detected_markers = {}
+
 def parse_arguments():
     """Set up command-line argument parser"""
     ap = argparse.ArgumentParser()
@@ -131,7 +133,7 @@ def display_text(frame, image_points, x , y, z, distance):
     # cv2.putText(frame, f"Z={z:.3f}", (org[0], org[1]+40), font, 0.7, (255, 0, 0), 1,cv2.LINE_AA)
     # cv2.putText(frame, f"Distance={distance:.3f}", (org[0], org[1]+60), font, 0.7, (200, 100, 0), 1,cv2.LINE_AA)
 
-def detect_markers(picam2, detector, camera_matrix, dist_coeffs):
+def detect_aruco(picam2, detector, camera_matrix, dist_coeffs):
     frame = picam2.capture_array()
     ## For webcam
     #ret, frame = cap.read()
@@ -140,17 +142,18 @@ def detect_markers(picam2, detector, camera_matrix, dist_coeffs):
     if frame is None:
         return None
 
+    detected_markers = {}
     # Detect markers in the frame with detectMarkers method
-    corners, ids, _ = detector.detectMarkers(frame)
+    corners, marker_ids, _ = detector.detectMarkers(frame)
 
 
-    if ids is not None and len(ids) > 0:
+    if marker_ids is not None and len(marker_ids) > 0:
         # Draw detected markers on the frame
-        cv2.aruco.drawDetectedMarkers(frame, corners, ids)
+        cv2.aruco.drawDetectedMarkers(frame, corners, marker_ids)
 
         
         
-        for marker_corners, marker_id in zip(corners, ids):
+        for marker_corners, marker_id in zip(corners, marker_ids):
             
             _marker_id = marker_id[0]
             
@@ -185,12 +188,21 @@ def detect_markers(picam2, detector, camera_matrix, dist_coeffs):
                 z_cm = z*100
                 distance_cm = distance*100
             
-                # Print to terminal
-                #print(f"{marker_corners[0]}")
-                print(f"ID:{_marker_id}, x={x_cm:.2f} cm, y={y_cm:.2f} cm, z={z_cm:.2f} cm, distance={distance_cm:.2f} cm")
-            
+                
+                detected_markers[int(_marker_id)] = {
+                    "x": float(round(x_cm, 4)),
+                    "y": float(round(y_cm, 4)),
+                    "z": float(round(z_cm, 4)),
+                    "distance": float(round(distance_cm, 4))
+                }
+                
+                print(f"ID:{_marker_id}, x: {x_cm:.2f} cm, y: {y_cm:.2f} cm, z: {z_cm:.2f} cm, distance: {distance_cm:.2f} cm")
+                #print(list(detected_markers.keys()))
+                #print(detected_markers[0])
+                #print(detected_markers[0]['distance'])
+                
                 display_text(frame, image_points, x, y, z, distance)
-    return frame
+    return frame, detected_markers
  
 def run_mjpeg_stream(picam2, detector, camera_matrix, dist_coeffs, args):
     app = Flask(__name__)
@@ -198,7 +210,7 @@ def run_mjpeg_stream(picam2, detector, camera_matrix, dist_coeffs, args):
     def generate():
         """Generator that yields JPEG frames in multipart format"""
         while True:
-            frame = detect_markers(picam2, detector, camera_matrix, dist_coeffs)
+            frame, _ = detect_aruco(picam2, detector, camera_matrix, dist_coeffs)
             if frame is None:
                 break
             
@@ -217,7 +229,7 @@ def run_mjpeg_stream(picam2, detector, camera_matrix, dist_coeffs, args):
     @app.route('/')
     def index():
         """Simple HTML page embedding the video stream"""
-        return '<html><body><h3>MJPEG stream</h3><img src="/video" /></body></html>'
+        return '<html><body><h3>Ollie Classified Stream</h3><img src="/video" /></body></html>'
     
     @app.route('/video')
     def video():
@@ -235,7 +247,7 @@ def run_mjpeg_stream(picam2, detector, camera_matrix, dist_coeffs, args):
 def run_local_gui(picam2, detector, camera_matrix, dist_coeffs, args):
     try:
         while True:
-            frame = detect_markers(picam2, detector, camera_matrix, dist_coeffs)
+            frame, _ = detect_aruco(picam2, detector, camera_matrix, dist_coeffs)
             
             if frame is None:
                 break
