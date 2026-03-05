@@ -41,7 +41,7 @@
 #include "sencoder.h"
 #include "simu.h"
 #include "umqttin.h"
-
+#include "test_servo_arm.h"
 void loop()
 { // turn on last LED (14) as green to show that we are ready
   teensy[0].send("leds 14 0 45 0\n", true);
