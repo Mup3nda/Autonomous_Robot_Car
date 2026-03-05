@@ -18,8 +18,8 @@
 // -------------------------------------------------------
 // Arm configuration - tune these to your physical setup
 // -------------------------------------------------------
-#define ARM_UP_POSITION      400    // Upright / extreme up position
-#define ARM_DOWN_POSITION    0      // Down / extreme down position
+#define ARM_UP_POSITION      0      // Upright / extreme up position
+#define ARM_DOWN_POSITION    400    // Down / extreme down position
 #define ARM_MID_POSITION     200    // Midpoint / parallel to surface
 #define ARM_SERVO_NUM        1      // Servo number the arm is attached to
 #define ARM_VELOCITY         200    // Movement speed in servo units/sec
