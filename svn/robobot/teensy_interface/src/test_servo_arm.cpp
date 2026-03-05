@@ -18,10 +18,9 @@
 // -------------------------------------------------------
 // Arm configuration - tune these to your physical setup
 // -------------------------------------------------------
-#define ARM_UP_POSITION      400    // Upright / resting position
+#define ARM_UP_POSITION      400    // Upright / resting position (initial)
 #define ARM_DOWN_POSITION    0      // Down / deployed position
 #define ARM_90_UP_POSITION   250    // 90 degrees UP - tune this
-#define ARM_90_DOWN_POSITION -250   // 90 degrees DOWN - tune this
 #define ARM_SERVO_NUM        1      // Servo number the arm is attached to
 #define ARM_VELOCITY         200    // Movement speed in servo units/sec
 #define TEENSY_NUM           0      // Teensy 0 confirmed
@@ -56,6 +55,20 @@ void commandArm(bool goDown)
 }
 
 // -------------------------------------------------------
+// printServoStatus()
+// -------------------------------------------------------
+void printServoStatus()
+{
+    std::cout << "\n--- Servo Status ---\n";
+    std::cout << "Arm state     : " << (armIsDown ? "DOWN" : "UP")                         << "\n";
+    std::cout << "Servo ref pos : " << servo[TEENSY_NUM].servo_ref[ARM_SERVO_NUM - 1]      << "\n";
+    std::cout << "Servo act pos : " << servo[TEENSY_NUM].servo_position[ARM_SERVO_NUM - 1] << "\n";
+    std::cout << "Servo enabled : " << servo[TEENSY_NUM].servo_enabled[ARM_SERVO_NUM - 1]  << "\n";
+    std::cout << "Update count  : " << servo[TEENSY_NUM].updateCnt                         << "\n";
+    std::cout << "--------------------\n\n";
+}
+
+// -------------------------------------------------------
 // testServoLoop()
 // -------------------------------------------------------
 void testServoLoop()
@@ -65,10 +78,10 @@ void testServoLoop()
     std::cout << "\n=============================\n";
     std::cout << " Servo Arm Manual Test\n";
     std::cout << "=============================\n";
-    std::cout << " [u] - Move arm UP (full)\n";
-    std::cout << " [d] - Move arm DOWN (full)\n";
-    std::cout << " [1] - Move arm 90 degrees DOWN\n";
+    std::cout << " [u] - Move arm to initial UP position (" << ARM_UP_POSITION << ")\n";
+    std::cout << " [d] - Move arm DOWN\n";
     std::cout << " [2] - Move arm 90 degrees UP\n";
+    std::cout << " [s] - Print servo status\n";
     std::cout << " [q] - Quit\n";
     std::cout << "=============================\n\n";
 
@@ -100,24 +113,29 @@ void testServoLoop()
         if (input == '\n' or input == '\r')
             continue;
 
-         switch (input)
+        switch (input)
         {
             case 'u':
-                commandArm(true);   // was false, now true
+                // Always go back to initial position regardless of current state
+                std::cout << "[ARM] Returning to initial UP position\n";
+                servo[TEENSY_NUM].setServo(ARM_SERVO_NUM, true, ARM_UP_POSITION, ARM_VELOCITY);
+                armIsDown = false;
                 break;
 
             case 'd':
-                commandArm(false);  // was true, now false
-                break;
-
-            case '1':
-                std::cout << "[ARM] Moving to 90 degrees UP\n";
-                servo[TEENSY_NUM].setServo(ARM_SERVO_NUM, true, ARM_90_UP_POSITION, ARM_VELOCITY);
+                std::cout << "[ARM] Moving DOWN\n";
+                servo[TEENSY_NUM].setServo(ARM_SERVO_NUM, true, ARM_DOWN_POSITION, ARM_VELOCITY);
+                armIsDown = true;
                 break;
 
             case '2':
-                std::cout << "[ARM] Moving to 90 degrees DOWN\n";
-                servo[TEENSY_NUM].setServo(ARM_SERVO_NUM, true, ARM_90_DOWN_POSITION, ARM_VELOCITY);
+                std::cout << "[ARM] Moving to 90 degrees UP\n";
+                servo[TEENSY_NUM].setServo(ARM_SERVO_NUM, true, ARM_90_UP_POSITION, ARM_VELOCITY);
+                armIsDown = false; // treat as an intermediate up state
+                break;
+
+            case 's':
+                printServoStatus();
                 break;
 
             case 'q':
@@ -127,7 +145,7 @@ void testServoLoop()
                 break;
 
             default:
-                std::cout << "[TEST] Unknown command. Use u, d, 1, 2 or q.\n";
+                std::cout << "[TEST] Unknown command. Use u, d, 2, s or q.\n";
                 break;
         }
     }
