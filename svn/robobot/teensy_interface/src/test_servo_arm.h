@@ -33,7 +33,11 @@
  */
 void testServoLoop();
 
-
-// GYVVGv
+/**
+ * Command the arm to go down or up.
+ * This is the function the upper layer (ball detection) will call.
+ * \param goDown true = arm down, false = arm up
+ */
+void commandArm(bool goDown);
 
 #endif

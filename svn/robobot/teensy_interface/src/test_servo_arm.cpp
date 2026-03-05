@@ -25,8 +25,16 @@
 #define ARM_VELOCITY         200    // Movement speed in servo units/sec
 #define TEENSY_NUM           0      // Teensy 0 confirmed
 
+// -------------------------------------------------------
+// State tracking
+// -------------------------------------------------------
 static bool armIsDown = false;
 
+// -------------------------------------------------------
+// commandArm()
+// This is the function the upper layer will eventually call.
+// For now triggered manually via keyboard input.
+// -------------------------------------------------------
 void commandArm(bool goDown)
 {
     if (goDown && !armIsDown)
@@ -47,10 +55,13 @@ void commandArm(bool goDown)
     }
 }
 
+// -------------------------------------------------------
+// printServoStatus()
+// -------------------------------------------------------
 void printServoStatus()
 {
     std::cout << "\n--- Servo Status ---\n";
-    std::cout << "Arm state     : " << (armIsDown ? "DOWN" : "UP") << "\n";
+    std::cout << "Arm state     : " << (armIsDown ? "DOWN" : "UP")                         << "\n";
     std::cout << "Servo ref pos : " << servo[TEENSY_NUM].servo_ref[ARM_SERVO_NUM - 1]      << "\n";
     std::cout << "Servo act pos : " << servo[TEENSY_NUM].servo_position[ARM_SERVO_NUM - 1] << "\n";
     std::cout << "Servo enabled : " << servo[TEENSY_NUM].servo_enabled[ARM_SERVO_NUM - 1]  << "\n";
@@ -58,6 +69,9 @@ void printServoStatus()
     std::cout << "--------------------\n\n";
 }
 
+// -------------------------------------------------------
+// printServoHelp()
+// -------------------------------------------------------
 void printServoHelp()
 {
     std::cout << "\n=============================\n";
@@ -75,6 +89,9 @@ void printServoHelp()
     std::cout << "=============================\n\n";
 }
 
+// -------------------------------------------------------
+// testServoLoop()
+// -------------------------------------------------------
 void testServoLoop()
 {
     servo[TEENSY_NUM].setup(TEENSY_NUM);
@@ -93,7 +110,9 @@ void testServoLoop()
         servo[TEENSY_NUM].tick();
 
         std::cout << "Enter command: ";
-        std::cin >> input;
+
+        if (!(std::cin >> input))
+            break;
 
         switch (input)
         {
@@ -106,12 +125,12 @@ void testServoLoop()
                 break;
 
             case '1':
-                std::cout << "[ARM] Moving to 90 degrees UP (position " << ARM_90_UP_POSITION << ")\n";
+                std::cout << "[ARM] Moving to 90 degrees UP\n";
                 servo[TEENSY_NUM].setServo(ARM_SERVO_NUM, true, ARM_90_UP_POSITION, ARM_VELOCITY);
                 break;
 
             case '2':
-                std::cout << "[ARM] Moving to 90 degrees DOWN (position " << ARM_90_DOWN_POSITION << ")\n";
+                std::cout << "[ARM] Moving to 90 degrees DOWN\n";
                 servo[TEENSY_NUM].setServo(ARM_SERVO_NUM, true, ARM_90_DOWN_POSITION, ARM_VELOCITY);
                 break;
 
