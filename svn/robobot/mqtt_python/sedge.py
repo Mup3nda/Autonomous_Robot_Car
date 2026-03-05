@@ -71,14 +71,17 @@ class SEdge:
     # PID controller parameters
     lineKp = 0.75  # Proportional gain (rad/s per sensor value)
     lineKi = 0.2  # Integral gain (rad/s per (sensor value * sec))
-    lineKd = 0.09 # Derivative gain (rad/s per (sensor value / sec)))
-    derivativeAlpha = 0.5  # Low-pass filter for derivative (0-1, lower = more filtering)
+    lineKd = 0.08 # Derivative gain (rad/s per (sensor value / sec)))
+    derivativeAlpha = 0.6  # Low-pass filter for derivative (0-1, lower = more filtering)
+    # Motor velocity limits
+    wheelbase = 0.23  # Distance between wheels (m)
+    maxWheelVel = 1.3  # Maximum wheel velocity (m/s)
     # PID state variables
     lineE0 = 0.0      # previous error
     lineIntegral = 0.0 # accumulated integral error
     lineDerivFiltered = 0.0  # filtered derivative term
     lineY = 0.0       # control output (rad/s)
-    maxIntegral = 1.0 # anti-windup limit for integral term
+    maxIntegral = 1.2 # anti-windup limit for integral term
     # management
     # topicRc = ""
     topicCmdT0 = ""
@@ -397,6 +400,18 @@ class SEdge:
         self.lineY = 4
       elif self.lineY < -4:
         self.lineY = -4
+      #
+      # Rate limiting: prevent wheel velocity saturation
+      # velDif = wheelbase * turnrate, so:
+      # v_right = linVel + velDif/2 <= maxWheelVel
+      # Therefore: turnrate <= 2 * (maxWheelVel - linVel) / wheelbase
+      if self.velocity > 0.001:
+        max_turnrate = 2.0 * (self.maxWheelVel - self.velocity) / self.wheelbase
+        if max_turnrate < 0:
+          max_turnrate = 0  # Can't turn faster than physical limits allow
+        if abs(self.lineY) > max_turnrate:
+          # Clamp turn rate to physically achievable limit
+          self.lineY = max_turnrate if self.lineY > 0 else -max_turnrate
       #
       # Save error for next iteration
       self.lineE0 = e
