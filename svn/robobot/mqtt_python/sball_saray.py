@@ -107,9 +107,9 @@ class SBall(TargetDetector):
                 continue
 
             self.detect_ball(frame)
-
-            if self.ballCtrl and self.ball_valid:
-                self.followBall()
+            
+            #if self.ballCtrl and self.ball_valid:
+            #    self.followBall()
 
             elapsed = t.time() - start_time
             if elapsed < self.update_interval:
@@ -322,12 +322,22 @@ class SBall(TargetDetector):
 
         # Calculate confidence based on detection stability
         confidence = min(self.ball_update_cnt, 20)
+        
+        ball_real_radius_m = 0.11  # meters
+
+        # Focal length estimation (you should calibrate this)
+        focal_length_px = 600  # rough estimate for typical webcam
+
+        # Distance = (real_size * focal_length) / apparent_size
+        distance_m = (ball_real_radius_m * focal_length_px) / self.ball_radius
+
 
         return {
             'valid': True,
             'x': self.ball_x,
             'y': self.ball_y,
             'radius': self.ball_radius,
+            'distance': distance_m,
             'color': self.locked_target[4] if self.locked_target else 'unknown',
             'confidence': confidence
         }
