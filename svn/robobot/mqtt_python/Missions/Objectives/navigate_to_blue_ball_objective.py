@@ -1,15 +1,10 @@
 """Navigate To Ball Objective - Move towards detected ball target."""
 
 from enum import IntEnum
-import sys
-import os
-
-# Add parent directories to path for imports
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../..'))
 
 from mission_context import MissionContext
 from objective import Objective
-from target_detector import TargetDetector
+from mqtt_python.sball_saray import SBall
 from Nav import Nav
 
 
@@ -37,11 +32,10 @@ class NavigateToBallObjective(Objective):
         Print status every N ticks (default 20 = ~1 second at 50ms tick rate)
     """
     
-    def __init__(self, desired_distance=0.5, print_interval=20):
+    def __init__(self, desired_distance=0.41, print_interval=20):
         super().__init__()
         self.desired_distance = desired_distance
         self.print_interval = print_interval
-        
         # Navigation components
         self.detector = None
         self.nav = None
@@ -49,13 +43,16 @@ class NavigateToBallObjective(Objective):
     def start(self, ctx: MissionContext):
         """Initialize navigation to ball."""
         self.state = NavigateToBallState.MOVING
+        # Setup detector to find ball targets (use the camera from context)
+        self.detector = SBall(cam=ctx.cam, gpio=None, service=None)
+        self.detector.set_detection_color("blue")
         
-        # Setup detector to find ball targets
-        self.detector = BallDetector("Blue")
+        # Start the detector (this begins the threaded camera processing)
+        self.detector.start()
         
         # Setup navigation controller
         self.nav = Nav()
-        self.nav.setup(self.detector, self.desired_distance)
+        self.nav.setup(self.detector, self.desired_distance, ctx)
         
         # Start moving towards target
         self.nav.start()
@@ -69,23 +66,27 @@ class NavigateToBallObjective(Objective):
         # State 0: MOVING - Navigate towards ball
         if self.state == NavigateToBallState.MOVING:
             
-            # Get current target from navigation
-            target = self.nav.target
-            
-            if target is None:
-                if self.print_interval > 0 and self.ticks % self.print_interval == 0:
+            # Check if navigation has reached the target
+            if self.nav.hasReachedTarget:
+                print(f"% Reached target at tick {self.ticks}!")
+                self.nav.stop()
+                self.state = NavigateToBallState.REACHED
+                self._done = True
+                print(f"% Navigate To Ball objective complete!")
+            elif self.print_interval > 0 and self.ticks % self.print_interval == 0:
+                # Show navigation status
+                target_info = self.detector.get_target()
+                if target_info:
+                    distance = self.detector.get_target_distance()
+                    print(f"% Navigating: ball at ({target_info['x']}, {target_info['y']}), "
+                          f"dist={distance:.2f}m, conf={target_info['confidence']}")
+                else:
                     print(f"% Searching for ball target...")
-            else:
-                
-                if self.nav.hasReachedTarget():
-                    print(f"% Reached target at tick {self.ticks}!")
-                    self.nav.stop()
-                    self.state = NavigateToBallState.REACHED
-                    self._done = True
-                    print(f"% Navigate To Ball objective complete!")
     
     def stop(self, ctx: MissionContext):
         """Clean up when objective is stopped or interrupted."""
         if self.nav:
             self.nav.stop()
+        if self.detector:
+            self.detector.stop()
         print(f"% Navigate To Ball objective stopped")
