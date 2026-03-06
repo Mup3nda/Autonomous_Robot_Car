@@ -9,8 +9,10 @@ from threading import Thread
 import cv2 as cv
 import numpy as np
 
+from target_detector import TargetDetector
 
-class SBall:
+
+class SBall(TargetDetector):
     """Ball detection and tracking with selectable color."""
 
     ##########################################################
