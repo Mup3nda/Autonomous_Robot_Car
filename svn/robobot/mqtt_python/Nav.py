@@ -88,7 +88,7 @@ class Nav:
                 error_rot =  0 - self.target["x"]
 
                 if abs(error_rot) < self.TOLERANCIA_R:
-                    error = self.target["distance"] - self.DISTANCIA_DESEADA
+                    error = self.target["distance"] - self.desired_distance
 
                     p_term = self.KP * error
                     self.error_acumulado += error * dt
@@ -113,7 +113,6 @@ class Nav:
                             self.stable_since = ahora
                         elif ahora - self.stable_since >= self.stable_time_required:
                             self.ctx.actions.drive.stop()
-                            print(f"Distancia estabilizada en {self.distancia_actual:.3f}m (simulada).")
                             self.hasReachedTarget = True
                     else:
                         self.stable_since = None
