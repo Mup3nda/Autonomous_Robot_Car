@@ -17,13 +17,13 @@ from mission_context import MissionContext
 # Objective tuning constants
 SEARCH_SPEED = 0.2
 CENTERING_SPEED = 0.2
-FOLLOW_SPEED = 0.95
+FOLLOW_SPEED = 0.80
 SEARCH_MAX_DISTANCE_M = 1.0
 SEARCH_TIMEOUT_S = 15.0
 LINE_FOUND_CONFIDENCE = 4
 CENTERED_CONFIDENCE = 8
-CENTERED_MIN_TIME_S = 0.7
-CENTERING_TIMEOUT_S = 2.0
+CENTERED_MIN_TIME_S = 4.0
+CENTERING_TIMEOUT_S = 8.0
 FOLLOW_VALID_CONFIDENCE = 2
 LOST_LINE_TIMEOUT_S = 5.0
 STOPPED_VELOCITY_EPS = 0.001
@@ -67,7 +67,7 @@ class DriveToLineObjective(Objective):
             if ctx.actions.edge.is_line_valid(confidence=LINE_FOUND_CONFIDENCE):
                 # Line detected! Switch to centering mode at low speed
                 ctx.actions.edge.start_following(velocity=CENTERING_SPEED, follow_left=False)
-                ctx.actions.drive.servo(1, 0, 0)  # Center servo
+                ctx.actions.drive.servo(1, -800, 300)  # Center servo
                 self.dist_to_line = ctx.pose.tripB  # Record distance to line
                 ctx.pose.tripBreset()  # Reset counter
                 self.centering_start_time = t.time()
@@ -80,7 +80,7 @@ class DriveToLineObjective(Objective):
             centered = ctx.actions.edge.is_line_valid(confidence=CENTERED_CONFIDENCE)
             centered_long_enough = now - self.centering_start_time > CENTERED_MIN_TIME_S
             timed_out = now >= self.centering_deadline
-
+            ctx.actions.drive.servo(1, -800, 300) 
             if (centered and centered_long_enough) or timed_out:
                 ctx.actions.edge.start_following(velocity=FOLLOW_SPEED, follow_left=False)
                 self.state = DriveToLineState.LINE_FOLLOWING
@@ -89,6 +89,7 @@ class DriveToLineObjective(Objective):
             if abs(ctx.pose.velocity()) < STOPPED_VELOCITY_EPS:
                 self.state = DriveToLineState.DONE  # Mark as done
         elif self.state == DriveToLineState.LINE_FOLLOWING:
+            ctx.actions.drive.servo(1, -800, 300)  # Adjust servo
             # State 10: Following line - check if line is still valid
             if not ctx.actions.edge.is_line_valid(confidence=FOLLOW_VALID_CONFIDENCE) and ctx.actions.edge.last_seen_time_passed() > LOST_LINE_TIMEOUT_S:
                 # Lost the line - stop and try to recover
