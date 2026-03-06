@@ -4,6 +4,8 @@ from enum import IntEnum
 
 from mission_context import MissionContext
 from objective import Objective
+from mqtt_python.sball_saray import SBall
+from mqtt_python.scam import SCam
 
 
 class LookForBallState(IntEnum):
@@ -52,7 +54,8 @@ class LookForBallObjective(Objective):
         angular_velocity=0.3,
         min_confidence=2,
         timeout_seconds=30,
-        print_interval=20
+        print_interval=20,
+        ball_color=None
     ):
         super().__init__()
         self.angular_velocity = angular_velocity
@@ -60,10 +63,20 @@ class LookForBallObjective(Objective):
         self.timeout_seconds = timeout_seconds
         self.print_interval = print_interval
         self.max_ticks = int(timeout_seconds * 1000 / 50)  # 50ms per tick
+        self.ball_color = ball_color
+        self.cam = SCam()
+        self.cam.setup()
+        self.ball = SBall(self.cam, None, None)
     
     def start(self, ctx: MissionContext):
         """Initialize ball search objective."""
         self.state = LookForBallState.SEARCHING
+        if self.ball_color is not None:
+            self.ball.set_detection_color(self.ball_color)
+        
+        # Start ball detection thread
+        self.ball.setup()
+        
         print(f"% Objective: Look For Ball (omega={self.angular_velocity}, timeout={self.timeout_seconds}s)")
         print(f"% Robot will rotate in place to search for ball...")
     
@@ -103,4 +116,5 @@ class LookForBallObjective(Objective):
     def stop(self, ctx: MissionContext):
         """Clean up when objective is stopped or interrupted."""
         ctx.actions.drive.stop()
+        self.ball.terminate()
         print(f"% Look for Ball objective stopped")

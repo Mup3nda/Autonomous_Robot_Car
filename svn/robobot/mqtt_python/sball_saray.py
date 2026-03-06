@@ -16,7 +16,8 @@ class SBall:
     ##########################################################
     # STATE VARIABLES
     ##########################################################
-
+    url_stream = "http://localhost:8080/stream/video.mjpeg"
+    
     ball_x = 0
     ball_y = 0
     ball_radius = 0
@@ -225,7 +226,7 @@ class SBall:
             self.ball_update_cnt += 1
 
     ##########################################################
-    # FOLLOW CONTROL
+    # FOLLOW CONTROL -> no
     ##########################################################
 
     def followBall(self):
@@ -235,6 +236,7 @@ class SBall:
 
         err_x = cx - center_x
 
+        #accumulated_error += err_x*
         angular = -self.Kp_turn * err_x
         forward = self.Kp_fwd * (self.r_target - radius)
 
