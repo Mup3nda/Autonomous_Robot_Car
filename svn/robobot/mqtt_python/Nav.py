@@ -80,6 +80,7 @@ class Nav:
                 
                 ahora = time.time()
                 dt = ahora - self.ultima_vez
+
                 if dt <= 0.0:
                     dt = 0.05
 
@@ -87,8 +88,7 @@ class Nav:
                 error_rot =  0 - self.target["x"]
 
                 if abs(error_rot) < self.TOLERANCIA_R:
-                    error = self.target["radius"] - self.DISTANCIA_DESEADA
-
+                    error = self.target["distance"] - self.DISTANCIA_DESEADA
 
                     p_term = self.KP * error
                     self.error_acumulado += error * dt
