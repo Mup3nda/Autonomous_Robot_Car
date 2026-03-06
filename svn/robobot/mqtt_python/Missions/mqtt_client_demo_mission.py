@@ -33,6 +33,8 @@ from Objectives.drive_to_line_objective import DriveToLineObjective
 from Objectives.drive_one_meter_objective import DriveOneMeterObjective
 from Objectives.drive_to_ball_objective import DriveToBallObjective
 from Objectives.look_for_ball_objective import LookForBallObjective
+from Objectives.navigate_to_blue_ball_objective import NavigateToBallObjective
+
 
 # This is a demo mission that can be used to test the robot and MQTT connection.
 def build_objectives():
@@ -46,6 +48,8 @@ def build_objectives():
         return [DriveToBallObjective()]
     if service.args.look_ball:
         return [LookForBallObjective()]
+    if service.args.nav_ball:
+        return [NavigateToBallObjective()]
     return [LineTurnImageObjective()]
 
 

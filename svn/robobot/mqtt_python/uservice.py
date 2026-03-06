@@ -100,8 +100,11 @@ class UService:
                 help='Find and approach ball')
     self.parser.add_argument('--look-ball', action='store_true',
                 help='Rotate to find ball in camera view')
+    self.parser.add_argument('--nav-ball', action='store_true',
+                help='Navigate to the blue ball target')
     self.parser.add_argument('-u', '--usestate', type=int, default = 0,
                 help='set mission state to this value')
+    
     self.args = self.parser.parse_args()
     # if not isinstance(self.args.usestate, int):
     #   self.args.usestate = int(0)
