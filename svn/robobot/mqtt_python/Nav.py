@@ -33,8 +33,16 @@ class Nav:
         self.KI = 0.02
         self.KD = 0.1
 
+        self.KP_X = 1.2    # Ganancia Proporcional: velocidad de reacción inicial
+        self.KI_X = 0.05   # Ganancia Integral: corrige errores acumulados o fricción
+        self.KD_X = 0.1    # Ganancia Derivativa: evita que el robot oscile (frena antes de llegar)
+
+        self.TOLERANCIA_R = 0.01
+
         self.error_acumulado = 0.0
         self.ultimo_error = 0.0
+        self.error_rot_acumulado = 0.0
+        self.ultimo_rot_error = 0.0
         self.ultima_vez = time.time()
 
         # Consider objective complete after stable hold near setpoint
@@ -61,7 +69,7 @@ class Nav:
         while self.is_running:
             try:
                 # Get current target from detector
-                self.target = self.detector.get_target() #target is a list with X Y distance
+                self.target = self.detector.get_target() #target is a list with valid x y radius color conficence
                 
                 if self.target is None:
                     # No target detected, stop or wait
@@ -75,39 +83,67 @@ class Nav:
                     dt = 0.05
 
                 # PID error: positive means we are too far and should move forward
-                error = self.target - self.DISTANCIA_DESEADA
+                error_rot =  0 - self.target["x"]
 
-                p_term = self.KP * error
-                self.error_acumulado += error * dt
-                i_term = self.KI * self.error_acumulado
-                d_term = self.KD * (error - self.ultimo_error) / dt
-
-                velocidad = p_term + i_term + d_term
-
-                # Saturation
-                if velocidad > self.MAX_SPEED:
-                    velocidad = self.MAX_SPEED
-                if velocidad < -self.MAX_SPEED:
-                    velocidad = -self.MAX_SPEED
-
-                # Send command to robot interface
-                self.ctx.actions.drive.rc(velocidad, 0.0)
+                if abs(error_rot) < self.TOLERANCIA_R:
+                    error = self.target["radius"] - self.DISTANCIA_DESEADA
 
 
-        # Completion condition: stable around target for a while
-                if abs(error) < self.stable_band:
-                    if self.stable_since is None:
-                        self.stable_since = ahora
-                    elif ahora - self.stable_since >= self.stable_time_required:
-                        self.ctx.actions.drive.stop()
-                        print(f"Distancia estabilizada en {self.distancia_actual:.3f}m (simulada).")
-                        self.hasReachedTarget = True
+                    p_term = self.KP * error
+                    self.error_acumulado += error * dt
+                    i_term = self.KI * self.error_acumulado
+                    d_term = self.KD * (error - self.ultimo_error) / dt
+
+                    velocidad = p_term + i_term + d_term
+
+                    # Saturation
+                    if velocidad > self.MAX_SPEED:
+                        velocidad = self.MAX_SPEED
+                    if velocidad < -self.MAX_SPEED:
+                        velocidad = -self.MAX_SPEED
+
+                    # Send command to robot interface
+                    self.ctx.actions.drive.rc(velocidad, 0.0)
+
+
+            # Completion condition: stable around target for a while
+                    if abs(error) < self.stable_band:
+                        if self.stable_since is None:
+                            self.stable_since = ahora
+                        elif ahora - self.stable_since >= self.stable_time_required:
+                            self.ctx.actions.drive.stop()
+                            print(f"Distancia estabilizada en {self.distancia_actual:.3f}m (simulada).")
+                            self.hasReachedTarget = True
+                    else:
+                        self.stable_since = None
+
+                    self.ultimo_error = error
+                    self.ultima_vez = ahora
+
                 else:
-                    self.stable_since = None
-
-                self.ultimo_error = error
-                self.ultima_vez = ahora
-                
+                    P = self.KP_X * error_rot
+            
+                    # Integral (evita que el robot se quede "atascado" por fricción cerca del 0)
+                    self.error_rot_acumulado += error_rot * dt
+                    I = self.KI_X * self.error_rot_acumulado
+                    
+                    # Derivativo (amortigua el giro para no pasarse de largo)
+                    D = self.KD_X * (error_rot - self.ultimo_rot_error) / dt if dt > 0 else 0
+                    
+                    # Salida: Velocidad angular W
+                    # Nota: Multiplicamos por -1 si el sistema de coordenadas del robot es inverso
+                    w_speed = P + I + D
+                    
+                    # Saturación por seguridad
+                    if w_speed > self.MAX_W_SPEED: w_speed = self.MAX_W_SPEED
+                    if w_speed < -self.MAX_W_SPEED: w_speed = -self.MAX_W_SPEED
+                    
+                    # Enviar comando: lineal 0, angular w_speed
+                    self.ctx.service.send("robobot/cmd/ti", f"rc 0 {w_speed:.3f}")
+                    
+                    # Actualizar variables
+                    self.ultimo_rot_error = error
+                    self.ultima_vez = ahora
                 time.sleep(0.05)  # Control loop frequency
                 
             except Exception as e:
