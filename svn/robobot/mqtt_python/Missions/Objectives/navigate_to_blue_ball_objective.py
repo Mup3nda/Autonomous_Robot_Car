@@ -4,7 +4,7 @@ from enum import IntEnum
 
 from mission_context import MissionContext
 from objective import Objective
-from mqtt_python.sball_saray import SBall
+from sball_saray import SBall
 from Nav import Nav
 
 
@@ -44,7 +44,7 @@ class NavigateToBallObjective(Objective):
         """Initialize navigation to ball."""
         self.state = NavigateToBallState.MOVING
         # Setup detector to find ball targets (use the camera from context)
-        self.detector = SBall(cam=ctx.cam, gpio=None, service=None)
+        self.detector = SBall(cam=ctx.cam, gpio=ctx.gpio, service=ctx.service)
         self.detector.set_detection_color("blue")
         
         # Start the detector (this begins the threaded camera processing)
@@ -68,20 +68,19 @@ class NavigateToBallObjective(Objective):
             
             # Check if navigation has reached the target
             if self.nav.hasReachedTarget:
-                print(f"% Reached target at tick {self.ticks}!")
+                #print(f"% Reached target at tick {self.tick}!")
                 self.nav.stop()
                 self.state = NavigateToBallState.REACHED
                 self._done = True
                 print(f"% Navigate To Ball objective complete!")
-            elif self.print_interval > 0 and self.ticks % self.print_interval == 0:
+            else:
                 # Show navigation status
                 target_info = self.detector.get_target()
                 if target_info:
                     distance = self.detector.get_target_distance()
                     print(f"% Navigating: ball at ({target_info['x']}, {target_info['y']}), "
                           f"dist={distance:.2f}m, conf={target_info['confidence']}")
-                else:
-                    print(f"% Searching for ball target...")
+                
     
     def stop(self, ctx: MissionContext):
         """Clean up when objective is stopped or interrupted."""

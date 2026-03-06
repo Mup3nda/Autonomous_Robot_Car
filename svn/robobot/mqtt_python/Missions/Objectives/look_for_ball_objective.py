@@ -4,8 +4,8 @@ from enum import IntEnum
 
 from mission_context import MissionContext
 from objective import Objective
-from mqtt_python.sball_saray import SBall
-from mqtt_python.scam import SCam
+#from mqtt_python.sball_saray import SBall
+#from mqtt_python.scam import SCam
 
 
 class LookForBallState(IntEnum):
