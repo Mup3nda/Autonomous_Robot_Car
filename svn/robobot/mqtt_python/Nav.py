@@ -34,11 +34,11 @@ class Nav:
         self.KI = 0.02
         self.KD = 0.1
 
-        self.KP_X = 1.2    # Ganancia Proporcional: velocidad de reacción inicial
+        self.KP_X = 0.2    # Ganancia Proporcional: velocidad de reacción inicial
         self.KI_X = 0.05   # Ganancia Integral: corrige errores acumulados o fricción
         self.KD_X = 0.1    # Ganancia Derivativa: evita que el robot oscile (frena antes de llegar)
 
-        self.TOLERANCIA_R = 0.01
+        self.TOLERANCIA_R = 300
 
         self.error_acumulado = 0.0
         self.ultimo_error = 0.0
@@ -104,6 +104,8 @@ class Nav:
                         velocidad = -self.MAX_SPEED
 
                     # Send command to robot interface
+                    #print error and velocity for debugging
+                    print(f"Error: {error:.3f} m, Velocity: {velocidad:.3f} m/s")
                     self.ctx.actions.drive.rc(velocidad, 0.0)
 
 
@@ -137,12 +139,12 @@ class Nav:
                     # Saturación por seguridad
                     if w_speed > self.MAX_W_SPEED: w_speed = self.MAX_W_SPEED
                     if w_speed < -self.MAX_W_SPEED: w_speed = -self.MAX_W_SPEED
-                    
+                    print(f"Rot Error: {error_rot:.3f}, W Speed: {w_speed:.3f}")
                     # Enviar comando: lineal 0, angular w_speed
                     self.ctx.service.send("robobot/cmd/ti", f"rc 0 {w_speed:.3f}")
                     
                     # Actualizar variables
-                    self.ultimo_rot_error = error
+                    self.ultimo_rot_error = error_rot
                     self.ultima_vez = ahora
                 time.sleep(0.05)  # Control loop frequency
                 

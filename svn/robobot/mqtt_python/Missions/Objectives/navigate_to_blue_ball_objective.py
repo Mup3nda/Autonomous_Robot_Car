@@ -78,8 +78,8 @@ class NavigateToBallObjective(Objective):
                 target_info = self.detector.get_target()
                 if target_info:
                     distance = self.detector.get_target_distance()
-                    print(f"% Navigating: ball at ({target_info['x']}, {target_info['y']}), "
-                          f"dist={distance:.2f}m, conf={target_info['confidence']}")
+                    #print(f"% Navigating: ball at ({target_info['x']}, {target_info['y']}), "
+                     #     f"dist={distance:.2f}m, conf={target_info['confidence']}")
                 
     
     def stop(self, ctx: MissionContext):
