@@ -27,6 +27,7 @@ class Nav:
 
         #self.DISTANCIA_DESEADA = 0.41  # meters
         self.MAX_SPEED = 0.6  # m/s
+        self.MAX_W_SPEED = 0.2
 
         # PID constants (tune later with real sensor input)
         self.KP = 0.8
@@ -79,6 +80,7 @@ class Nav:
                 
                 ahora = time.time()
                 dt = ahora - self.ultima_vez
+
                 if dt <= 0.0:
                     dt = 0.05
 
@@ -86,8 +88,7 @@ class Nav:
                 error_rot =  0 - self.target["x"]
 
                 if abs(error_rot) < self.TOLERANCIA_R:
-                    error = self.target["radius"] - self.DISTANCIA_DESEADA
-
+                    error = self.target["distance"] - self.desired_distance
 
                     p_term = self.KP * error
                     self.error_acumulado += error * dt
@@ -112,7 +113,6 @@ class Nav:
                             self.stable_since = ahora
                         elif ahora - self.stable_since >= self.stable_time_required:
                             self.ctx.actions.drive.stop()
-                            print(f"Distancia estabilizada en {self.distancia_actual:.3f}m (simulada).")
                             self.hasReachedTarget = True
                     else:
                         self.stable_since = None
@@ -128,7 +128,7 @@ class Nav:
                     I = self.KI_X * self.error_rot_acumulado
                     
                     # Derivativo (amortigua el giro para no pasarse de largo)
-                    D = self.KD_X * (error_rot - self.ultimo_rot_error) / dt if dt > 0 else 0
+                    D = self.KD_X * (error_rot - self.ultimo_rot_error) / dt
                     
                     # Salida: Velocidad angular W
                     # Nota: Multiplicamos por -1 si el sistema de coordenadas del robot es inverso
