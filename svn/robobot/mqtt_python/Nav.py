@@ -34,11 +34,11 @@ class Nav:
         self.KI = 0.02
         self.KD = 0.1
 
-        self.KP_X = 0.2    # Ganancia Proporcional: velocidad de reacción inicial
+        self.KP_X = 1    # Ganancia Proporcional: velocidad de reacción inicial
         self.KI_X = 0.05   # Ganancia Integral: corrige errores acumulados o fricción
         self.KD_X = 0.1    # Ganancia Derivativa: evita que el robot oscile (frena antes de llegar)
 
-        self.TOLERANCIA_R = 300
+        self.TOLERANCIA_R = 20
 
         self.error_acumulado = 0.0
         self.ultimo_error = 0.0
@@ -86,8 +86,9 @@ class Nav:
 
                 # PID error: positive means we are too far and should move forward
                 error_rot =  640/2 - self.target["x"]
-
-                if abs(error_rot) < self.TOLERANCIA_R:
+                '''
+                #if abs(error_rot) < self.TOLERANCIA_R:
+                if 1 != 1:
                     error = self.target["distance"] - self.desired_distance
 
                     p_term = self.KP * error
@@ -146,6 +147,8 @@ class Nav:
                     # Actualizar variables
                     self.ultimo_rot_error = error_rot
                     self.ultima_vez = ahora
+                '''
+                    
                 time.sleep(0.05)  # Control loop frequency
                 
             except Exception as e:

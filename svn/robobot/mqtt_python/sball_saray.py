@@ -230,38 +230,6 @@ class SBall(TargetDetector):
         else:
             self.ball_update_cnt = 0
             return False
-
-    ##########################################################
-    # FOLLOW CONTROL -> no
-    ##########################################################
-
-    def followBall(self):
-
-        center_x = self.image_width // 2
-        _, cx, _, radius, color = self.locked_target
-
-        err_x = cx - center_x
-
-        #accumulated_error += err_x*
-        angular = -self.Kp_turn * err_x
-        forward = self.Kp_fwd * (self.r_target - radius)
-
-        angular = max(min(angular, 1.0), -1.0)
-        forward = max(min(forward, 0.5), 0)
-
-        param = f"rc {forward:.3f} {angular:.3f} {t.time()}"
-        self.service.send("robobot/cmd/ti", param)
-
-        if self.ball_update_cnt % 10 == 0:
-            print(f"% Ball: LOCKED {color} | fwd={forward:.2f} turn={angular:.2f}")
-
-    ##########################################################
-
-    def ballControl(self, velocity):
-        self.velocity = velocity
-        self.ballCtrl = velocity > 0.001
-
-    ##########################################################
     
     def debug_detect_only(self, frame):
         """
