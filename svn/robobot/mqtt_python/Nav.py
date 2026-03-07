@@ -1,6 +1,6 @@
 import threading
 import time
-
+import cv2
 
 class Nav:
     """Simple navigation controller for moving towards a detected target."""
@@ -27,7 +27,7 @@ class Nav:
 
         #self.DISTANCIA_DESEADA = 0.41  # meters
         self.MAX_SPEED = 0.6  # m/s
-        self.MAX_W_SPEED = 0.2
+        self.MAX_W_SPEED = 0.4
 
         # PID constants (tune later with real sensor input)
         self.KP = 0.8
@@ -85,7 +85,7 @@ class Nav:
                     dt = 0.05
 
                 # PID error: positive means we are too far and should move forward
-                error_rot =  0 - self.target["x"]
+                error_rot =  640/2 - self.target["x"]
 
                 if abs(error_rot) < self.TOLERANCIA_R:
                     error = self.target["distance"] - self.desired_distance
