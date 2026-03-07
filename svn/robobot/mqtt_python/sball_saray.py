@@ -291,7 +291,7 @@ class SBall(TargetDetector):
         # Calculate confidence based on detection stability
         confidence = min(self.ball_update_cnt, 20)
         
-        ball_real_radius_m = 0.11  # meters
+        ball_real_radius_m = 0.03  # meters
 
         # Focal length estimation (you should calibrate this)
         focal_length_px = 600  # rough estimate for typical webcam
@@ -313,6 +313,14 @@ class SBall(TargetDetector):
     def stop(self):
         """Stop the target detection system."""
         self.terminate()
+
+    def terminate(self):
+        """Terminate the ball tracking thread and clean up resources."""
+        if self.running:
+            self.running = False
+            if self.thread is not None and self.thread.is_alive():
+                self.thread.join(timeout=1.0)
+        print("% Ball:: Terminated")
 
     def is_target_visible(self, min_confidence=1):
         """
@@ -363,7 +371,7 @@ class SBall(TargetDetector):
         # Rough distance estimation based on ball radius
         # This is a simplified model - you may want to calibrate this
         # Typical soccer ball is ~22cm diameter, so radius ~11cm = 0.11m
-        ball_real_radius_m = 0.11  # meters
+        ball_real_radius_m = 0.0275  # meters
 
         # Focal length estimation (you should calibrate this)
         focal_length_px = 600  # rough estimate for typical webcam

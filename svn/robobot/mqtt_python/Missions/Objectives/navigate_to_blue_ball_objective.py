@@ -32,7 +32,7 @@ class NavigateToBallObjective(Objective):
         Print status every N ticks (default 20 = ~1 second at 50ms tick rate)
     """
     
-    def __init__(self, desired_distance=0.41, print_interval=20):
+    def __init__(self, desired_distance=0.41, print_interval=20): #real desired_distance=0.41 m
         super().__init__()
         self.desired_distance = desired_distance
         self.print_interval = print_interval
