@@ -7,7 +7,7 @@ from .drive import DriveActions
 from .edge import EdgeActions
 from .ball import BallActions
 from .vision import VisionActions
-
+from .servo import ServoArmActions
 
 class RobotActions:
     """Aggregates all robot control actions: drive, edge, ball, and vision.
@@ -24,3 +24,4 @@ class RobotActions:
         self.edge = EdgeActions(edge)  # Line detection and following
         self.ball = BallActions(ball)  # Ball detection and following
         self.vision = VisionActions(cam, edge, gpio, service)  # Image capture and analysis
+        self.arm = ServoArmActions(service)             # Arm servo control
