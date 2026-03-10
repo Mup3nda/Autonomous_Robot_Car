@@ -1,3 +1,0 @@
-% Edge
-% 1 	Time (sec)
-% 2-10 	sensor AD value (0..4196), sensor 0 is left, AD=0 is no reflection

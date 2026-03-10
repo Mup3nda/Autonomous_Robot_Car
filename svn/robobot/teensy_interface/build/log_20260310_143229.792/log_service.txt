@@ -1,9 +1,0 @@
-% Service logfile
-% 1 	Time (sec)
-% 2 	Message
-1773149550.0089 msg: # Mqtt cmd connection established
-1773149550.0199 msg: Teensy connection just opened
-1773149549.7923 Setup finished OK=1
-1773149550.1192 msg: # CServo: subscribed to Teensy data
-1773149567.0413 msg: # STeensy: close USB
-1773149566.0773 All terminated; closing logfile

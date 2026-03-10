@@ -1,4 +1,0 @@
-% force (using distance sensor input) logfile
-% 1 	Time (sec)
-% 2-3 	estimated force (1 and 2)
-% 4-5 	Raw AD values (1 and 2)
