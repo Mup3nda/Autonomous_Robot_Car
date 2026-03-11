@@ -1,5 +1,5 @@
 CMakeFiles/teensy_interface.dir/src/sjoylogitech.cpp.o: \
- /home/local/svn/robobot/teensy_interface/src/sjoylogitech.cpp \
+ /home/local/Autonomous_Robot_Car/svn/robobot/teensy_interface/src/sjoylogitech.cpp \
  /usr/include/stdc-predef.h /usr/include/aarch64-linux-gnu/sys/ioctl.h \
  /usr/include/features.h /usr/include/features-time64.h \
  /usr/include/aarch64-linux-gnu/bits/wordsize.h \
@@ -180,7 +180,7 @@ CMakeFiles/teensy_interface.dir/src/sjoylogitech.cpp.o: \
  /usr/include/c++/14/bits/uses_allocator_args.h /usr/include/c++/14/tuple \
  /usr/include/c++/14/bits/ranges_util.h /usr/include/string.h \
  /usr/include/strings.h /usr/include/c++/14/stdlib.h \
- /home/local/svn/robobot/teensy_interface/src/sjoylogitech.h \
+ /home/local/Autonomous_Robot_Car/svn/robobot/teensy_interface/src/sjoylogitech.h \
  /usr/include/c++/14/thread /usr/include/c++/14/stop_token \
  /usr/include/c++/14/atomic /usr/include/c++/14/bits/atomic_base.h \
  /usr/lib/gcc/aarch64-linux-gnu/14/include/stdint.h /usr/include/stdint.h \
@@ -247,9 +247,9 @@ CMakeFiles/teensy_interface.dir/src/sjoylogitech.cpp.o: \
  /usr/include/c++/14/bits/atomic_timed_wait.h \
  /usr/include/c++/14/bits/this_thread_sleep.h /usr/include/semaphore.h \
  /usr/include/aarch64-linux-gnu/bits/semaphore.h \
- /home/local/svn/robobot/teensy_interface/src/utime.h \
- /home/local/svn/robobot/teensy_interface/src/uservice.h \
- /home/local/svn/robobot/teensy_interface/src/uini.h \
+ /home/local/Autonomous_Robot_Car/svn/robobot/teensy_interface/src/utime.h \
+ /home/local/Autonomous_Robot_Car/svn/robobot/teensy_interface/src/uservice.h \
+ /home/local/Autonomous_Robot_Car/svn/robobot/teensy_interface/src/uini.h \
  /usr/include/c++/14/sstream /usr/include/c++/14/istream \
  /usr/include/c++/14/bits/istream.tcc \
  /usr/include/c++/14/bits/sstream.tcc /usr/include/c++/14/algorithm \
@@ -292,4 +292,4 @@ CMakeFiles/teensy_interface.dir/src/sjoylogitech.cpp.o: \
  /usr/include/aarch64-linux-gnu/bits/statx-generic.h \
  /usr/include/aarch64-linux-gnu/bits/types/struct_statx_timestamp.h \
  /usr/include/aarch64-linux-gnu/bits/types/struct_statx.h \
- /home/local/svn/robobot/teensy_interface/src/mjoy.h
+ /home/local/Autonomous_Robot_Car/svn/robobot/teensy_interface/src/mjoy.h
