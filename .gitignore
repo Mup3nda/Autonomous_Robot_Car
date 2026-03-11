@@ -1,6 +1,12 @@
-svn
 venv
 CV/test/test.py
 test
 img*
 calib_imagesCV/README.md
+svn/robobot/kicad
+svn/robobot/mqtt_python/__pycache__
+svn/robobot/off_by_mqtt/build
+svn/robobot/mqtt_python/.kdev4
+svn/.DS_Store
+.gitignore
+svn/robobot/off_by_mqtt/build2

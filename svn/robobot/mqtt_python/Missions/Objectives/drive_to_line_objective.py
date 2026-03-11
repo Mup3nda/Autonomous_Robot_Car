@@ -47,7 +47,7 @@ class DriveToLineObjective(Objective):
                 self.state = DriveToLineState.STOPPED
             if ctx.actions.edge.is_line_valid(confidence=4):
                 # Line detected! Switch to line following mode
-                ctx.actions.edge.start_following(velocity=0.2, follow_left=True)
+                ctx.actions.edge.start_following(velocity=0.2, follow_left=False)
                 ctx.actions.drive.servo(1, 0, 0)  # Center servo
                 self.dist_to_line = ctx.pose.tripB  # Record distance to line
                 ctx.pose.tripBreset()  # Reset counter for line following distance
@@ -58,7 +58,7 @@ class DriveToLineObjective(Objective):
                 self.state = DriveToLineState.DONE  # Mark as done
         elif self.state == DriveToLineState.LINE_FOLLOWING:
             # State 10: Following line - check if line is still valid
-            if not ctx.actions.edge.is_line_valid(confidence=2) and ctx.actions.edge.last_seen_time_passed() > 1.0:
+            if not ctx.actions.edge.is_line_valid(confidence=2) and ctx.actions.edge.last_seen_time_passed() > 5.0:
                 # Lost the line - stop and try to recover
                 ctx.actions.edge.stop_following()
                 ctx.actions.drive.stop()
