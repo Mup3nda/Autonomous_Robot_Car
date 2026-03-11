@@ -1,4 +1,6 @@
 svn
 venv
 CV/test/test.py
-CV/README.md
+test
+img*
+calib_imagesCV/README.md

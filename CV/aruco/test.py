@@ -1,54 +1,76 @@
+import cv2
 import numpy as np
 import yaml
-import glob
-import cv2
-
-CHESSBOARD_SIZE = (8,6)
-SQUARE_SIZE = 21
-
-objp = np.zeros((CHESSBOARD_SIZE[0]*CHESSBOARD_SIZE[1], 3),np.float32)
-
-objp[:, :2] = np.mgrid[0:CHESSBOARD_SIZE[0], 0:CHESSBOARD_SIZE[1]].T.reshape(-1,2)
-
-objp = SQUARE_SIZE
-
-objpoints = []
-imgpoints = []
-
-images = glob.glob('calib_images/*.jpg')
-
-for fname in images:
-    img = cv2.imread(fname)
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    
-    found, corner = cv2.findChessboardCorners(gray, CHESSBOARD_SIZE, None)
-    
-    if found:
-        object.append(objp)
-        corners2 = cv2.cornerSubPix(
-            gray, corners, (11,11), (-1, -1),
-            (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
-        )
-        imgpoints.append(corners2)
-
-ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(
-    objpoints, imgpoints, gray.shape[::-1], None, None
-)
-
-# print the calibration results
-print("Camera matrix:\n", mtx)
-print("Distortion coefficients:\n", dist)
-print("Reprojection error:", ret)
-
-calib_data = {
-    "camera_matrix": mtx.tolist(),
-    "dis_coeff": dist.tolist(),
-    "reprojection_error": float(ret)
-}
+from picamera2 import Picamera2
 
 with open('calibration.yaml') as f:
-    yaml.dump(calib_data, f)
+    calib = yaml.safe_load(f)
     
-print("Saved calibration.yaml")
+camera_matrix = calib['camera_matrix']
+dist_coeffs = calib['dist_coeff']
+marker_length = 0.026
+    
+aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
+parameters = cv2.aruco.DetectorParameters()
 
+detector = cv2.aruco.ArucoDetector(aruco_dict, parameters)
 
+ 
+picam2 = Picamera2()
+
+camera_config = picam2.create_preview_configuration(
+    main={"size": (640, 480), "format": "RGB888"}
+)
+picam2.configure(camera_config)
+picam2.start()
+
+#cap = cv2.VideoCapture(0)
+
+num=0
+
+while True:
+    frame = picam2.capture_array()
+    
+    if frame is None:
+        break
+    
+    corners, ids, _ = detector.detectMarkers(frame)
+    
+    if corners is not None and len(ids) > 0:
+        cv2.aruco.drawDetectedMarkers(frame, corners, ids)
+        
+        obj_points = np.array([
+            [-marker_length/2, marker_length/2, 0],
+            [marker_length/2, marker_length/2, 0],
+            [-marker_length/2, -marker_length/2, 0],
+            [marker_length/2, -marker_length/2, 0]
+        ], dtype=np.float32)
+        
+        for marker_corners in corners:
+            image_points = marker_corners[0].astype(np.float32)
+            
+            retval, rvec, tvec = cv2.solvePnP(obj_points, image_points, camera_matrix, dist_coeffs)
+            
+            if retval:
+                cv2.drawFrameAxes(frame, camera_matrix, dist_coeffs, rvec, tvec, 0.03)
+                
+                x, y, z = tvec.flatten()
+                distance = np.linalg.norm(tvec)
+                
+                print(f"X={x:.3f} m, Y={y:.3f} m, Z(depth)={z:.3f} m, Distance={distance:.3f} m")
+                
+                text_x = int(image_points[0])
+                text_y = int(image_points[1]) - 10
+                
+                font = cv2.FONT_HERSHEY_SIMPLEX
+                cv2.putText(frame, f"X={x:.3f}", (text_x, text_y), font, 0.5, (0, 255, 0), 2, cv2.LINE_AA)
+                cv2.putText(frame, f"Y={y:.3f}", (text_x, text_y+20), font, 0.5, (255, 0, 0), 2, cv2.LINE_AA)
+                cv2.putText(frame, f"Z(Depth)={z:.3f}", (text_x, text_y+40), font, 0.5, (255, 0, 0), 2,cv2.LINE_AA)
+                cv2.putText(frame, f"Distance={distance:.3f}", (text_x, text_y+60), font, 0.5, (255, 0, 0), 2,cv2.LINE_AA)
+        cv2.imshow('Aruco Pose', frame)
+        
+        if cv2.waitKey(1) & 0xFF == ord('q')
+            break
+
+picam2.stop()
+cv2.destroyAllWindows()
