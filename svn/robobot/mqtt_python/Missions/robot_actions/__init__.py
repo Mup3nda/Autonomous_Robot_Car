@@ -5,22 +5,21 @@ edge/line detection and following, ball tracking and following, and vision/image
 """
 from .drive import DriveActions
 from .edge import EdgeActions
-from .ball import BallActions
+from .navigation import NavigationAction
 from .vision import VisionActions
 
 
 class RobotActions:
-    """Aggregates all robot control actions: drive, edge, ball, and vision.
+    """Aggregates all robot control actions: drive, edge, navigation, and vision.
     
     Args:
         service: MQTT service for sending commands to Teensy
         gpio: GPIO interface for direct pin control
         cam: Camera interface for image capture
         edge: Edge sensor interface for line detection
-        ball: Ball tracking interface for ball detection and following
     """
-    def __init__(self, service, gpio, cam, edge, ball):
+    def __init__(self, service, gpio, cam, edge):
         self.drive = DriveActions(service, gpio)  # Motor, LED, servo control
         self.edge = EdgeActions(edge)  # Line detection and following
-        self.ball = BallActions(ball)  # Ball detection and following
+        self.navigation = NavigationAction()  # Navigation with any TargetDetector
         self.vision = VisionActions(cam, edge, gpio, service)  # Image capture and analysis

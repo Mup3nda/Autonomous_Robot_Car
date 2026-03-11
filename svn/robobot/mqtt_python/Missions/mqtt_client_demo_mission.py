@@ -18,7 +18,7 @@ from spose import pose
 from sir import ir
 from scam import cam
 from sedge import edge
-from sball import ball
+
 from sgpio import gpio
 from uservice import service
 
@@ -31,8 +31,6 @@ from Objectives.drive_turn_pi_objective import DriveTurnPiObjective
 from Objectives.line_turn_image_objective import LineTurnImageObjective
 from Objectives.drive_to_line_objective import DriveToLineObjective
 from Objectives.drive_one_meter_objective import DriveOneMeterObjective
-from Objectives.drive_to_ball_objective import DriveToBallObjective
-from Objectives.look_for_ball_objective import LookForBallObjective
 from Objectives.navigate_to_blue_ball_objective import NavigateToBallObjective
 
 
@@ -45,9 +43,9 @@ def build_objectives():
     if service.args.edge:
         return [DriveToLineObjective()]
     if service.args.ball:
-        return [DriveToBallObjective()]
+        return [NavigateToBallObjective()]
     if service.args.look_ball:
-        return [LookForBallObjective()]
+        return [NavigateToBallObjective()]
     if service.args.nav_ball:
         return [NavigateToBallObjective()]
     return [LineTurnImageObjective()]
@@ -65,7 +63,7 @@ if __name__ == "__main__":
         print("% Starting")
         service.setup("localhost")
         if service.connected:
-            actions = RobotActions(service, gpio, cam, edge, ball)
+            actions = RobotActions(service, gpio, cam, edge)
             ctx = MissionContext(actions)
             objectives = build_objectives()
             runner = MissionRunner(objectives, ctx)
