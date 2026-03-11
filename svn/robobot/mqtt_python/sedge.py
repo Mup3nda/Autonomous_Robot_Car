@@ -68,20 +68,45 @@ class SEdge:
     #
     # follow line controller
     lineCtrl = False # private
-    # PID controller parameters
+    # Motor velocity limits
+    wheelbase = 0.23  # Distance between wheels (m)
+    maxWheelVel = 1.3  # Maximum wheel velocity (m/s)
+    # PID profiles for different velocities
+    pidProfiles = {
+        'slow': {
+            'Kp': 1.5,    # More aggressive proportional gain for slow speeds
+            'Ki': 0.4,    # Increased integral gain
+            'Kd': 0.15,   # Increased derivative gain
+            'derivativeAlpha': 0.5,    # More low-pass filtering for noise reduction
+            'maxIntegral': 1.5
+        },
+        'medium': {
+            'Kp': 1.1,    # Moderate proportional gain
+            'Ki': 0.3,    # Moderate integral gain
+            'Kd': 0.11,   # Moderate derivative gain
+            'derivativeAlpha': 0.55,   # Moderate filtering
+            'maxIntegral': 1.35
+        },
+        'fast': {
+            'Kp': 0.75,   # Original proportional gain (works well at 0.95 m/s)
+            'Ki': 0.2,    # Original integral gain
+            'Kd': 0.08,   # Original derivative gain
+            'derivativeAlpha': 0.6,    # Original low-pass filter
+            'maxIntegral': 1.2
+        }
+    }
+    # Currently active profile parameters
     lineKp = 0.75  # Proportional gain (rad/s per sensor value)
     lineKi = 0.2  # Integral gain (rad/s per (sensor value * sec))
     lineKd = 0.08 # Derivative gain (rad/s per (sensor value / sec)))
     derivativeAlpha = 0.6  # Low-pass filter for derivative (0-1, lower = more filtering)
-    # Motor velocity limits
-    wheelbase = 0.23  # Distance between wheels (m)
-    maxWheelVel = 1.3  # Maximum wheel velocity (m/s)
+    maxIntegral = 1.2 # anti-windup limit for integral term
+    currentProfile = 'fast'  # Track which profile is active
     # PID state variables
     lineE0 = 0.0      # previous error
     lineIntegral = 0.0 # accumulated integral error
     lineDerivFiltered = 0.0  # filtered derivative term
     lineY = 0.0       # control output (rad/s)
-    maxIntegral = 1.2 # anti-windup limit for integral term
     # management
     # topicRc = ""
     topicCmdT0 = ""
@@ -343,10 +368,37 @@ class SEdge:
 
     ##########################################################
 
+    def selectAndApplyProfile(self, velocity):
+      """Select appropriate PID profile based on velocity and apply parameters"""
+      profileName = 'fast'  # default
+      
+      if velocity <= 0.35:
+        profileName = 'slow'
+      elif velocity < 0.55:
+        profileName = 'medium'
+      else:
+        profileName = 'fast'
+      
+      # Only update if profile changed (reduces console spam)
+      if profileName != self.currentProfile:
+        self.currentProfile = profileName
+        profile = self.pidProfiles[profileName]
+        self.lineKp = profile['Kp']
+        self.lineKi = profile['Ki']
+        self.lineKd = profile['Kd']
+        self.derivativeAlpha = profile['derivativeAlpha']
+        self.maxIntegral = profile['maxIntegral']
+        print(f"% Edge::selectAndApplyProfile: Switched to '{profileName}' profile (velocity={velocity:.3f})")
+        print(f"  Kp={self.lineKp}, Ki={self.lineKi}, Kd={self.lineKd}, alpha={self.derivativeAlpha}")
+
+    ##########################################################
+
     def lineControl(self, velocity, followLeft = True, refPosition = 0):
       self.velocity = velocity
       self.followLeft = followLeft
       self.refPosition = refPosition
+      # Select and apply the appropriate PID profile
+      self.selectAndApplyProfile(velocity)
       # velocity 0 (or negative) is turning off line control
       wasActive = self.lineCtrl
       self.lineCtrl = velocity > 0.001
