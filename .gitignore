@@ -1,6 +1,12 @@
-svn
-venv
+
 CV/test/test.py
 test
 img*
 calib_images
+CV/venv
+svn/robobot/teensy_interface/build
+svn/robobot/mqtt_python/__pycache__
+svn/robobot/mqtt_python/logfile.txt
+svn/robobot/teensy_interface/build/out_console.txt
+svn/robobot/teensy_interface/build/robot.ini
+svn/robobot/teensy_interface/build

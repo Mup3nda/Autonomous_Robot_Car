@@ -39,7 +39,7 @@ class SCam:
   gray = {}
   useCam = True
   imageFailCnt = 0
-  stop = False;
+  stop = False
   camhost = '192.168.2.251'
 
   def setup(self, camhost):
