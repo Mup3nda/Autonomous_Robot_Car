@@ -5,7 +5,7 @@ from Objectives.look_for_blue_ball_objective import LookForBlueBallObjective
 from Objectives.navigate_to_blue_ball_objective import NavigateToBallObjective
 
 
-class Search_And_Navigate_To_Blue_Ball(CompositeObjective):
+class SearchAndNavigateToBlueBall(CompositeObjective):
     """Run blue-ball search first, then start navigation to the detected ball."""
 
     name = "Search_And_Navigate_To_Blue_Ball"
