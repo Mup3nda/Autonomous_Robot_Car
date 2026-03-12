@@ -1,4 +1,5 @@
 svn/robobot/teensy_interface/build/log*
+svn/robobot/teensy_interface/log_*/
 svn/robobot/mqtt_python/__pycache__
 .venv/
 svn/robobot/mqtt_python/Missions/__pycache__/
