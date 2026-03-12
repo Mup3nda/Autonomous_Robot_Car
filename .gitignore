@@ -10,3 +10,12 @@ svn/robobot/mqtt_python/.kdev4
 svn/.DS_Store
 .gitignore
 svn/robobot/off_by_mqtt/build2
+
+calib_images
+CV/venv
+svn/robobot/teensy_interface/build
+svn/robobot/mqtt_python/__pycache__
+svn/robobot/mqtt_python/logfile.txt
+svn/robobot/teensy_interface/build/out_console.txt
+svn/robobot/teensy_interface/build/robot.ini
+svn/robobot/teensy_interface/build
