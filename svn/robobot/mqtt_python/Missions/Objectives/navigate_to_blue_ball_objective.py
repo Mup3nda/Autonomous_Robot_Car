@@ -34,7 +34,7 @@ class NavigateToBallObjective(Objective):
         "sequential" (rotate-then-drive) or "smooth" (simultaneous drive+turn)
     """
     
-    def __init__(self, desired_distance=0.41, print_interval=20, nav_mode="smooth"):
+    def __init__(self, desired_distance=0.41, print_interval=20, nav_mode="smooth"): #NavMode "sequential" or "smooth". Sequential is Nav.py Smooth is NavSmooth.py
         super().__init__()
         self.desired_distance = desired_distance
         self.print_interval = print_interval
