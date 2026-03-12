@@ -6,3 +6,6 @@ __pycache__
 *.pyd
 *.log
 *.tmp
+svn/robobot/mqtt_python/logfile.txt
+svn/robobot/teensy_interface/build/
+svn/robobot/teensy_interface/log_*/
