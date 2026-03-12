@@ -19,6 +19,13 @@ class TargetDetector:
         # In a real implementation, this would return the detected target's position and confidence
         return None
     
+    def is_target_visible(self, min_confidence=1):
+        # Placeholder for visibility check based on confidence threshold
+        target = self.get_target()
+        if target is not None:
+            return True
+        return False
+    
     def stop(self):
         # Clean up any resources if necessary
         print("% TargetDetector:: Stopped")

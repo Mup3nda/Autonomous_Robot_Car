@@ -96,8 +96,8 @@ class UService:
                 help='Turn 180 degrees (Pi) and stop')
     self.parser.add_argument('-e', '--edge', action='store_true',
                 help='Find line and follow the left edge')
-    self.parser.add_argument('--ball', action='store_true',
-                help='Find and approach ball')
+    self.parser.add_argument('--SearchAndNavBlueball', action='store_true',
+                help='Find and approach blue ball')
     self.parser.add_argument('--look-ball', action='store_true',
                 help='Rotate to find ball in camera view')
     self.parser.add_argument('--nav-ball', action='store_true',

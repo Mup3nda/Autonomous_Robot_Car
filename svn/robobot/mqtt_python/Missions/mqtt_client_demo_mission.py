@@ -32,6 +32,8 @@ from Objectives.line_turn_image_objective import LineTurnImageObjective
 from Objectives.drive_to_line_objective import DriveToLineObjective
 from Objectives.drive_one_meter_objective import DriveOneMeterObjective
 from Objectives.navigate_to_blue_ball_objective import NavigateToBallObjective
+from Objectives.look_for_blue_ball_objective import LookForBlueBallObjective
+from Objectives.search_and_navigate_to_blue_ball_objective import Search_And_Navigate_To_Blue_Ball
 
 
 # This is a demo mission that can be used to test the robot and MQTT connection.
@@ -42,10 +44,10 @@ def build_objectives():
         return [DriveTurnPiObjective()]
     if service.args.edge:
         return [DriveToLineObjective()]
-    if service.args.ball:
-        return [NavigateToBallObjective()]
+    if service.args.SearchAndNavBlueball:
+        return [Search_And_Navigate_To_Blue_Ball()]
     if service.args.look_ball:
-        return [NavigateToBallObjective()]
+        return [LookForBlueBallObjective()]
     if service.args.nav_ball:
         return [NavigateToBallObjective()]
     return [LineTurnImageObjective()]
