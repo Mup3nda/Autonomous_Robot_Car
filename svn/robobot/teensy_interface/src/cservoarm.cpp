@@ -27,7 +27,6 @@ CServoArm servoArm;
 
 void CServoArm::setup()
 {
-    // If no config exists yet, write defaults to robot.ini
     if (not ini.has("servoarm"))
     {
         ini["servoarm"]["up_position"]   = "-900";
@@ -37,37 +36,33 @@ void CServoArm::setup()
         ini["servoarm"]["servo_idx"]     = "1";
     }
 
-    // Read values from robot.ini
     arm_up_pos   = strtol(ini["servoarm"]["up_position"].c_str(),   nullptr, 10);
     arm_mid_pos  = strtol(ini["servoarm"]["mid_position"].c_str(),  nullptr, 10);
     arm_down_pos = strtol(ini["servoarm"]["down_position"].c_str(), nullptr, 10);
     arm_velocity = strtol(ini["servoarm"]["velocity"].c_str(),      nullptr, 10);
     servo_idx    = strtol(ini["servoarm"]["servo_idx"].c_str(),     nullptr, 10);
 
-    std::cout << "[ServoArm] Setup complete\n";
-    std::cout << "[ServoArm] up_pos="   << arm_up_pos
-              << " mid_pos="            << arm_mid_pos
-              << " down_pos="           << arm_down_pos
-              << " velocity="           << arm_velocity
-              << " servo_idx="          << servo_idx << "\n";
+    printf("# ServoArm setup complete\n");
+    printf("# ServoArm up_pos=%d mid_pos=%d down_pos=%d velocity=%d servo_idx=%d\n",
+           arm_up_pos, arm_mid_pos, arm_down_pos, arm_velocity, servo_idx);
 }
 
 void CServoArm::moveUp()
 {
-    std::cout << "[ServoArm] Moving UP\n";
+    printf("# ServoArm moving UP\n");
     servo[TEENSY_NUM].setServo(servo_idx, true, arm_up_pos, arm_velocity);
-}
-
-void CServoArm::moveMid()
-{
-    std::cout << "[ServoArm] Moving MID\n";
-    servo[TEENSY_NUM].setServo(servo_idx, true, arm_mid_pos, arm_velocity);
 }
 
 void CServoArm::moveDown()
 {
-    std::cout << "[ServoArm] Moving DOWN\n";
+    printf("# ServoArm moving DOWN\n");
     servo[TEENSY_NUM].setServo(servo_idx, true, arm_down_pos, arm_velocity);
+}
+
+void CServoArm::moveMid()
+{
+    printf("# ServoArm moving MID\n");
+    servo[TEENSY_NUM].setServo(servo_idx, true, arm_mid_pos, arm_velocity);
 }
 
 void CServoArm::tick()

@@ -1,5 +1,5 @@
 CMakeFiles/teensy_interface.dir/src/sgpiod2.cpp.o: \
- /home/local/svn/robobot/teensy_interface/src/sgpiod2.cpp \
+ /home/local/Autonomous_Robot_Car/svn/robobot/teensy_interface/src/sgpiod2.cpp \
  /usr/include/stdc-predef.h /usr/include/c++/14/string \
  /usr/include/c++/14/bits/requires_hosted.h \
  /usr/include/aarch64-linux-gnu/c++/14/bits/c++config.h \
@@ -237,9 +237,9 @@ CMakeFiles/teensy_interface.dir/src/sgpiod2.cpp.o: \
  /usr/include/aarch64-linux-gnu/sys/time.h /usr/include/semaphore.h \
  /usr/include/aarch64-linux-gnu/bits/semaphore.h \
  /usr/include/c++/14/iostream \
- /home/local/svn/robobot/teensy_interface/src/uservice.h \
- /home/local/svn/robobot/teensy_interface/src/utime.h \
- /home/local/svn/robobot/teensy_interface/src/uini.h \
+ /home/local/Autonomous_Robot_Car/svn/robobot/teensy_interface/src/uservice.h \
+ /home/local/Autonomous_Robot_Car/svn/robobot/teensy_interface/src/utime.h \
+ /home/local/Autonomous_Robot_Car/svn/robobot/teensy_interface/src/uini.h \
  /usr/include/c++/14/algorithm /usr/include/c++/14/bits/ranges_algo.h \
  /usr/include/c++/14/pstl/glue_algorithm_defs.h \
  /usr/include/c++/14/pstl/execution_defs.h /usr/include/c++/14/utility \
@@ -264,5 +264,5 @@ CMakeFiles/teensy_interface.dir/src/sgpiod2.cpp.o: \
  /usr/include/aarch64-linux-gnu/bits/statx-generic.h \
  /usr/include/aarch64-linux-gnu/bits/types/struct_statx_timestamp.h \
  /usr/include/aarch64-linux-gnu/bits/types/struct_statx.h \
- /home/local/svn/robobot/teensy_interface/src/sgpiod2.h \
+ /home/local/Autonomous_Robot_Car/svn/robobot/teensy_interface/src/sgpiod2.h \
  /usr/include/gpiod.h /usr/lib/gcc/aarch64-linux-gnu/14/include/stdbool.h

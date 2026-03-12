@@ -5,6 +5,8 @@ teensy_interface: \
   CMakeFiles/teensy_interface.dir/src/cmixer.cpp.o \
   CMakeFiles/teensy_interface.dir/src/cmotor.cpp.o \
   CMakeFiles/teensy_interface.dir/src/cservo.cpp.o \
+  CMakeFiles/teensy_interface.dir/src/cservoarm.cpp.o \
+  CMakeFiles/teensy_interface.dir/src/test_servo_arm.cpp.o \
   CMakeFiles/teensy_interface.dir/src/sgpiod2.cpp.o \
   CMakeFiles/teensy_interface.dir/src/main.cpp.o \
   CMakeFiles/teensy_interface.dir/src/mjoy.cpp.o \
@@ -120,6 +122,10 @@ CMakeFiles/teensy_interface.dir/src/cmixer.cpp.o:
 CMakeFiles/teensy_interface.dir/src/cmotor.cpp.o:
 
 CMakeFiles/teensy_interface.dir/src/cservo.cpp.o:
+
+CMakeFiles/teensy_interface.dir/src/cservoarm.cpp.o:
+
+CMakeFiles/teensy_interface.dir/src/test_servo_arm.cpp.o:
 
 CMakeFiles/teensy_interface.dir/src/sgpiod2.cpp.o:
 
