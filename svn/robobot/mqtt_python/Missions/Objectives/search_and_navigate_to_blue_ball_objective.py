@@ -27,6 +27,7 @@ class SearchAndNavigateToBlueBall(CompositeObjective):
             NavigateToBallObjective(
                 desired_distance=desired_distance,
                 print_interval=navigate_print_interval,
+                nav_mode="sequential"
             ),
         ]
         super().__init__(objectives)
