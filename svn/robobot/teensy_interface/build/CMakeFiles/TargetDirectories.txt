@@ -1,3 +1,0 @@
-/home/local/Autonomous_Robot_Car/svn/robobot/teensy_interface/build/CMakeFiles/teensy_interface.dir
-/home/local/Autonomous_Robot_Car/svn/robobot/teensy_interface/build/CMakeFiles/edit_cache.dir
-/home/local/Autonomous_Robot_Car/svn/robobot/teensy_interface/build/CMakeFiles/rebuild_cache.dir
