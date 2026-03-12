@@ -7,6 +7,7 @@ import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
 from Nav import Nav
+from NavSmooth import NavSmooth
 
 
 class NavigationAction:
@@ -54,18 +55,22 @@ class NavigationAction:
             raise ValueError("Detector not set. Call setup_detector() first.")
         self.detector.reset_origin()
     
-    def setup(self, desired_distance=0.41, ctx=None):
+    def setup(self, desired_distance=0.41, ctx=None, nav_mode="sequential"):
         """Initialize the navigation controller.
         
         Args:
             desired_distance: Target distance to maintain from target (meters)
             ctx: Mission context with actions, pose, service, etc.
+            nav_mode: "sequential" (rotate-then-drive) or "smooth" (simultaneous drive+turn)
         """
         if not self.detector:
             raise ValueError("Detector not set. Call setup_detector() first.")
         
         self.desired_distance = float(desired_distance)
-        self.nav = Nav()
+        if str(nav_mode).lower() == "smooth":
+            self.nav = NavSmooth()
+        else:
+            self.nav = Nav()
         self.nav.setup(self.detector, self.desired_distance, ctx)
     
     def start(self):

@@ -29,7 +29,7 @@ class Nav:
 
         #self.DISTANCIA_DESEADA = 0.41  # meters
         self.MAX_SPEED = 0.4  # m/s
-        self.MAX_W_SPEED = 0.2
+        self.MAX_W_SPEED = 0.4
 
         # PID constants (tune later with real sensor input)
         self.KP = 0.8
@@ -40,7 +40,8 @@ class Nav:
         self.KI_X = 0.1   # Ganancia Integral: corrige errores acumulados o fricción
         self.KD_X = 0.1    # Ganancia Derivativa: evita que el robot oscile (frena antes de llegar)
 
-        self.TOLERANCIA_R = 5
+        self.TOLERANCIA_R = 5          # pixels (fallback for camera detectors)
+        self.TOLERANCIA_R_RAD = 0.05      # radians (~8.6 deg, for bearing-based detectors)
         self.TOLERANCIA_D = 0.05
 
         self.error_acumulado = 0.0
@@ -48,7 +49,8 @@ class Nav:
         self.error_rot_acumulado = 0.0
         self.ultimo_rot_error = 0.0
         self.ultima_vez = time.time()
-
+        self.print_every_n_ticks = 20
+        self.debug_tick = 0
         # Consider objective complete after stable hold near setpoint
         self.stable_since = None
         self.stable_band = 0.03  # +/- 3 cm
@@ -71,30 +73,53 @@ class Nav:
         """
         while self.is_running:
             try:
+                self.debug_tick += 1
+                should_log = (self.debug_tick % self.print_every_n_ticks) == 0
+
                 # Get current target from detector
                 self.target = self.detector.get_target() #target is a list with valid x y radius color conficence
                 
                 if self.target is None:
                     # No target detected, stop or wait
-                    print("No target detected")
+                    if should_log:
+                        print("No target detected")
                     time.sleep(0.1)
                     continue
-                
+
                 ahora = time.time()
                 dt = ahora - self.ultima_vez
 
                 if dt <= 0.0:
                     dt = 0.05
 
-                # PID error: positive means we are too far and should move forward
-                error_rot =  820/2 - self.target["x"]
+                # Use bearing (radians) from world-point detectors if available,
+                # otherwise fall back to pixel-based offset for camera detectors.
+                if "bearing" in self.target:
+                    error_rot = self.target["bearing"]  # radians; positive = target is left
+                    tol_rot = self.TOLERANCIA_R_RAD
+                else:
+                    img_center = self.target.get("image_width", 820) / 2.0
+                    error_rot = img_center - self.target["x"]  # pixels
+                    tol_rot = self.TOLERANCIA_R
+                error = self.target["distance"] - self.desired_distance
                 
                 if (self.TOLERANCIA_D < abs(error) and self.rot_flag == False and self.forward_flag == True):
-                    #self.ctx.actions.drive.stop()
-                    print("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
-                    
-                    error = self.target["distance"] - self.desired_distance
 
+                    # If heading drift grows while driving forward, re-enter
+                    # the rotation phase before continuing.
+                    if abs(error_rot) > (2.0 * tol_rot):
+                        self.ctx.actions.drive.stop()
+                        self.forward_flag = False
+                        self.rot_flag = True
+                        self.ultimo_rot_error = 0.0
+                        self.error_rot_acumulado = 0.0
+                        if should_log:
+                            print(f"Heading drift {error_rot:.3f} too large, rotating to re-align")
+                        self.ultima_vez = ahora
+                        time.sleep(0.05)
+                        continue
+
+                    # Forward PID only - no turning while driving
                     p_term = self.KP * error
                     self.error_acumulado += error * dt
                     i_term = self.KI * self.error_acumulado
@@ -108,9 +133,8 @@ class Nav:
                     if velocidad < -self.MAX_SPEED:
                         velocidad = -self.MAX_SPEED
 
-                    # Send command to robot interface
-                    #print error and velocity for debugging
-                    print(f"Error: {error:.3f} m, Velocity: {velocidad:.3f} m/s")
+                    if should_log:
+                        print(f"Error: {error:.3f} m, Velocity: {velocidad:.3f} m/s")
                     self.ctx.actions.drive.rc(velocidad, 0.0)
 
                 
@@ -131,19 +155,11 @@ class Nav:
                     self.ultima_vez = ahora
                     
                 elif abs(error) <= self.TOLERANCIA_D and self.rot_flag == False and self.forward_flag == True:
-                    if abs(error_rot) <= self.TOLERANCIA_R:
-                        print(f"Target reached and stable for {self.stable_time_required} seconds. Stopping.")
-                        self.ctx.actions.drive.stop()
-                        self.ultimo_error = 0.0
-                        self.error_acumulado = 0.0
-                        self.forward_flag = False
-                        print("Distance aligned, rotating to target")
-                        self.hasReachedTarget = True
-                        time.sleep(2)  # Control loop frequency
-                    else:
-                        self.rot_flag = True
+                    print("Target reached.")
+                    self.ctx.actions.drive.stop()
+                    self.hasReachedTarget = True
                     
-                if(abs(error_rot) >= self.TOLERANCIA_R and self.rot_flag == True):
+                if(abs(error_rot) >= tol_rot and self.rot_flag == True):
                     self.rot_flag = True
                     P = self.KP_X * error_rot
             
@@ -161,7 +177,8 @@ class Nav:
                     # Saturación por seguridad
                     if w_speed > self.MAX_W_SPEED: w_speed = self.MAX_W_SPEED
                     if w_speed < -self.MAX_W_SPEED: w_speed = -self.MAX_W_SPEED
-                    print(f"Rot Error: {error_rot:.3f}, W Speed: {w_speed:.3f}")
+                    if should_log:
+                        print(f"Rot Error: {error_rot:.3f}, W Speed: {w_speed:.3f}")
                     # Enviar comando: lineal 0, angular w_speed
                     self.ctx.service.send("robobot/cmd/ti", f"rc 0 {w_speed:.3f}")
                     

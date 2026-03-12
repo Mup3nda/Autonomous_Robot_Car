@@ -5,7 +5,6 @@ from enum import IntEnum
 from mission_context import MissionContext
 from objective import Objective
 from sball_saray import SBall
-from Nav import Nav
 
 
 class NavigateToBallState(IntEnum):
@@ -26,16 +25,20 @@ class NavigateToBallObjective(Objective):
     Parameters:
     -----------
     desired_distance: Float
-        Target distance to maintain from ball (default 0.5 = 50cm)
+        Target distance to maintain from ball (default 0.41 = 41cm)
     
     print_interval: Int
         Print status every N ticks (default 20 = ~1 second at 50ms tick rate)
+
+    nav_mode: str
+        "sequential" (rotate-then-drive) or "smooth" (simultaneous drive+turn)
     """
     
-    def __init__(self, desired_distance=0.41, print_interval=20):
+    def __init__(self, desired_distance=0.41, print_interval=20, nav_mode="smooth"):
         super().__init__()
         self.desired_distance = desired_distance
         self.print_interval = print_interval
+        self.nav_mode = str(nav_mode).lower()
         self.tick_count = 0
 
     def start(self, ctx: MissionContext):
@@ -49,11 +52,11 @@ class NavigateToBallObjective(Objective):
         
         # Setup navigation action with this detector
         ctx.actions.navigation.setup_detector(detector)
-        ctx.actions.navigation.setup(desired_distance=self.desired_distance, ctx=ctx)
+        ctx.actions.navigation.setup(desired_distance=self.desired_distance, ctx=ctx, nav_mode=self.nav_mode)
         ctx.actions.navigation.start()
         
-        print(f"% Objective: Navigate To Ball (target_distance={self.desired_distance}m)")
-
+        print(f"% Objective: Navigate To Ball (target_distance={self.desired_distance}m, nav_mode={self.nav_mode})")
+    
     def tick(self, ctx: MissionContext):
         """Execute one iteration of navigation."""
         self.tick_count += 1
