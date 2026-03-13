@@ -8,15 +8,32 @@ State machine:
 - State 99: Line following complete
 """
 from enum import IntEnum
+import time as t
 from objective import Objective
 from robot_actions import RobotActions
 from mission_context import MissionContext
+
+
+# Objective tuning constants
+SEARCH_SPEED = 0.2
+CENTERING_SPEED = 0.2
+FOLLOW_SPEED = 0.80
+SEARCH_MAX_DISTANCE_M = 1.0
+SEARCH_TIMEOUT_S = 15.0
+LINE_FOUND_CONFIDENCE = 4
+CENTERED_CONFIDENCE = 8
+CENTERED_MIN_TIME_S = 4.0
+CENTERING_TIMEOUT_S = 8.0
+FOLLOW_VALID_CONFIDENCE = 2
+LOST_LINE_TIMEOUT_S = 5.0
+STOPPED_VELOCITY_EPS = 0.001
 
 
 class DriveToLineState(IntEnum):
     START = 0
     SEARCHING = 1
     STOPPED = 2
+    CENTERING = 3
     LINE_FOLLOWING = 10
     DONE = 99
 
@@ -27,6 +44,8 @@ class DriveToLineObjective(Objective):
         """Initialize: reset distance tracker, set green LED."""
         self.state = DriveToLineState.START
         self.dist_to_line = 0.0  # Track distance traveled before finding line
+        self.centering_start_time = 0.0  # Wall-clock when centering started
+        self.centering_deadline = 0.0  # Hard timeout for centering phase
         ctx.pose.tripBreset()  # Reset distance counter
         ctx.actions.drive.leds(0, 100, 0)  # Green LED
         print("% Driving to line ---------------------- right ir start ---")
@@ -35,30 +54,44 @@ class DriveToLineObjective(Objective):
         """Update objective state and control the robot."""
         if self.state == DriveToLineState.START:
             # State 0: Start driving forward (IR check was removed)
-            ctx.actions.drive.rc(0.2, 0.0)  # 20% throttle, straight
+            ctx.actions.drive.rc(SEARCH_SPEED, 0.0)  # Search speed, straight
             ctx.actions.drive.lognow(3)  # Log sensor data
             ctx.actions.drive.servo(1, -800, 300)  # Adjust servo
             self.state = DriveToLineState.SEARCHING
         elif self.state == DriveToLineState.SEARCHING:
             # State 1: Searching for line while driving forward
-            if ctx.pose.tripB > 1.0 or ctx.pose.tripBtimePassed() > 15:
+            if ctx.pose.tripB > SEARCH_MAX_DISTANCE_M or ctx.pose.tripBtimePassed() > SEARCH_TIMEOUT_S:
                 # Stop if traveled >1m or >15s timeout without finding line
                 ctx.actions.drive.stop()
                 self.state = DriveToLineState.STOPPED
-            if ctx.actions.edge.is_line_valid(confidence=4):
-                # Line detected! Switch to line following mode
-                ctx.actions.edge.start_following(velocity=0.2, follow_left=False)
-                ctx.actions.drive.servo(1, 0, 0)  # Center servo
+            if ctx.actions.edge.is_line_valid(confidence=LINE_FOUND_CONFIDENCE):
+                # Line detected! Switch to centering mode at low speed
+                ctx.actions.edge.start_following(velocity=CENTERING_SPEED, follow_left=False)
+                ctx.actions.drive.servo(1, -800, 300)  # Center servo
                 self.dist_to_line = ctx.pose.tripB  # Record distance to line
-                ctx.pose.tripBreset()  # Reset counter for line following distance
-                self.state = DriveToLineState.LINE_FOLLOWING  # Enter line following state
+                ctx.pose.tripBreset()  # Reset counter
+                self.centering_start_time = t.time()
+                self.centering_deadline = self.centering_start_time + CENTERING_TIMEOUT_S
+                self.state = DriveToLineState.CENTERING
+        elif self.state == DriveToLineState.CENTERING:
+            # State 3: Center on line at low speed before accelerating.
+            # Promote to high speed when line confidence is strong, or after timeout.
+            now = t.time()
+            centered = ctx.actions.edge.is_line_valid(confidence=CENTERED_CONFIDENCE)
+            centered_long_enough = now - self.centering_start_time > CENTERED_MIN_TIME_S
+            timed_out = now >= self.centering_deadline
+            ctx.actions.drive.servo(1, -800, 300) 
+            if (centered and centered_long_enough) or timed_out:
+                ctx.actions.edge.start_following(velocity=FOLLOW_SPEED, follow_left=False)
+                self.state = DriveToLineState.LINE_FOLLOWING
         elif self.state == DriveToLineState.STOPPED:
             # State 2: Stopped after timeout - wait for robot to settle
-            if abs(ctx.pose.velocity()) < 0.001:
+            if abs(ctx.pose.velocity()) < STOPPED_VELOCITY_EPS:
                 self.state = DriveToLineState.DONE  # Mark as done
         elif self.state == DriveToLineState.LINE_FOLLOWING:
+            ctx.actions.drive.servo(1, -800, 300)  # Adjust servo
             # State 10: Following line - check if line is still valid
-            if not ctx.actions.edge.is_line_valid(confidence=2) and ctx.actions.edge.last_seen_time_passed() > 5.0:
+            if not ctx.actions.edge.is_line_valid(confidence=FOLLOW_VALID_CONFIDENCE) and ctx.actions.edge.last_seen_time_passed() > LOST_LINE_TIMEOUT_S:
                 # Lost the line - stop and try to recover
                 ctx.actions.edge.stop_following()
                 ctx.actions.drive.stop()

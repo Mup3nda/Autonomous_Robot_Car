@@ -41,10 +41,10 @@ from sir import ir
 from srobot import robot
 from scam import cam
 from sedge import edge
-from sball import ball
 from sgpio import gpio
 from ulog import flog
 import psutil
+
 
 class UService:
   host = 'IP-setup'
@@ -97,12 +97,17 @@ class UService:
                 help='Turn 180 degrees (Pi) and stop')
     self.parser.add_argument('-e', '--edge', action='store_true',
                 help='Find line and follow the left edge')
-    self.parser.add_argument('--ball', action='store_true',
-                help='Find and approach ball')
+    self.parser.add_argument('--SearchAndNavBlueball', action='store_true',
+                help='Find and approach blue ball')
     self.parser.add_argument('--look-ball', action='store_true',
                 help='Rotate to find ball in camera view')
+    self.parser.add_argument('--nav-ball', action='store_true',
+                help='Navigate to the blue ball target')
+    self.parser.add_argument('--square-world', action='store_true',
+          help='Drive a square using world-point navigation')
     self.parser.add_argument('-u', '--usestate', type=int, default = 0,
                 help='set mission state to this value')
+    
     self.args = self.parser.parse_args()
     # if not isinstance(self.args.usestate, int):
     #   self.args.usestate = int(0)
@@ -130,7 +135,7 @@ class UService:
     imu.setup()
     cam.setup()
     edge.setup()
-    ball.setup()
+  
     print(f"% (uservice.py) Setup finished with connected={self.connected}")
     if self.args.level:
       print(f"% Command line argument '--level'={self.args.level} but not implemented")
@@ -282,7 +287,7 @@ class UService:
 
   def send(self, topic, param):
     # print(self.startTime.strftime("At %Y-%m-%d %H:%M:%S.%f"))
-    print(f"% {self.startTime.strftime("At %Y-%m-%d %H:%M:%S.%f")}: sending: '{topic}' with '{param}' len(param)={len(param)}, not master {self.confirmedNotMaster}, master {self.confirmedMaster}")
+    print(f"% {self.startTime.strftime('At %Y-%m-%d %H:%M:%S.%f')}: sending: '{topic}' with '{param}' len(param)={len(param)}, not master {self.confirmedNotMaster}, master {self.confirmedMaster}")
     if self.confirmedNotMaster:
       # self.terminate()
       self.stop = True
@@ -360,6 +365,7 @@ class UService:
     cam.terminate()
     gpio.terminate()
     flog.terminate()
+    
     self.startTime = datetime.now()
     print(self.startTime.strftime("Ended at %Y-%m-%d %H:%M:%S.%f"))
 
