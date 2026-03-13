@@ -1,16 +1,11 @@
 
 from collections import deque
-from imutils.video import VideoStream  # Threaded video stream (used for optional video file)
 import numpy as np                  # Numerical operations
 import argparse                     # Command-line argument parsing
 import cv2                          # OpenCV for image processing
-import imutils                      # Convenience functions for OpenCV
-import time                         # Sleep on startup
-import socket                       # For getting local IP address
 from flask import Flask, Response   # Web server for MJPEG streaming
 import logging
 import yaml
-from scam_usb import cam_usb
 from scam import cam
 
 logging.basicConfig(level=logging.INFO)
@@ -51,7 +46,7 @@ class ArucoDetector:
     #ARUCO_DICT = cv2.aruco.DICT_4X4_50
     ARUCO_DICT = cv2.aruco.DICT_4X4_100
     
-    def __init__(self, camera_config='myraspi_calibration.yaml'):
+    def __init__(self, camera_config='CV/aruco/oliver_calibration.yaml', target_id=None):
         self.detected_markers = {}
         self.aruco_dict = None
         self.camera_matrix = None
@@ -60,30 +55,25 @@ class ArucoDetector:
         self.detector = None
         self.distance_buffer = deque(maxlen=5)
         self.camera_config = camera_config
+        self.target_id = target_id
+        self.last_frame = None
+        
         
     def start(self):
         # Initialize any necessary resources for target detection
         cam.setup()
-        #cam_usb.setup()
         self.camera_matrix, self.dist_coeffs = self.load_camera_calibrations(self.camera_config)
         self.aruco_dict, self.parameters, self.detector = self.initialize_aruco_detector()
         
         logger.info("% ArucoDetector:: Setup complete")
     
-    def get_target(self, target_id=None):
-        # Placeholder for target detection logic
-        # In a real implementation, this would return the detected target's position and confidence
-        return self.detect_aruco(
-            cam_usb, 
-            self.detector, 
-            self.camera_matrix, 
-            self.dist_coeffs, target_id=target_id
-        )
-    
     def stop(self):
         # Clean up any resources if necessary
-        cam_usb.terminate()
-        logger.info("% ArucoDetector:: Setup stopped")
+        cam.terminate()
+        logger.info("% ArucoDetector:: Stopped")
+    
+    def set_target_id(self, target_id):
+        self.target_id = target_id
     
     def parse_arguments(self):
         """Set up command-line argument parser"""
@@ -97,7 +87,6 @@ class ArucoDetector:
         args = vars(ap.parse_args())
         return args
 
-        
     def load_camera_calibrations(self, file_path):
         """load camera calibration"""
         with open(file_path) as f:
@@ -138,7 +127,6 @@ class ArucoDetector:
         # Detect markers in the frame with detectMarkers method
         corners, marker_ids, _ = detector.detectMarkers(frame)
 
-
         if marker_ids is not None and len(marker_ids) > 0:
             # Draw detected markers on the frame
             
@@ -151,17 +139,12 @@ class ArucoDetector:
                 if target_id is not None and current_id != target_id:
                     continue
 
-                if current_id in self.MARKER_SIZES:
-                    _marker_size = self.MARKER_SIZES[current_id]
-                    
-                else:
-                    logger.info("Did not find the marker id in he defined list")
+                if current_id not in self.MARKER_SIZES:
+                    logger.info("Did not find the marker id in the defined list")
                     continue
             
-            
+                _marker_size = self.MARKER_SIZES[current_id]
                 obj_points = self.get_object_points(_marker_size)
-                    
-                    
                 image_points = marker_corners[0].astype(np.float32)
 
                 """
@@ -169,35 +152,65 @@ class ArucoDetector:
                 It returns the rotation vector (rvec) and translation vector (tvec).
                 """
                 retval, rvec, tvec = cv2.solvePnP(obj_points, image_points, camera_matrix, dist_coeffs)
+                if not retval:
+                    continue
                 
-                if retval:
-                    # Draw the axis on the frame
-                    cv2.drawFrameAxes(frame, camera_matrix, dist_coeffs, rvec, tvec, 0.03)
-                    
-                    # Extract the translation vector and calculate the distance
-                    x, y, z = tvec.flatten()
-                    distance = np.linalg.norm(tvec)
-                    x_cm = x*100
-                    y_cm = y*100
-                    z_cm = z*100
-                    distance_cm = distance*100
+                cv2.drawFrameAxes(frame, camera_matrix, dist_coeffs, rvec, tvec, 0.03)
                 
-                    
-                    detected_markers[current_id] = {
-                        "x": float(round(x_cm, 4)),
-                        "y": float(round(y_cm, 4)),
-                        "z": float(round(z_cm, 4)),
-                        "distance": float(round(distance_cm, 4))
-                    }
-                    
-                    print(f"ID:{current_id}, x: {x_cm:.2f} cm, y: {y_cm:.2f} cm, z: {z_cm:.2f} cm, distance: {distance_cm:.2f} cm")
-                    #print(list(detected_markers.keys()))
-                    #print(detected_markers[0])
-                    #print(detected_markers[0]['distance'])
-                    #self.display_text(frame, image_points, x_cm, y_cm, z_cm, distance_cm)
+                # Extract the translation vector components and Euclidean distance
+                x, y, z = tvec.flatten()
+                distance = float(np.linalg.norm(tvec))
+
+                # Pixel center of the marker corners in the image (used by Nav for rotation)
+                pixel_x = float(np.mean(image_points[:, 0]))
+                pixel_y = float(np.mean(image_points[:, 1]))
+
+                detected_markers[current_id] = {
+                    "x": float(x),        # tvec x — lateral offset (meters)
+                    "y": float(y),        # tvec y — vertical offset (meters)
+                    "z": float(z),        # tvec z — forward depth (meters)
+                    "distance": distance, # Euclidean 3D distance (meters)
+                    "pixel_x": pixel_x,  # pixel x center of marker (used by Nav)
+                    "pixel_y": pixel_y,  # pixel y center of marker
+                }
 
         self.detected_markers = detected_markers
+        self.last_frame = frame
         return frame, detected_markers
+
+    def get_target(self):
+        frame, self.detected_markers = self.detect_aruco(
+            cam,
+            self.detector,
+            self.camera_matrix,
+            self.dist_coeffs,
+            target_id=self.target_id,
+        )
+        if not self.detected_markers:
+            return None
+        if self.target_id is not None:
+            selected_id = self.target_id
+            target = self.detected_markers.get(self.target_id)
+        else:
+            selected_id = min(self.detected_markers, key=lambda mid: self.detected_markers[mid]["distance"])
+            target = self.detected_markers[selected_id]
+        if target is None:
+            return None
+        image_width = frame.shape[1] if frame is not None else 820
+        return {
+            "id":       selected_id,
+            "x":        target["pixel_x"],  # pixel x center — required by Nav for rotation
+            "y":        target["pixel_y"],  # pixel y center
+            "tvec_x":   target["x"],        # lateral offset in meters (camera frame)
+            "tvec_y":   target["y"],        # vertical offset in meters (camera frame)
+            "z":        target["z"],        # forward depth in meters (camera frame)
+            "distance": target["distance"], # Euclidean 3D distance in meters
+            "image_width": image_width,     # required by Nav for pixel-to-angle conversion
+            "valid":    True,
+        }
+    
+    def get_all_targets(self):
+        return self.detected_markers.copy()
     
     def run_mjpeg_stream(self, cam, detector, camera_matrix, dist_coeffs, args, target_id=None):
         app = Flask(__name__)
@@ -284,8 +297,8 @@ if __name__=='__main__':
     
     aruco.start()
     
-    logger.warning("Make sure you have included comand arguments")
-    logger.info("Make sure you use correctg calibration file")
+    logger.warning("Make sure you have included command arguments")
+    logger.info("Make sure you use correct calibration file")
 
     target_id = args.get("target_id")
     if target_id is None:
@@ -294,8 +307,8 @@ if __name__=='__main__':
         logger.info(f"% ArucoDetector:: Detecting only marker ID {target_id}")
     
     if args.get("stream", False):
-        aruco.run_mjpeg_stream(cam_usb, aruco.detector, aruco.camera_matrix, aruco.dist_coeffs, args, target_id)
+        aruco.run_mjpeg_stream(cam, aruco.detector, aruco.camera_matrix, aruco.dist_coeffs, args, target_id)
     else:
-        aruco.run_local_gui(cam_usb, aruco.detector, aruco.camera_matrix, aruco.dist_coeffs, args, target_id)
+        aruco.run_local_gui(cam, aruco.detector, aruco.camera_matrix, aruco.dist_coeffs, args, target_id)
         
         
