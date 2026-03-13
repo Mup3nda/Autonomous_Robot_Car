@@ -61,19 +61,16 @@ class NavigationAction:
         Args:
             desired_distance: Target distance to maintain from target (meters)
             ctx: Mission context with actions, pose, service, etc.
-            nav_mode: "sequential" or "smooth"
+            nav_mode: "sequential" (rotate-then-drive) or "smooth" (simultaneous drive+turn)
         """
         if not self.detector:
             raise ValueError("Detector not set. Call setup_detector() first.")
         
         self.desired_distance = float(desired_distance)
-        mode = str(nav_mode).lower()
-        if mode == "sequential":
-            self.nav = Nav()
-        elif mode == "smooth":
+        if str(nav_mode).lower() == "smooth":
             self.nav = NavSmooth()
         else:
-            raise ValueError(f"Unknown nav_mode '{nav_mode}'. Use 'sequential' or 'smooth'.")
+            self.nav = Nav()
         self.nav.setup(self.detector, self.desired_distance, ctx)
     
     def start(self):

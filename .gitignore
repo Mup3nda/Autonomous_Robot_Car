@@ -1,3 +1,14 @@
+.venv
+.vscode
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+*.log
+*.tmp
+svn/robobot/mqtt_python/logfile.txt
+svn/robobot/teensy_interface/build/
+svn/robobot/teensy_interface/log_*/
 svn/robobot/teensy_interface/build/log*
 svn/robobot/teensy_interface/log_*/
 svn/robobot/mqtt_python/__pycache__

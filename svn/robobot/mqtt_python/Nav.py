@@ -28,20 +28,21 @@ class Nav:
         self.forward_flag = False
 
         #self.DISTANCIA_DESEADA = 0.41  # meters
-        self.MAX_SPEED = 0.4  # m/s
+        self.MAX_SPEED = 0.3  # m/s
         self.MAX_W_SPEED = 0.4
+        self.CAMERA_FOV = 1.047  # 60 grados en radianes
 
         # PID constants (tune later with real sensor input)
-        self.KP = 0.8
+        self.KP = 0.4
         self.KI = 0.02
-        self.KD = 0.1
+        self.KD = -0.1
 
-        self.KP_X = 0.8    # Ganancia Proporcional: velocidad de reacción inicial
-        self.KI_X = 0.1   # Ganancia Integral: corrige errores acumulados o fricción
-        self.KD_X = 0.1    # Ganancia Derivativa: evita que el robot oscile (frena antes de llegar)
+        self.KP_X = 0.75    # Ganancia Proporcional: velocidad de reacción inicial
+        self.KI_X = 0.5   # Ganancia Integral: corrige errores acumulados o fricción
+        self.KD_X = -1    # Ganancia Derivativa: evita que el robot oscile (frena antes de llegar)
 
-        self.TOLERANCIA_R = 5          # pixels (fallback for camera detectors)
-        self.TOLERANCIA_R_RAD = 0.05      # radians (~8.6 deg, for bearing-based detectors)
+        self.TOLERANCIA_R = 2          # pixels (fallback for camera detectors)
+        self.TOLERANCIA_R_RAD = 0.005      # radians (~8.6 deg, for bearing-based detectors)
         self.TOLERANCIA_D = 0.05
 
         self.error_acumulado = 0.0
@@ -94,19 +95,26 @@ class Nav:
 
                 # Use bearing (radians) from world-point detectors if available,
                 # otherwise fall back to pixel-based offset for camera detectors.
-                if "bearing" in self.target:
-                    error_rot = self.target["bearing"]  # radians; positive = target is left
-                    tol_rot = self.TOLERANCIA_R_RAD
-                else:
-                    img_center = self.target.get("image_width", 820) / 2.0
-                    error_rot = img_center - self.target["x"]  # pixels
-                    tol_rot = self.TOLERANCIA_R
+                
+                
+                img_width = self.target.get("image_width", 820)
+                img_center = img_width / 2.0
+
+                error_px = img_center - self.target["x"]
+
+                error_rot = error_px * (self.CAMERA_FOV / img_width)
+                tol_rot = self.TOLERANCIA_R_RAD
+                
+                
                 error = self.target["distance"] - self.desired_distance
+                
+                print(f"Distance to the ball: {self.target["distance"]}")
                 
                 if (self.TOLERANCIA_D < abs(error) and self.rot_flag == False and self.forward_flag == True):
 
                     # If heading drift grows while driving forward, re-enter
                     # the rotation phase before continuing.
+                    '''
                     if abs(error_rot) > (2.0 * tol_rot):
                         self.ctx.actions.drive.stop()
                         self.forward_flag = False
@@ -118,7 +126,7 @@ class Nav:
                         self.ultima_vez = ahora
                         time.sleep(0.05)
                         continue
-
+                    '''
                     # Forward PID only - no turning while driving
                     p_term = self.KP * error
                     self.error_acumulado += error * dt
@@ -172,7 +180,9 @@ class Nav:
                     
                     # Salida: Velocidad angular W
                     # Nota: Multiplicamos por -1 si el sistema de coordenadas del robot es inverso
+                    
                     w_speed = P + I + D
+                    print(f"w_speed: {w_speed}")
                     
                     # Saturación por seguridad
                     if w_speed > self.MAX_W_SPEED: w_speed = self.MAX_W_SPEED
@@ -194,9 +204,9 @@ class Nav:
                     self.rot_flag = False
                     self.forward_flag = True
                     print("Rotation aligned, moving forward")
-                    time.sleep(3)  # Control loop frequency
+                    time.sleep(2)  # Control loop frequency
                     
-                time.sleep(0.01)  # Control loop frequency
+                time.sleep(0.001)  # Control loop frequency
                 
             except Exception as e:
                 print(f"Error in go_to_target: {e}")
