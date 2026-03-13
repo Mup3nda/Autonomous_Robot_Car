@@ -22,33 +22,29 @@ class Nav:
         # navigation state
         self.rotation_phase = True
         self.forward_phase = False
-        self.filtered_distance = None
 
         # robot limits
-        self.MAX_LINEAR_SPEED = 0.3
+        self.MAX_LINEAR_SPEED = 0.2
         self.MAX_ANGULAR_SPEED = 0.6
 
         # camera parameters
         self.CAMERA_FOV = 1.047
 
-        # distance PID
-        self.KP_DIST = 0.4
-        self.KI_DIST = 0.0
-        self.KD_DIST = 0.1
+        # visual servoing rotation gain
+        self.K_ROT = 5.0
 
         # steering gain while moving
         self.K_STEER = 1.5
 
-        # visual servoing gain
-        self.K_ROT = 5.0
+        # forward controller using Y position
+        self.K_FORWARD = 0.002
+
+        # desired vertical position of the ball
+        self.DESIRED_Y = 550
 
         # tolerances
-        self.ROTATION_TOLERANCE = 0.005  # radians, ~3 degrees
-        self.DISTANCE_TOLERANCE = 0.02
-
-        # PID state
-        self.distance_error_integral = 0.0
-        self.last_distance_error = 0.0
+        self.ROTATION_TOLERANCE = 0.015
+        self.Y_TOLERANCE = 10
 
         # timing
         self.last_time = time.time()
@@ -88,30 +84,20 @@ class Nav:
                     continue
 
                 now = time.time()
-                dt = now - self.last_time
-
-                if dt <= 0:
-                    dt = 0.05
 
                 img_width = self.target.get("image_width", 820)
                 img_center = img_width / 2.0
 
+                # ---------- rotation error ----------
                 pixel_error = img_center - self.target["x"]
+                rotation_error = pixel_error * (self.CAMERA_FOV / img_width)
 
-                rotation_error = pixel_error * (self.CAMERA_FOV / img_width) # convert pixel error to radians
-                #print(f"Pixel error: {pixel_error}, Rotation error (radians): {rotation_error}")
-                distance = self.target["distance"]
-
-                alpha = 0.7
-                if self.filtered_distance is None:
-                    self.filtered_distance = distance
-                else:
-                    self.filtered_distance = alpha * self.filtered_distance + (1 - alpha) * distance
-
-                distance_error = self.filtered_distance - self.desired_distance
+                # ---------- y error ----------
+                ball_y = self.target["y"]
+                y_error = self.DESIRED_Y - ball_y
 
                 if should_log:
-                    print(f"Distance to ball: {self.target['distance']}")
+                    print(f"Ball y: {ball_y}, y_error: {y_error}")
 
                 # ---------------------------------------------------
                 # ROTATION PHASE
@@ -120,17 +106,13 @@ class Nav:
                 if self.rotation_phase:
 
                     if abs(rotation_error) > self.ROTATION_TOLERANCE:
-                        
-                        # visual servoing control (angular speed proportional to error, with a gain and saturation)
+
                         angular_speed = self.K_ROT * rotation_error * abs(rotation_error)
+
                         MIN_W = 0.15
 
                         if abs(angular_speed) < MIN_W:
                             angular_speed = MIN_W * (1 if angular_speed > 0 else -1)
-                        #a voing very small angular speeds that might not overcome friction
-                        
-                        #if abs(angular_speed) < 0.005:
-                        #    angular_speed = 0
 
                         if angular_speed > self.MAX_ANGULAR_SPEED:
                             angular_speed = self.MAX_ANGULAR_SPEED
@@ -141,10 +123,9 @@ class Nav:
 
                         if should_log:
                             print(
-                                f"Rotating | error={rotation_error:.3f}  w={angular_speed:.3f}"
+                                f"Rotating | rot_error={rotation_error:.3f}  w={angular_speed:.3f}"
                             )
 
-                        self.last_time = now
                         time.sleep(0.01)
                         continue
 
@@ -155,42 +136,36 @@ class Nav:
                         self.rotation_phase = False
                         self.forward_phase = True
 
-                        self.distance_error_integral = 0
-                        self.last_distance_error = 0
-
                 # ---------------------------------------------------
                 # FORWARD PHASE
                 # ---------------------------------------------------
 
                 if self.forward_phase:
-                    #print("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
-                    print(f"Distance error: {distance_error}, Rotation error: {rotation_error}")
-                    if abs(distance_error) <= self.DISTANCE_TOLERANCE:
+
+                    print(f"Y error: {y_error}, Rotation error: {rotation_error}")
+
+                    # stop condition
+                    if abs(y_error) <= self.Y_TOLERANCE:
 
                         print("Target reached")
 
                         self.ctx.actions.drive.stop()
                         self.hasReachedTarget = True
                         self.is_running = False
+
                         time.sleep(0.05)
                         continue
 
-                    # distance PID
-                    p_term = self.KP_DIST * distance_error
+                    # proportional forward controller
+                    linear_speed = self.K_FORWARD * y_error
 
-                    self.distance_error_integral += distance_error * dt
-                    i_term = self.KI_DIST * self.distance_error_integral
-
-                    d_term = self.KD_DIST * ((distance_error - self.last_distance_error) / dt)
-
-                    linear_speed = p_term + i_term + d_term
-
+                    # clamp forward speed
                     if linear_speed > self.MAX_LINEAR_SPEED:
                         linear_speed = self.MAX_LINEAR_SPEED
-                    if linear_speed < -self.MAX_LINEAR_SPEED:
-                        linear_speed = -self.MAX_LINEAR_SPEED
+                    if linear_speed < 0:
+                        linear_speed = 0
 
-                    # steering correction while moving
+                    # steering correction
                     angular_speed = self.K_STEER * rotation_error
 
                     if angular_speed > self.MAX_ANGULAR_SPEED:
@@ -202,11 +177,8 @@ class Nav:
 
                     if should_log:
                         print(
-                            f"Forward | dist_err={distance_error:.3f}  rot_err={rotation_error:.3f}  v={linear_speed:.3f}  w={angular_speed:.3f}"
+                            f"Forward | y_err={y_error:.1f} rot_err={rotation_error:.3f} v={linear_speed:.3f} w={angular_speed:.3f}"
                         )
-
-                    self.last_distance_error = distance_error
-                    self.last_time = now
 
                 time.sleep(0.03)
 
@@ -223,7 +195,7 @@ class Nav:
 
         if self.nav_thread and self.nav_thread.is_alive():
             self.nav_thread.join(timeout=1.0)
-            
+
     def hasReachedTarget(self):
-        
+
         return self.hasReachedTarget
