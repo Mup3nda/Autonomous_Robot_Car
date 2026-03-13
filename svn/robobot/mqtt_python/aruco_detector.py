@@ -11,6 +11,7 @@ from flask import Flask, Response   # Web server for MJPEG streaming
 import logging
 import yaml
 from scam_usb import cam_usb
+from scam import cam
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -62,7 +63,8 @@ class ArucoDetector:
         
     def start(self):
         # Initialize any necessary resources for target detection
-        cam_usb.setup()
+        cam.setup()
+        #cam_usb.setup()
         self.camera_matrix, self.dist_coeffs = self.load_camera_calibrations(self.camera_config)
         self.aruco_dict, self.parameters, self.detector = self.initialize_aruco_detector()
         
