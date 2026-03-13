@@ -6,7 +6,7 @@ import os
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from Nav import Nav
+from Nav import Nav #import nav2  for the new version
 from NavSmooth import NavSmooth
 
 
