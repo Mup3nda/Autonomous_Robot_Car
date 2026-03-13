@@ -49,15 +49,33 @@ class SBall:
     image_height = 480
     
     # Ball color detection parameters (RED ball by default)
-    # Red wraps around HSV spectrum, so we need two ranges
-    color_lower1 = (0, 245, 150)  # Lower red: H(0-10), S(min), V(min)
+    # Multiple colors supported: red, blue, white
+    color_detect_mode = "white"  # Which color to track
+    
+    # RED color detection (wraps around HSV spectrum)
+    color_lower1 = (0, 120, 80)   # Lower red: H(0-10), S(min), V(min)
     color_upper1 = (10, 255, 255)
-    color_lower2 = (170, 245, 150)  # Upper red: H(170-180), S(min), V(min)
+    color_lower2 = (170, 120, 80)  # Upper red: H(170-180), S(min), V(min)
     color_upper2 = (180, 255, 255)
     
+    # BLUE color detection
+    blue_lower = (90, 60, 60)
+    blue_upper = (135, 255, 255)
+    
+    # WHITE color detection
+    white_lower = (0, 0, 90)       # V down (shadow tolerant)
+    white_upper = (180, 60, 255)   # Keep S low so it stays "white"
+    
     # Ball detection thresholds
+    min_area = 350  # Minimum contour area (pixels)
+    max_area = 9000  # Maximum contour area
+    min_fill_ratio = 0.5  # Minimum (area / bounding_rect_area)
     min_radius = 10  # Minimum radius to consider valid (pixels)
-    min_circularity = 0.7  # Minimum circularity (0-1, 1=perfect circle)
+    min_circularity = 0.8  # Minimum circularity (0-1, 1=perfect circle)
+    
+    # Multi-ball tracking
+    locked_target = None  # Currently tracked ball
+    lock_distance = 120  # Max pixel distance for target continuity
     
     # Following control
     ballCtrl = False  # Whether ball following is active
@@ -88,21 +106,20 @@ class SBall:
     # Distance estimation (camera calibration)
     # Assuming known ball size: standard red ball ~7cm diameter
     ball_real_diameter = 0.07  # meters
+    
+    # Focal length: can be specified in pixels or converted from mm
+    # For Raspberry Pi Camera v2 with 3.68mm sensor width and 640px image width:
+    #   focal_length_pixels = (focal_length_mm * 640) / 3.68
+    # Example: 3.6mm lens -> focal_length = (3.6 * 640) / 3.68 = 627px
     focal_length = 600  # Approximate focal length (pixels) - needs calibration
     
     ##########################################################
     
-    def __init__(self, cam, gpio, service):
+    def __init__(self):
         """Initialize ball tracking module.
         
-        Args:
-            cam: Camera interface (scam.SCam instance)
-            gpio: GPIO interface for environment checks
-            service: MQTT service for sending commands
+        Module dependencies (cam, gpio, service) are set during setup().
         """
-        self.cam = cam
-        self.gpio = gpio
-        self.service = service
         pass
     
     ##########################################################
@@ -110,6 +127,13 @@ class SBall:
     def setup(self):
         """Start the ball tracking thread."""
         from uservice import service
+        from scam import cam
+        from sgpio import gpio
+        
+        # Set module dependencies
+        self.cam = cam
+        self.gpio = gpio
+        self.service = service
         
         if not self.cam.useCam:
             print("% Ball (sball.py):: Camera not available, ball tracking disabled")
@@ -171,6 +195,12 @@ class SBall:
     def detect_ball(self, frame):
         """Detect ball in the given frame using color and shape detection.
         
+        Supports multiple colors (red, blue, white) and uses advanced filtering:
+        - Area thresholding
+        - Fill ratio checking
+        - Circularity validation
+        - Multi-ball tracking with target locking
+        
         Args:
             frame: BGR image from camera
         """
@@ -178,53 +208,139 @@ class SBall:
         blurred = cv.GaussianBlur(frame, (11, 11), 0)
         hsv = cv.cvtColor(blurred, cv.COLOR_BGR2HSV)
         
-        # Create masks for red color detection
-        mask1 = cv.inRange(hsv, self.color_lower1, self.color_upper1)
-        mask2 = cv.inRange(hsv, self.color_lower2, self.color_upper2)
-        mask = cv.bitwise_or(mask1, mask2)
+        h, w = frame.shape[:2]
+        center_x = w // 2
+        
+        # Create color masks based on detection mode
+        if self.color_detect_mode == "red":
+            mask1 = cv.inRange(hsv, self.color_lower1, self.color_upper1)
+            mask2 = cv.inRange(hsv, self.color_lower2, self.color_upper2)
+            mask = cv.bitwise_or(mask1, mask2)
+        elif self.color_detect_mode == "blue":
+            mask = cv.inRange(hsv, self.blue_lower, self.blue_upper)
+        elif self.color_detect_mode == "white":
+            mask = cv.inRange(hsv, self.white_lower, self.white_upper)
+        else:
+            # Default to red
+            mask1 = cv.inRange(hsv, self.color_lower1, self.color_upper1)
+            mask2 = cv.inRange(hsv, self.color_lower2, self.color_upper2)
+            mask = cv.bitwise_or(mask1, mask2)
         
         # Morphological operations to remove noise
-        mask = cv.erode(mask, None, iterations=2)
-        mask = cv.dilate(mask, None, iterations=2)
+        kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (9, 9))
+        kernel2 = cv.getStructuringElement(cv.MORPH_ELLIPSE, (13, 13))
+        mask = cv.morphologyEx(mask, cv.MORPH_OPEN, kernel)
+        mask = cv.morphologyEx(mask, cv.MORPH_CLOSE, kernel2)
         
         # Find contours
         # Handle different OpenCV versions: older returns (img, cnts, hier), newer returns (cnts, hier)
         result = cv.findContours(mask.copy(), cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
         cnts = result[-2] if len(result) == 3 else result[0]
         
-        # Process detected contours
+        # Process all detected contours and filter candidates
+        valid_balls = []
         old_valid = self.ball_valid
         self.ball_valid = False
         
         if len(cnts) > 0:
-            # Find the largest contour (assume it's the ball)
-            c = max(cnts, key=cv.contourArea)
-            area = cv.contourArea(c)
-            
-            if area > 100:  # Minimum area threshold
+            for c in cnts:
+                area = cv.contourArea(c)
+                
+                # Area filtering
+                if area < self.min_area or area > self.max_area:
+                    continue
+                
+                # Get bounding rect for fill ratio check
+                (xr, yr, wr, hr) = cv.boundingRect(c)
+                rect_area = wr * hr
+                if rect_area == 0:
+                    continue
+                    
+                fill_ratio = area / rect_area
+                if fill_ratio < self.min_fill_ratio:
+                    continue
+                
+                # For white balls, check aspect ratio (should be roughly square)
+                if self.color_detect_mode == "white":
+                    aspect = wr / float(hr) if hr > 0 else 0
+                    if aspect < 0.7 or aspect > 1.5:
+                        continue
+                
+                # Circularity check
+                perimeter = cv.arcLength(c, True)
+                if perimeter == 0:
+                    continue
+                    
+                circularity = 4 * np.pi * area / (perimeter * perimeter)
+                if circularity < self.min_circularity:
+                    continue
+                
                 # Calculate minimum enclosing circle
                 ((x, y), radius) = cv.minEnclosingCircle(c)
                 
-                # Check circularity to filter non-ball objects
-                perimeter = cv.arcLength(c, True)
-                if perimeter > 0:
-                    circularity = 4 * np.pi * area / (perimeter * perimeter)
-                    
-                    if circularity > self.min_circularity and radius > self.min_radius:
-                        # Valid ball detected!
-                        self.ball_x = int(x)
-                        self.ball_y = int(y)
-                        self.ball_radius = int(radius)
-                        self.ball_valid = True
-                        self.ball_time = datetime.now()
-                        self.ball_update_cnt += 1
-                        
-                        # Update confidence (similar to lineValidCnt)
-                        if self.ball_confidence < 20:
-                            self.ball_confidence += 1
+                # Check radius
+                if radius < self.min_radius:
+                    continue
+                
+                # Check bounds
+                if int(y) >= h or int(x) >= w:
+                    continue
+                
+                # Valid ball candidate!
+                valid_balls.append({
+                    'x': x,
+                    'y': y,
+                    'radius': radius,
+                    'area': area,
+                    'circularity': circularity
+                })
         
-        # Decrease confidence if ball lost
-        if not self.ball_valid:
+        # Ball prioritization: sort by radius (size = distance proxy)
+        valid_balls.sort(key=lambda b: b['radius'], reverse=True)
+        
+        # Target locking: maintain continuity across frames
+        if len(valid_balls) > 0:
+            if self.locked_target is None:
+                # No locked target, take the largest (closest) ball
+                self.locked_target = valid_balls[0]
+            else:
+                # Try to match with tracked target
+                prev_x = self.locked_target['x']
+                prev_y = self.locked_target['y']
+                best_match = None
+                best_dist = 999999
+                
+                for ball in valid_balls:
+                    dist = np.sqrt((ball['x'] - prev_x)**2 + (ball['y'] - prev_y)**2)
+                    
+                    if dist < best_dist and dist < self.lock_distance:
+                        best_dist = dist
+                        best_match = ball
+                
+                # Update lock to best match, or re-pick if no continuity
+                if best_match is not None:
+                    self.locked_target = best_match
+                else:
+                    # Lost tracked target, relock to closest
+                    self.locked_target = valid_balls[0]
+        else:
+            # No balls detected
+            self.locked_target = None
+        
+        # Update ball detection state based on locked target
+        if self.locked_target is not None:
+            self.ball_x = int(self.locked_target['x'])
+            self.ball_y = int(self.locked_target['y'])
+            self.ball_radius = int(self.locked_target['radius'])
+            self.ball_valid = True
+            self.ball_time = datetime.now()
+            self.ball_update_cnt += 1
+            
+            # Update confidence
+            if self.ball_confidence < 20:
+                self.ball_confidence += 1
+        else:
+            # Decrease confidence if no ball
             if self.ball_confidence > 0:
                 self.ball_confidence -= 1
     
@@ -245,6 +361,37 @@ class SBall:
             print(f"% Ball (sball.py):: Ball following enabled (v={velocity:.2f}, target={target_distance:.2f}m)")
         else:
             print("% Ball (sball.py):: Ball following disabled")
+    
+    ##########################################################
+    
+    def set_color(self, color_name):
+        """Set the color to track.
+        
+        Args:
+            color_name: 'red', 'blue', or 'white'
+        """
+        if color_name in ['red', 'blue', 'white']:
+            self.color_detect_mode = color_name
+            print(f"% Ball (sball.py):: Color mode set to {color_name}")
+        else:
+            print(f"% Ball (sball.py):: Unknown color '{color_name}', keeping {self.color_detect_mode}")
+    
+    ##########################################################
+    
+    def set_focal_length_mm(self, focal_length_mm, sensor_width_mm=3.68):
+        """Convert focal length from mm to pixels and set it.
+        
+        Uses the formula: focal_length_pixels = (focal_length_mm * image_width) / sensor_width
+        
+        Args:
+            focal_length_mm: Focal length in millimeters (e.g., 3.6mm for Pi Camera)
+            sensor_width_mm: Camera sensor width (default 3.68mm for Pi Camera v2)
+                           For other cameras, measure or look up specifications
+        """
+        # Calculate focal length in pixels based on sensor geometry
+        self.focal_length = (focal_length_mm * self.image_width) / sensor_width_mm
+        print(f"% Ball (sball.py):: Focal length set to {focal_length_mm}mm = {self.focal_length:.0f}px "
+              f"(sensor_width={sensor_width_mm}mm)")
     
     ##########################################################
     
@@ -358,4 +505,4 @@ class SBall:
 
 
 # Global instance (similar to sedge pattern)
-ball = SBall(None, None, None)
+ball = SBall()

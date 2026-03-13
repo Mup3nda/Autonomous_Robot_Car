@@ -1,5 +1,0 @@
-% Pose logfile
-% 1 	Time (sec)
-% 2,3 	X, Y position (m)
-% 4 	Heading in radians (m)
-% 5 	Tilt angle, if calculated (rad)
