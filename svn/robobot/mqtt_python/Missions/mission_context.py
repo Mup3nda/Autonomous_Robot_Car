@@ -24,3 +24,22 @@ class MissionContext:
 
     def state_time_passed(self):
         return (datetime.now() - self.state_time).total_seconds()
+
+    def start_local_progress(self, name="default"):
+        """Store a local progress baseline using non-resettable odometry counters."""
+        progress_map = self.memory.setdefault("_local_progress", {})
+        progress_map[str(name)] = {
+            "tripA": float(self.pose.tripA),
+            "tripAh": float(self.pose.tripAh),
+            "time_s": t.time(),
+        }
+
+    def distance_since_start(self, name="default"):
+        """Return signed distance in meters since start_local_progress(name)."""
+        key = str(name)
+        progress_map = self.memory.setdefault("_local_progress", {})
+        marker = progress_map.get(key)
+        if marker is None:
+            self.start_local_progress(key)
+            return 0.0
+        return float(self.pose.tripA) - marker["tripA"]

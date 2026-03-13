@@ -20,11 +20,12 @@ class DriveTurnPiState(IntEnum):
 
 class DriveTurnPiObjective(Objective):
     name = "drive_turn_pi"
+    PROGRESS_KEY = "drive_turn_pi"
 
     def start(self, ctx):
         """Initialize: reset angle tracker and turn on green LED."""
         self.state = DriveTurnPiState.START
-        ctx.pose.tripBreset()  # Reset pose counter (includes angle)
+        ctx.start_local_progress(self.PROGRESS_KEY)
         ctx.actions.drive.leds(0, 100, 0)  # Green LED
         print("% Driving a Pi turn -------------------------")
 
@@ -37,19 +38,27 @@ class DriveTurnPiObjective(Objective):
             self.state = DriveTurnPiState.ROTATING
         elif self.state == DriveTurnPiState.ROTATING:
             # State 1: Rotating - check if π radians reached or timeout
-            # tripBh is the angle in radians
-            if ctx.pose.tripBh > 3.14 or ctx.pose.tripBtimePassed() > 15:
+            marker = ctx.memory["_local_progress"][self.PROGRESS_KEY]
+            turned = abs(ctx.pose.tripAh - marker["tripAh"])
+            elapsed = t.time() - marker["time_s"]
+            if turned > 3.14 or elapsed > 15:
                 ctx.actions.drive.stop()  # Stop rotation
                 self.state = DriveTurnPiState.STOPPED
         elif self.state == DriveTurnPiState.STOPPED:
             # State 2: Stopped - wait for rotation to settle (zero velocity and turnrate)
             if abs(ctx.pose.velocity()) < 0.001 and abs(ctx.pose.turnrate()) < 0.001:
+                marker = ctx.memory["_local_progress"][self.PROGRESS_KEY]
+                turned = abs(ctx.pose.tripAh - marker["tripAh"])
+                elapsed = t.time() - marker["time_s"]
                 print(
-                    f"# drive turned {ctx.pose.tripBh:.3f} rad in {ctx.pose.tripBtimePassed():.3f} seconds"
+                    f"# drive turned {turned:.3f} rad in {elapsed:.3f} seconds"
                 )
                 self._done = True  # Mark objective as complete
+        marker = ctx.memory["_local_progress"][self.PROGRESS_KEY]
+        turned = abs(ctx.pose.tripAh - marker["tripAh"])
+        elapsed = t.time() - marker["time_s"]
         print(
-            f"# turn {int(self.state)}, now {ctx.pose.tripBh:.3f} rad in {ctx.pose.tripBtimePassed():.3f} seconds; "
+            f"# turn {int(self.state)}, now {turned:.3f} rad in {elapsed:.3f} seconds; "
             f"left {ctx.actions.edge.get_left_position()}, right {ctx.actions.edge.get_right_position()}"
         )
 

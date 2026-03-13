@@ -8,6 +8,7 @@ The stop condition is based on odometry heading traveled (tripBh).
 """
 
 import math
+import time as t
 from enum import IntEnum
 
 from objective import Objective
@@ -22,6 +23,7 @@ class DriveCircleState(IntEnum):
 
 class DriveCircleObjective(Objective):
     name = "drive_circle"
+    PROGRESS_KEY = "drive_circle"
 
     def __init__(
         self,
@@ -75,8 +77,8 @@ class DriveCircleObjective(Objective):
         self.tick_count = 0
         self.target_angle_rad = 2.0 * math.pi * self.revolutions
         self._effective_turn_cmd = self._compute_turn_cmd()
+        ctx.start_local_progress(self.PROGRESS_KEY)
 
-        ctx.pose.tripBreset()
         ctx.actions.drive.leds(0, 100, 0)
         print(
             "% Objective: Drive Circle "
@@ -97,8 +99,9 @@ class DriveCircleObjective(Objective):
             return
 
         if self.state == DriveCircleState.DRIVING:
-            turned = abs(ctx.pose.tripBh)
-            elapsed = ctx.pose.tripBtimePassed()
+            marker = ctx.memory["_local_progress"][self.PROGRESS_KEY]
+            turned = abs(ctx.pose.tripAh - marker["tripAh"])
+            elapsed = t.time() - marker["time_s"]
 
             if turned >= self.target_angle_rad or elapsed >= self.timeout_s:
                 ctx.actions.drive.stop()
@@ -112,11 +115,15 @@ class DriveCircleObjective(Objective):
 
         if self.state == DriveCircleState.STOPPED:
             if abs(ctx.pose.velocity()) <= self.settle_velocity_threshold:
+                marker = ctx.memory["_local_progress"][self.PROGRESS_KEY]
+                turned_total = abs(ctx.pose.tripAh - marker["tripAh"])
+                distance_total = ctx.distance_since_start(self.PROGRESS_KEY)
+                elapsed_total = t.time() - marker["time_s"]
                 print(
                     "% Drive Circle complete: "
-                    f"turned={abs(ctx.pose.tripBh):.3f} rad, "
-                    f"distance={ctx.pose.tripB:.3f}m, "
-                    f"time={ctx.pose.tripBtimePassed():.2f}s"
+                    f"turned={turned_total:.3f} rad, "
+                    f"distance={distance_total:.3f}m, "
+                    f"time={elapsed_total:.2f}s"
                 )
                 self._done = True
 
