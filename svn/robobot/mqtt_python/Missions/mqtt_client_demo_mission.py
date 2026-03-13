@@ -18,7 +18,7 @@ from spose import pose
 from sir import ir
 from scam import cam
 from sedge import edge
-from sball import ball
+
 from sgpio import gpio
 from uservice import service
 
@@ -31,8 +31,11 @@ from Objectives.drive_turn_pi_objective import DriveTurnPiObjective
 from Objectives.line_turn_image_objective import LineTurnImageObjective
 from Objectives.drive_to_line_objective import DriveToLineObjective
 from Objectives.drive_one_meter_objective import DriveOneMeterObjective
-from Objectives.drive_to_ball_objective import DriveToBallObjective
-from Objectives.look_for_ball_objective import LookForBallObjective
+from Objectives.navigate_to_blue_ball_objective import NavigateToBallObjective
+from Objectives.look_for_blue_ball_objective import LookForBlueBallObjective
+from Objectives.search_and_navigate_to_blue_ball_objective import SearchAndNavigateToBlueBall
+from Objectives.drive_square_world_points_objective import DriveSquareWorldPointsObjective
+
 
 # This is a demo mission that can be used to test the robot and MQTT connection.
 def build_objectives():
@@ -42,10 +45,14 @@ def build_objectives():
         return [DriveTurnPiObjective()]
     if service.args.edge:
         return [DriveToLineObjective()]
-    if service.args.ball:
-        return [DriveToBallObjective()]
+    if service.args.SearchAndNavBlueball:
+        return [SearchAndNavigateToBlueBall()]
     if service.args.look_ball:
-        return [LookForBallObjective()]
+        return [LookForBlueBallObjective()]
+    if service.args.nav_ball:
+        return [NavigateToBallObjective()]
+    if service.args.square_world:
+        return [DriveSquareWorldPointsObjective()]
     return [LineTurnImageObjective()]
 
 
@@ -61,7 +68,7 @@ if __name__ == "__main__":
         print("% Starting")
         service.setup("localhost")
         if service.connected:
-            actions = RobotActions(service, gpio, cam, edge, ball)
+            actions = RobotActions(service, gpio, cam, edge)
             ctx = MissionContext(actions)
             objectives = build_objectives()
             runner = MissionRunner(objectives, ctx)
