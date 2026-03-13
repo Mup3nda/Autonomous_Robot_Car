@@ -2,6 +2,7 @@
 
 import os
 import sys
+import time as t
 
 from svn.robobot.mqtt_python.Missions.Objectives import drive_to_waypoint_objective
 from svn.robobot.mqtt_python.Missions.Objectives.drive_to_line_objective import DriveToLineObjective
@@ -69,11 +70,18 @@ def build_objectives():
     return objectives
 
 #function that makes sure to tell the Arm to stay at its current position, so it doesn't flop around during the mission
-def keep_arm_position():
-    # Implementation for keeping arm position
-    # lets add a arm state to ctx.memory that tracks the current arm position, and then in each tick of the mission, we can send a command to hold that position
-    # when we call ctx.arm.
-    pass
+def keep_arm_position(ctx, hold_interval_s=0.25):
+    """Re-send the current arm target periodically to keep servo position stable."""
+    if "_arm_state" not in ctx.memory:
+        return
+
+    now = t.time()
+    last_sent = float(ctx.memory.get("_arm_hold_last_sent_s", 0.0))
+    if now - last_sent < float(hold_interval_s):
+        return
+
+    ctx.actions.arm.hold_position()
+    ctx.memory["_arm_hold_last_sent_s"] = now
 
 
 if __name__ == "__main__":
@@ -89,8 +97,10 @@ if __name__ == "__main__":
         if service.connected:
             actions = RobotActions(service, gpio, cam, edge)
             ctx = MissionContext(actions)
+            ctx.actions.arm.bind_memory(ctx.memory)
+            ctx.actions.arm.move_up()
             objectives = build_objectives()
-            runner = MissionRunner(objectives, ctx)
+            runner = MissionRunner(objectives, ctx, tick_hook=keep_arm_position)
             runner.run()
         service.terminate()
     print("% Main Terminated")
