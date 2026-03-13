@@ -36,3 +36,11 @@ __pycache__/
 svn/robobot/mqtt_python/__pycache__/
 svn/robobot/mqtt_python/logfile.txt
 svn/robobot/teensy_interface/build
+svn/robobot/mqtt_python/Missions/logs
+.vscode
+.venv
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+*.log
