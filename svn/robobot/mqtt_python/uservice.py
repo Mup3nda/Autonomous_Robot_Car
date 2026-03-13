@@ -41,10 +41,10 @@ from sir import ir
 from srobot import robot
 from scam import cam
 from sedge import edge
-from sball import ball
 from sgpio import gpio
 from ulog import flog
 import psutil
+
 
 class UService:
   host = 'IP-setup'
@@ -135,7 +135,7 @@ class UService:
     imu.setup()
     cam.setup()
     edge.setup()
-    ball.setup()
+  
     print(f"% (uservice.py) Setup finished with connected={self.connected}")
     if self.args.level:
       print(f"% Command line argument '--level'={self.args.level} but not implemented")
@@ -365,6 +365,7 @@ class UService:
     cam.terminate()
     gpio.terminate()
     flog.terminate()
+    
     self.startTime = datetime.now()
     print(self.startTime.strftime("Ended at %Y-%m-%d %H:%M:%S.%f"))
 
