@@ -27,7 +27,7 @@ CENTERING_TIMEOUT_S = 8.0
 FOLLOW_VALID_CONFIDENCE = 2
 LOST_LINE_TIMEOUT_S = 5.0
 STOPPED_VELOCITY_EPS = 0.001
-follow_left = False  # Set to True to follow line on left side instead of right
+FOLLOW_LEFT = False  # Set to True to follow line on left side instead of right
 
 
 class DriveToLineState(IntEnum):
@@ -42,6 +42,19 @@ class DriveToLineObjective(Objective):
     name = "drive_to_line"
     SEARCH_PROGRESS_KEY = "drive_to_line_search"
     ALONG_LINE_PROGRESS_KEY = "drive_to_line_along"
+
+    def __init__(
+        self,
+        follow_left=FOLLOW_LEFT,
+        follow_speed=FOLLOW_SPEED,
+        search_speed=SEARCH_SPEED,
+        centering_speed=CENTERING_SPEED,
+    ):
+        super().__init__()
+        self.follow_left = bool(follow_left)
+        self.follow_speed = float(follow_speed)
+        self.search_speed = float(search_speed)
+        self.centering_speed = float(centering_speed)
 
     def start(self, ctx):
         """Initialize local progress trackers without resetting global odometry."""
@@ -58,7 +71,7 @@ class DriveToLineObjective(Objective):
         """Update objective state and control the robot."""
         if self.state == DriveToLineState.START:
             # State 0: Start driving forward (IR check was removed)
-            ctx.actions.drive.rc(SEARCH_SPEED, 0.0)  # Search speed, straight
+            ctx.actions.drive.rc(self.search_speed, 0.0)  # Search speed, straight
             ctx.actions.drive.lognow(3)  # Log sensor data
             ctx.actions.drive.servo(1, -800, 300)  # Adjust servo
             self.state = DriveToLineState.SEARCHING
@@ -73,7 +86,7 @@ class DriveToLineObjective(Objective):
                 self.state = DriveToLineState.STOPPED
             if ctx.actions.edge.is_line_valid(confidence=LINE_FOUND_CONFIDENCE):
                 # Line detected! Switch to centering mode at low speed
-                ctx.actions.edge.start_following(velocity=CENTERING_SPEED, follow_left=follow_left)
+                ctx.actions.edge.start_following(velocity=self.centering_speed, follow_left=self.follow_left)
                 ctx.actions.arm.move_up()  # Center servo
                 self.dist_to_line = search_dist  # Record distance to line
                 ctx.start_local_progress(self.ALONG_LINE_PROGRESS_KEY)
@@ -90,7 +103,7 @@ class DriveToLineObjective(Objective):
             timed_out = now >= self.centering_deadline
             ctx.actions.arm.move_up()  # Center servo
             if (centered and centered_long_enough) or timed_out:
-                ctx.actions.edge.start_following(velocity=FOLLOW_SPEED, follow_left=False)
+                ctx.actions.edge.start_following(velocity=self.follow_speed, follow_left=self.follow_left)
                 self.state = DriveToLineState.LINE_FOLLOWING
         elif self.state == DriveToLineState.STOPPED:
             # State 2: Stopped after timeout - wait for robot to settle
