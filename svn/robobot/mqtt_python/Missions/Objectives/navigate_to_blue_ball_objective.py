@@ -48,7 +48,7 @@ class NavigateToBallObjective(Objective):
         
         # Create detector for blue balls
         detector = SBall(cam=ctx.cam, gpio=ctx.gpio, service=ctx.service)
-        detector.set_detection_color("blue")
+        detector.set_detection_color("red_orange")  # Assuming SBall detects red balls; adjust if needed
         
         # Setup navigation action with this detector
         ctx.actions.navigation.setup_detector(detector)

@@ -22,28 +22,29 @@ class Nav:
         # navigation state
         self.rotation_phase = True
         self.forward_phase = False
+        self.filtered_distance = None
 
         # robot limits
         self.MAX_LINEAR_SPEED = 0.3
-        self.MAX_ANGULAR_SPEED = 0.4
+        self.MAX_ANGULAR_SPEED = 0.6
 
         # camera parameters
         self.CAMERA_FOV = 1.047
 
         # distance PID
         self.KP_DIST = 0.4
-        self.KI_DIST = 0.02
-        self.KD_DIST = -0.1
+        self.KI_DIST = 0.0
+        self.KD_DIST = 0.1
 
         # steering gain while moving
         self.K_STEER = 1.5
 
         # visual servoing gain
-        self.K_ROT = 2.0
+        self.K_ROT = 5.0
 
         # tolerances
-        self.ROTATION_TOLERANCE = 0.005
-        self.DISTANCE_TOLERANCE = 0.05
+        self.ROTATION_TOLERANCE = 0.005  # radians, ~3 degrees
+        self.DISTANCE_TOLERANCE = 0.02
 
         # PID state
         self.distance_error_integral = 0.0
@@ -63,6 +64,7 @@ class Nav:
             return
 
         self.is_running = True
+        self.hasReachedTarget = False
         self.nav_thread = threading.Thread(target=self.go_to_target, daemon=True)
         self.nav_thread.start()
 
@@ -97,8 +99,16 @@ class Nav:
                 pixel_error = img_center - self.target["x"]
 
                 rotation_error = pixel_error * (self.CAMERA_FOV / img_width) # convert pixel error to radians
+                #print(f"Pixel error: {pixel_error}, Rotation error (radians): {rotation_error}")
+                distance = self.target["distance"]
 
-                distance_error = self.target["distance"] - self.desired_distance
+                alpha = 0.7
+                if self.filtered_distance is None:
+                    self.filtered_distance = distance
+                else:
+                    self.filtered_distance = alpha * self.filtered_distance + (1 - alpha) * distance
+
+                distance_error = self.filtered_distance - self.desired_distance
 
                 if should_log:
                     print(f"Distance to ball: {self.target['distance']}")
@@ -113,10 +123,14 @@ class Nav:
                         
                         # visual servoing control (angular speed proportional to error, with a gain and saturation)
                         angular_speed = self.K_ROT * rotation_error * abs(rotation_error)
+                        MIN_W = 0.15
 
+                        if abs(angular_speed) < MIN_W:
+                            angular_speed = MIN_W * (1 if angular_speed > 0 else -1)
                         #a voing very small angular speeds that might not overcome friction
-                        if abs(angular_speed) < 0.02:
-                            angular_speed = 0
+                        
+                        #if abs(angular_speed) < 0.005:
+                        #    angular_speed = 0
 
                         if angular_speed > self.MAX_ANGULAR_SPEED:
                             angular_speed = self.MAX_ANGULAR_SPEED
@@ -149,12 +163,15 @@ class Nav:
                 # ---------------------------------------------------
 
                 if self.forward_phase:
-
+                    #print("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+                    print(f"Distance error: {distance_error}, Rotation error: {rotation_error}")
                     if abs(distance_error) <= self.DISTANCE_TOLERANCE:
 
                         print("Target reached")
 
                         self.ctx.actions.drive.stop()
+                        self.hasReachedTarget = True
+                        self.is_running = False
                         time.sleep(0.05)
                         continue
 
@@ -191,7 +208,7 @@ class Nav:
                     self.last_distance_error = distance_error
                     self.last_time = now
 
-                time.sleep(0.01)
+                time.sleep(0.03)
 
             except Exception as e:
 
@@ -206,3 +223,7 @@ class Nav:
 
         if self.nav_thread and self.nav_thread.is_alive():
             self.nav_thread.join(timeout=1.0)
+            
+    def hasReachedTarget(self):
+        
+        return self.hasReachedTarget
