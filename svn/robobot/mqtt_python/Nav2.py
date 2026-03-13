@@ -24,8 +24,8 @@ class Nav:
         self.forward_phase = False
 
         # robot limits
-        self.MAX_LINEAR_SPEED = 0.2
-        self.MAX_ANGULAR_SPEED = 0.6
+        self.MAX_LINEAR_SPEED = 0.25
+        self.MAX_ANGULAR_SPEED = 0.4
 
         # camera parameters
         self.CAMERA_FOV = 1.047
@@ -37,14 +37,14 @@ class Nav:
         self.K_STEER = 1.5
 
         # forward controller using Y position
-        self.K_FORWARD = 0.002
+        self.K_FORWARD = 0.0015
 
         # desired vertical position of the ball
-        self.DESIRED_Y = 550
+        self.DESIRED_Y = 545
 
         # tolerances
         self.ROTATION_TOLERANCE = 0.015
-        self.Y_TOLERANCE = 10
+        self.Y_TOLERANCE = 5
 
         # timing
         self.last_time = time.time()
@@ -75,7 +75,7 @@ class Nav:
 
                 self.target = self.detector.get_target()
 
-                if self.target is None:
+                if self.target['radius'] is None:
 
                     if should_log:
                         print("No target detected")
@@ -96,8 +96,8 @@ class Nav:
                 ball_y = self.target["y"]
                 y_error = self.DESIRED_Y - ball_y
 
-                if should_log:
-                    print(f"Ball y: {ball_y}, y_error: {y_error}")
+
+                print(f"Ball y: {ball_y}, y_error: {y_error}")
 
                 # ---------------------------------------------------
                 # ROTATION PHASE
@@ -143,12 +143,18 @@ class Nav:
                 if self.forward_phase:
 
                     print(f"Y error: {y_error}, Rotation error: {rotation_error}")
-
-                    # stop condition
-                    if abs(y_error) <= self.Y_TOLERANCE:
+                    print(f"Target info: {self.target}")
+                    
+                    if self.target['radius'] is None:
+                        print("Lost target during forward motion")
+                        self.ctx.actions.drive.rc(-0.2, 0)
+                        time.sleep(0.100)
+                        continue
+                   
+                    if y_error <= self.Y_TOLERANCE:
 
                         print("Target reached")
-
+                        time.sleep(1.5)
                         self.ctx.actions.drive.stop()
                         self.hasReachedTarget = True
                         self.is_running = False
