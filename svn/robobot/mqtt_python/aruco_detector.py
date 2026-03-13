@@ -68,11 +68,15 @@ class ArucoDetector:
         
         logger.info("% ArucoDetector:: Setup complete")
     
-    def get_target(self):
+    def get_target(self, target_id=None):
         # Placeholder for target detection logic
         # In a real implementation, this would return the detected target's position and confidence
-        frame, target_info = self.detect_aruco(cam_usb, self.detector, self.camera_matrix, self.dist_coeffs)
-        return frame, target_info
+        return self.detect_aruco(
+            cam_usb, 
+            self.detector, 
+            self.camera_matrix, 
+            self.dist_coeffs, target_id=target_id
+        )
     
     def stop(self):
         # Clean up any resources if necessary
@@ -84,6 +88,7 @@ class ArucoDetector:
         ap = argparse.ArgumentParser()
         ap.add_argument("-v", "--video", metavar="PATH",  help="Path to video file (optional, default: Pi camera)")
         ap.add_argument("-s", "--stream", action="store_true", help="Serve MJPEG stream in browser instead of cv2.imshow")
+        ap.add_argument("-t", "--target-id", type=int, default=None, metavar="ID", help="Detect only this ArUco marker ID (default: detect all)")
         ap.add_argument("-H", "--host", default="0.0.0.0", metavar="IP",  help="Host/IP to bind the MJPEG server        (default: 0.0.0.0)")
         ap.add_argument("-p", "--port", type=int, default=5000,   metavar="PORT", help="Port to serve the MJPEG stream on       (default: 5000)")
         ap.add_argument("-q", "--jpeg-quality", type=int, default=70, metavar="1-100",  help="JPEG compression quality for streaming  (default: 70)")
@@ -122,12 +127,8 @@ class ArucoDetector:
     
         return obj_points
     
-    def detect_aruco(self, cam, detector, camera_matrix, dist_coeffs):
+    def detect_aruco(self, cam, detector, camera_matrix, dist_coeffs, target_id=None):
         ok, frame, timestamp = cam.getImage()
-        ## For webcam
-        #ret, frame = cap.read()
-        # if not ret:
-        #     break
         if not ok or frame is None:
             return None, {}
 
@@ -138,14 +139,18 @@ class ArucoDetector:
 
         if marker_ids is not None and len(marker_ids) > 0:
             # Draw detected markers on the frame
+            
             cv2.aruco.drawDetectedMarkers(frame, corners, marker_ids)
             
             for marker_corners, marker_id in zip(corners, marker_ids):
                 
-                _marker_id = marker_id[0]
-                
-                if _marker_id in self.MARKER_SIZES:
-                    _marker_size = self.MARKER_SIZES[_marker_id]
+                current_id = int(marker_id[0])
+
+                if target_id is not None and current_id != target_id:
+                    continue
+
+                if current_id in self.MARKER_SIZES:
+                    _marker_size = self.MARKER_SIZES[current_id]
                     
                 else:
                     logger.info("Did not find the marker id in he defined list")
@@ -176,29 +181,29 @@ class ArucoDetector:
                     distance_cm = distance*100
                 
                     
-                    detected_markers[int(_marker_id)] = {
+                    detected_markers[current_id] = {
                         "x": float(round(x_cm, 4)),
                         "y": float(round(y_cm, 4)),
                         "z": float(round(z_cm, 4)),
                         "distance": float(round(distance_cm, 4))
                     }
                     
-                    print(f"ID:{_marker_id}, x: {x_cm:.2f} cm, y: {y_cm:.2f} cm, z: {z_cm:.2f} cm, distance: {distance_cm:.2f} cm")
+                    print(f"ID:{current_id}, x: {x_cm:.2f} cm, y: {y_cm:.2f} cm, z: {z_cm:.2f} cm, distance: {distance_cm:.2f} cm")
                     #print(list(detected_markers.keys()))
                     #print(detected_markers[0])
                     #print(detected_markers[0]['distance'])
-                    
                     #self.display_text(frame, image_points, x_cm, y_cm, z_cm, distance_cm)
-                    
+
+        self.detected_markers = detected_markers
         return frame, detected_markers
     
-    def run_mjpeg_stream(self, cam, detector, camera_matrix, dist_coeffs, args):
+    def run_mjpeg_stream(self, cam, detector, camera_matrix, dist_coeffs, args, target_id=None):
         app = Flask(__name__)
         
         def generate():
             """Generator that yields JPEG frames in multipart format"""
             while True:
-                frame, _ = self.detect_aruco(cam, detector, camera_matrix, dist_coeffs)
+                frame, _ = self.detect_aruco(cam, detector, camera_matrix, dist_coeffs, target_id=target_id)
                 if frame is None:
                     break
                 
@@ -232,10 +237,10 @@ class ArucoDetector:
             cam.terminate()
             cv2.destroyAllWindows()
 
-    def run_local_gui(self, cam, detector, camera_matrix, dist_coeffs, args):
+    def run_local_gui(self, cam, detector, camera_matrix, dist_coeffs, args, target_id=None):
         try:
             while True:
-                frame, _ = self.detect_aruco(cam, detector, camera_matrix, dist_coeffs)
+                frame, _ = self.detect_aruco(cam, detector, camera_matrix, dist_coeffs, target_id=target_id)
                 
                 if frame is None:
                     break
@@ -279,8 +284,16 @@ if __name__=='__main__':
     
     logger.warning("Make sure you have included comand arguments")
     logger.info("Make sure you use correctg calibration file")
+
+    target_id = args.get("target_id")
+    if target_id is None:
+        logger.info("% ArucoDetector:: Detecting all known markers")
+    else:
+        logger.info(f"% ArucoDetector:: Detecting only marker ID {target_id}")
     
     if args.get("stream", False):
-        aruco.run_mjpeg_stream(cam_usb, aruco.detector, aruco.camera_matrix, aruco.dist_coeffs, args)
+        aruco.run_mjpeg_stream(cam_usb, aruco.detector, aruco.camera_matrix, aruco.dist_coeffs, args, target_id)
     else:
-        aruco.run_local_gui(cam_usb, aruco.detector, aruco.camera_matrix, aruco.dist_coeffs, args)
+        aruco.run_local_gui(cam_usb, aruco.detector, aruco.camera_matrix, aruco.dist_coeffs, args, target_id)
+        
+        

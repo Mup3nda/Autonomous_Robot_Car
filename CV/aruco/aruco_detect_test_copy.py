@@ -253,7 +253,6 @@ def run_local_gui(picam2, detector, camera_matrix, dist_coeffs, args):
                 break
             
             cv2.imshow("Aruco Detect", frame)
-            
             key = cv2.waitKey(1) & 0xFF
             if key == ord('q'):
                 break
