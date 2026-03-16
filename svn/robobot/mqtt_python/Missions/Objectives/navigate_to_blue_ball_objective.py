@@ -1,20 +1,10 @@
-"""Navigate To Ball Objective - Move towards detected ball target."""
+"""Navigate To Blue Ball Objective - Move towards detected ball target."""
 
-from enum import IntEnum
-
-from mission_context import MissionContext
-from objective import Objective
-from sball_saray import SBall
+from navigate_to_ball_objective import NavigateToBallObjective
 
 
-class NavigateToBallState(IntEnum):
-    MOVING = 0
-    COMPLETE = 1
-    DONE = 99
-
-
-class NavigateToBallObjective(Objective):
-    """Move the robot towards a detected ball target.
+class NavigateToBlueBallObjective(NavigateToBallObjective):
+    """Move the robot towards a detected blue ball target.
     
     This objective demonstrates how to use the Nav class with a TargetDetector:
     1. Setup a detector to find ball targets
@@ -35,47 +25,7 @@ class NavigateToBallObjective(Objective):
     """
     
     def __init__(self, desired_distance=0.41, print_interval=20, nav_mode="sequential"): #NavMode "sequential" or "smooth". Sequential is Nav.py Smooth is NavSmooth.py
-        super().__init__()
-        self.desired_distance = desired_distance
-        self.print_interval = print_interval
-        self.nav_mode = str(nav_mode).lower()
-        self.tick_count = 0
+        super().__init__(desired_distance=desired_distance, print_interval=print_interval, nav_mode=nav_mode, color="blue")
+  
 
-    def start(self, ctx: MissionContext):
-        """Initialize navigation to blue ball using NavigationAction."""
-        ctx.actions.arm.move_up()
-        self.state = NavigateToBallState.MOVING
-        self.tick_count = 0
-        
-        # Create detector for blue balls
-        detector = SBall(cam=ctx.cam, gpio=ctx.gpio, service=ctx.service)
-        detector.set_detection_color("blue")  # Assuming SBall detects red balls; adjust if needed
-        
-        # Setup navigation action with this detector
-        ctx.actions.navigation.setup_detector(detector)
-        ctx.actions.navigation.setup(desired_distance=self.desired_distance, ctx=ctx, nav_mode=self.nav_mode)
-        ctx.actions.navigation.start()
-        
-        print(f"% Objective: Navigate To Ball (target_distance={self.desired_distance}m, nav_mode={self.nav_mode})")
     
-    def tick(self, ctx: MissionContext):
-        """Execute one iteration of navigation."""
-        self.tick_count += 1
-        
-        # Check if navigation objective is complete
-        if ctx.actions.navigation.is_complete():
-            ctx.actions.arm.move_down()  # Deploy arm to pick up ball
-            self.state = NavigateToBallState.COMPLETE
-            self._done = True
-            print(f"% Navigate To Ball objective complete!")
-        elif self.tick_count % self.print_interval == 0:
-            # Print status periodically
-            target_info = ctx.actions.navigation.get_target_info()
-            if target_info:
-                print(f"% Navigating: dist={target_info.get('distance', 0):.2f}m, "
-                      f"conf={target_info.get('confidence', 0)}")
-
-    def stop(self, ctx: MissionContext):
-        """Clean up when objective is stopped or interrupted."""
-        ctx.actions.navigation.stop()
-        print(f"% Navigate To Ball objective stopped")

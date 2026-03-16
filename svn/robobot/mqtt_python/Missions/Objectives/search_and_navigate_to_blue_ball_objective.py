@@ -2,7 +2,7 @@
 
 from objective import CompositeObjective
 from Objectives.look_for_blue_ball_objective import LookForBlueBallObjective
-from Objectives.navigate_to_blue_ball_objective import NavigateToBallObjective
+from Objectives.navigate_to_blue_ball_objective import NavigateToBlueBallObjective
 
 
 class SearchAndNavigateToBlueBall(CompositeObjective):
@@ -24,7 +24,7 @@ class SearchAndNavigateToBlueBall(CompositeObjective):
                 min_confidence=min_confidence,
                 print_interval=search_print_interval,
             ),
-            NavigateToBallObjective(
+            NavigateToBlueBallObjective(
                 desired_distance=desired_distance,
                 print_interval=navigate_print_interval,
                 nav_mode="sequential"
