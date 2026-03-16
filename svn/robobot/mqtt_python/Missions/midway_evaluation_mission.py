@@ -2,7 +2,6 @@
 
 import os
 import sys
-import time as t
 
 from svn.robobot.mqtt_python.Missions.Objectives import drive_to_waypoint_objective
 from svn.robobot.mqtt_python.Missions.Objectives.drive_to_line_objective import DriveToLineObjective
@@ -25,6 +24,8 @@ from mission_context import MissionContext
 from Objectives.drive_circle_objective import DriveCircleObjective
 from Objectives.drive_to_waypoint_objective import DriveToWaypointObjective
 from Objectives.search_and_navigate_to_blue_ball_objective import SearchAndNavigateToBlueBall
+from Objectives.arm_up_objective import ArmUpObjective
+from Objectives.arm_down_objective import ArmDownObjective
 
 
 # Roundabout tuning parameters.
@@ -40,6 +41,7 @@ CIRCLE_TIMEOUT_S = 40.0
 # Add objectives in the list below in the exact order they should execute.
 def build_objectives():
     objectives = [
+        ArmUpObjective(),
         DriveToLineObjective(
             follow_left=True,
             follow_speed=0.8,
@@ -62,27 +64,13 @@ def build_objectives():
             nav_mode="smooth",
         ),
         SearchAndNavigateToBlueBall(),
+        ArmDownObjective(),
         # Next objectives for midpoint demo can be appended here.
         # DriveToLineObjective(),
         # FollowLineOpenSpaceObjective(),
         # ExtraShowcaseObjective(),
     ]
     return objectives
-
-#function that makes sure to tell the Arm to stay at its current position, so it doesn't flop around during the mission
-def keep_arm_position(ctx, hold_interval_s=0.25):
-    """Re-send the current arm target periodically to keep servo position stable."""
-    if "_arm_state" not in ctx.memory:
-        return
-
-    now = t.time()
-    last_sent = float(ctx.memory.get("_arm_hold_last_sent_s", 0.0))
-    if now - last_sent < float(hold_interval_s):
-        return
-
-    ctx.actions.arm.hold_position()
-    ctx.memory["_arm_hold_last_sent_s"] = now
-
 
 if __name__ == "__main__":
     if service.process_running("midway-evaluation-mission"):
@@ -100,7 +88,7 @@ if __name__ == "__main__":
             ctx.actions.arm.bind_memory(ctx.memory)
             ctx.actions.arm.move_up()
             objectives = build_objectives()
-            runner = MissionRunner(objectives, ctx, tick_hook=keep_arm_position)
+            runner = MissionRunner(objectives, ctx)
             runner.run()
         service.terminate()
     print("% Main Terminated")

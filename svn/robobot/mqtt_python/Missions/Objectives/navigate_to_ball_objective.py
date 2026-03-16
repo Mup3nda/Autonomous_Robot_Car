@@ -44,7 +44,7 @@ class NavigateToBallObjective(Objective):
 
     def start(self, ctx: MissionContext):
         """Initialize navigation to blue ball using NavigationAction."""
-        ctx.actions.arm.move_up()
+        #ctx.actions.arm.move_up()
         self.state = NavigateToBallState.MOVING
         self.tick_count = 0
         
@@ -65,7 +65,7 @@ class NavigateToBallObjective(Objective):
         
         # Check if navigation objective is complete
         if ctx.actions.navigation.is_complete():
-            ctx.actions.arm.move_down()  # Deploy arm to pick up ball
+            #ctx.actions.arm.move_down()  # Deploy arm to pick up ball
             self.state = NavigateToBallState.COMPLETE
             self._done = True
             print(f"% Navigate To Ball objective complete!")
