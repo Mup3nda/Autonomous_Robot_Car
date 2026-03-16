@@ -1,6 +1,6 @@
 """Navigate To Blue Ball Objective - Move towards detected ball target."""
 
-from navigate_to_ball_objective import NavigateToBallObjective
+from Objectives.navigate_to_ball_objective import NavigateToBallObjective
 
 
 class NavigateToBlueBallObjective(NavigateToBallObjective):

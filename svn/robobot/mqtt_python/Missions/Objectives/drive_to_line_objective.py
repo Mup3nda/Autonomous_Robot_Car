@@ -22,10 +22,10 @@ SEARCH_MAX_DISTANCE_M = 1.0
 SEARCH_TIMEOUT_S = 15.0
 LINE_FOUND_CONFIDENCE = 4
 CENTERED_CONFIDENCE = 8
-CENTERED_MIN_TIME_S = 4.0
-CENTERING_TIMEOUT_S = 8.0
-FOLLOW_VALID_CONFIDENCE = 2
-LOST_LINE_TIMEOUT_S = 5.0
+CENTERED_MIN_TIME_S = 2.0
+CENTERING_TIMEOUT_S = 4.0
+FOLLOW_VALID_CONFIDENCE = 1
+LOST_LINE_TIMEOUT_S = 5
 STOPPED_VELOCITY_EPS = 0.001
 FOLLOW_LEFT = False  # Set to True to follow line on left side instead of right
 
@@ -49,12 +49,14 @@ class DriveToLineObjective(Objective):
         follow_speed=FOLLOW_SPEED,
         search_speed=SEARCH_SPEED,
         centering_speed=CENTERING_SPEED,
+        lost_line_timeout_s=LOST_LINE_TIMEOUT_S,
     ):
         super().__init__()
         self.follow_left = bool(follow_left)
         self.follow_speed = float(follow_speed)
         self.search_speed = float(search_speed)
         self.centering_speed = float(centering_speed)
+        self.lost_line_timeout_s = float(lost_line_timeout_s)
 
     def start(self, ctx):
         """Initialize local progress trackers without resetting global odometry."""
@@ -73,7 +75,6 @@ class DriveToLineObjective(Objective):
             # State 0: Start driving forward (IR check was removed)
             ctx.actions.drive.rc(self.search_speed, 0.0)  # Search speed, straight
             ctx.actions.drive.lognow(3)  # Log sensor data
-            ctx.actions.drive.servo(1, -800, 300)  # Adjust servo
             self.state = DriveToLineState.SEARCHING
         elif self.state == DriveToLineState.SEARCHING:
             # State 1: Searching for line while driving forward
@@ -87,7 +88,6 @@ class DriveToLineObjective(Objective):
             if ctx.actions.edge.is_line_valid(confidence=LINE_FOUND_CONFIDENCE):
                 # Line detected! Switch to centering mode at low speed
                 ctx.actions.edge.start_following(velocity=self.centering_speed, follow_left=self.follow_left)
-                ctx.actions.arm.move_up()  # Center servo
                 self.dist_to_line = search_dist  # Record distance to line
                 ctx.start_local_progress(self.ALONG_LINE_PROGRESS_KEY)
                 self.along_line_started = True
@@ -101,7 +101,6 @@ class DriveToLineObjective(Objective):
             centered = ctx.actions.edge.is_line_valid(confidence=CENTERED_CONFIDENCE)
             centered_long_enough = now - self.centering_start_time > CENTERED_MIN_TIME_S
             timed_out = now >= self.centering_deadline
-            ctx.actions.arm.move_up()  # Center servo
             if (centered and centered_long_enough) or timed_out:
                 ctx.actions.edge.start_following(velocity=self.follow_speed, follow_left=self.follow_left)
                 self.state = DriveToLineState.LINE_FOLLOWING
@@ -110,9 +109,8 @@ class DriveToLineObjective(Objective):
             if abs(ctx.pose.velocity()) < STOPPED_VELOCITY_EPS:
                 self.state = DriveToLineState.DONE  # Mark as done
         elif self.state == DriveToLineState.LINE_FOLLOWING:
-            ctx.actions.drive.servo(1, -800, 300)  # Adjust servo
             # State 10: Following line - check if line is still valid
-            if not ctx.actions.edge.is_line_valid(confidence=FOLLOW_VALID_CONFIDENCE) and ctx.actions.edge.last_seen_time_passed() > LOST_LINE_TIMEOUT_S:
+            if not ctx.actions.edge.is_line_valid(confidence=FOLLOW_VALID_CONFIDENCE) and ctx.actions.edge.last_seen_time_passed() > self.lost_line_timeout_s:
                 # Lost the line - stop and try to recover
                 ctx.actions.edge.stop_following()
                 ctx.actions.drive.stop()
@@ -130,7 +128,6 @@ class DriveToLineObjective(Objective):
                 f"{along_line_dist:.3f}m in {along_line_time:.3f} seconds"
             )
             ctx.actions.drive.stop()
-            ctx.actions.drive.servo(1, 500, 200)  # Position servo
             self._done = True  # Mark objective as complete
 
     def stop(self, ctx):

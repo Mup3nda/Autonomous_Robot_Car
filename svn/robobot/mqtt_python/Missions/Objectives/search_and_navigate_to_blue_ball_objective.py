@@ -12,7 +12,7 @@ class SearchAndNavigateToBlueBall(CompositeObjective):
 
     def __init__(
         self,
-        turn_rate=0.18,
+        turn_rate=0.5,
         min_confidence=1,
         search_print_interval=20,
         desired_distance=0.41,

@@ -1,6 +1,6 @@
 """Look For Blue Ball Objective - rotate until blue ball is detected."""
 
-from look_for_ball_objective import LookForBallObjective
+from Objectives.look_for_ball_objective import LookForBallObjective
 
 
 class LookForBlueBallObjective(LookForBallObjective):

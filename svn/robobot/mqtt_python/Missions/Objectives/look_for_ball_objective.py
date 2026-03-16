@@ -13,7 +13,7 @@ class LookForBlueBallState(IntEnum):
 	DONE = 99
 
 
-class LookForBlueBallObjective(Objective):
+class LookForBallObjective(Objective):
 	"""Rotate in place until the ball detector sees a target."""
 
 	def __init__(self, turn_rate=0.18, min_confidence=1, print_interval=20,color="blue"):
