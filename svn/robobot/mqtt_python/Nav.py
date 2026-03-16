@@ -33,13 +33,13 @@ class Nav:
         self.CAMERA_FOV = 1.047  # 60 grados en radianes
 
         # PID constants (tune later with real sensor input)
-        self.KP = 0.4
-        self.KI = 0.02
-        self.KD = -0.1
+        self.KP = 0.4 # 
+        self.KI = 0.02 # probar sin integral para ver si el sistema responde bien solo con P y D, y evitar acumulación de error que pueda causar sobrecorrección.
+        self.KD = -0.1 # quitar el signo para que el término derivativo frene el avance a medida que se acerca al objetivo, evitando oscilaciones.
 
-        self.KP_X = 0.75    # Ganancia Proporcional: velocidad de reacción inicial
-        self.KI_X = 0.5   # Ganancia Integral: corrige errores acumulados o fricción
-        self.KD_X = -1    # Ganancia Derivativa: evita que el robot oscile (frena antes de llegar)
+        self.KP_X = 0.75  # Probar con 1.4 Ganancia Proporcional: velocidad de reacción inicial 
+        self.KI_X = 0.5   # Probar con 0.0 Ganancia Integral: corrige errores acumulados o fricción
+        self.KD_X = -1    # Probar con 0.25 Ganancia Derivativa: evita que el robot oscile (frena antes de llegar)
 
         self.TOLERANCIA_R = 2          # pixels (fallback for camera detectors)
         self.TOLERANCIA_R_RAD = 0.005      # radians (~8.6 deg, for bearing-based detectors)
@@ -108,7 +108,7 @@ class Nav:
                 
                 error = self.target["distance"] - self.desired_distance
                 
-                print(f"Distance to the ball: {self.target["distance"]}")
+                print(f"Distance to the ball: {self.target['distance']}")
                 
                 if (self.TOLERANCIA_D < abs(error) and self.rot_flag == False and self.forward_flag == True):
 
@@ -169,6 +169,10 @@ class Nav:
                     
                 if(abs(error_rot) >= tol_rot and self.rot_flag == True):
                     self.rot_flag = True
+                    #filter the error to reduce noise (optional, can be tuned or removed)
+                    #alpha = 0.7
+                    #self.filtered_error = alpha * self.filtered_error + (1-alpha) * error_rot
+                    
                     P = self.KP_X * error_rot
             
                     # Integral (evita que el robot se quede "atascado" por fricción cerca del 0)
@@ -183,6 +187,11 @@ class Nav:
                     
                     w_speed = P + I + D
                     print(f"w_speed: {w_speed}")
+                    
+                    MIN_W = 0.05
+
+                    if abs(w_speed) < MIN_W:
+                        w_speed = 0
                     
                     # Saturación por seguridad
                     if w_speed > self.MAX_W_SPEED: w_speed = self.MAX_W_SPEED

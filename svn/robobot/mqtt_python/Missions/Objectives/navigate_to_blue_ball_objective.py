@@ -43,12 +43,13 @@ class NavigateToBallObjective(Objective):
 
     def start(self, ctx: MissionContext):
         """Initialize navigation to blue ball using NavigationAction."""
+        ctx.actions.arm.move_up()
         self.state = NavigateToBallState.MOVING
         self.tick_count = 0
         
         # Create detector for blue balls
         detector = SBall(cam=ctx.cam, gpio=ctx.gpio, service=ctx.service)
-        detector.set_detection_color("blue")
+        detector.set_detection_color("blue")  # Assuming SBall detects red balls; adjust if needed
         
         # Setup navigation action with this detector
         ctx.actions.navigation.setup_detector(detector)
@@ -63,6 +64,7 @@ class NavigateToBallObjective(Objective):
         
         # Check if navigation objective is complete
         if ctx.actions.navigation.is_complete():
+            ctx.actions.arm.move_down()  # Deploy arm to pick up ball
             self.state = NavigateToBallState.COMPLETE
             self._done = True
             print(f"% Navigate To Ball objective complete!")
