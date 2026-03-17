@@ -37,7 +37,7 @@ WAYPOINT_FOR_CIRCLE_M = (0.3, 0.0)  # Distance (forward, sideways) from line end
 WAYPOINT_NAV_MODE = "smooth"  # "smooth" (drive+turn together) or "sequential" (rotate-then-drive)
 
 # Step 3: Circle roundabout
-CIRCLE_RADIUS_M = 0.8
+CIRCLE_RADIUS_M = 0.35
 CIRCLE_REVOLUTIONS = 1.5
 CIRCLE_FORWARD_CMD = 0.28
 CIRCLE_TURN_CMD = None  # Set e.g. 0.24 to override auto radius-based turning.
@@ -63,7 +63,7 @@ def build_objectives():
             ),
         # Step 2: Align to circle entry point via waypoint
         DriveToWaypointObjective(
-            waypoint=WAYPOINT_FOR_CIRCLE_M,
+            waypoint=(0.2, 0.5),
             reset_origin=True,
             print_interval=20,
             nav_mode=WAYPOINT_NAV_MODE,
