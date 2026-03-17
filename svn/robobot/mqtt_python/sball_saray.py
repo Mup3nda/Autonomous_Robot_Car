@@ -133,12 +133,15 @@ class SBall(TargetDetector):
         masks = {}
 
         # RED / ORANGE
+        
         lower_red1 = np.array([0, 120, 80])
         upper_red1 = np.array([10, 255, 255])
         lower_red2 = np.array([170, 120, 80])
         upper_red2 = np.array([180, 255, 255])
         masks["red_orange"] = cv.inRange(hsv, lower_red1, upper_red1) | \
                               cv.inRange(hsv, lower_red2, upper_red2)
+        
+        
 
         # BLUE
         lower_blue = np.array([90, 60, 60])
