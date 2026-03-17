@@ -1,3 +1,0 @@
-/home/local/svn/robobot/teensy_interface/build/CMakeFiles/teensy_interface.dir
-/home/local/svn/robobot/teensy_interface/build/CMakeFiles/edit_cache.dir
-/home/local/svn/robobot/teensy_interface/build/CMakeFiles/rebuild_cache.dir

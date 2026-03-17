@@ -9,14 +9,15 @@ from threading import Thread
 import cv2 as cv
 import numpy as np
 
+from target_detector import TargetDetector
 
-class SBall:
+
+class SBall(TargetDetector):
     """Ball detection and tracking with selectable color."""
 
     ##########################################################
     # STATE VARIABLES
-    ##########################################################
-
+    #########################################################    
     ball_x = 0
     ball_y = 0
     ball_radius = 0
@@ -57,6 +58,7 @@ class SBall:
     ##########################################################
 
     def __init__(self, cam, gpio, service):
+        super().__init__()
         self.cam = cam
         self.gpio = gpio
         self.service = service
@@ -105,9 +107,9 @@ class SBall:
                 continue
 
             self.detect_ball(frame)
-
-            if self.ballCtrl and self.ball_valid:
-                self.followBall()
+            
+            #if self.ballCtrl and self.ball_valid:
+            #    self.followBall()
 
             elapsed = t.time() - start_time
             if elapsed < self.update_interval:
@@ -223,37 +225,11 @@ class SBall:
             self.ball_y = int(cy)
             self.ball_radius = int(radius)
             self.ball_update_cnt += 1
-
-    ##########################################################
-    # FOLLOW CONTROL
-    ##########################################################
-
-    def followBall(self):
-
-        center_x = self.image_width // 2
-        _, cx, _, radius, color = self.locked_target
-
-        err_x = cx - center_x
-
-        angular = -self.Kp_turn * err_x
-        forward = self.Kp_fwd * (self.r_target - radius)
-
-        angular = max(min(angular, 1.0), -1.0)
-        forward = max(min(forward, 0.5), 0)
-
-        param = f"rc {forward:.3f} {angular:.3f} {t.time()}"
-        self.service.send("robobot/cmd/ti", param)
-
-        if self.ball_update_cnt % 10 == 0:
-            print(f"% Ball: LOCKED {color} | fwd={forward:.2f} turn={angular:.2f}")
-
-    ##########################################################
-
-    def ballControl(self, velocity):
-        self.velocity = velocity
-        self.ballCtrl = velocity > 0.001
-
-    ##########################################################
+            
+            return True
+        else:
+            self.ball_update_cnt = 0
+            return False
     
     def debug_detect_only(self, frame):
         """
@@ -272,14 +248,138 @@ class SBall:
             }
         else:
             return {"valid": False}
+        
+    ###########################################################
+        
+    def get_target_info(self):
+        """
+        Get the position and size of the locked target.
+        
+        Returns:
+            tuple: (x, y, radius) if a target is locked, None otherwise
+        """
+        if self.ball_valid:
+            return self.ball_x, self.ball_y, self.ball_radius
+        return None
     
     
     ##########################################################
+    # TARGET DETECTOR INTERFACE IMPLEMENTATION
+    ##########################################################
+
+    def start(self):
+        """Start the target detection system."""
+        self.setup()
+
+    def get_target(self):
+        """
+        Get the current target information.
+
+        Returns:
+            dict: Target information with keys:
+                - 'valid': bool, whether a target is detected
+                - 'x': int, x-coordinate of target center
+                - 'y': int, y-coordinate of target center
+                - 'radius': int, radius of target in pixels
+                - 'color': str, detected color name
+                - 'confidence': int, detection confidence (0-20)
+            Returns None if no target is detected
+        """
+        if not self.ball_valid:
+            return None
+
+        # Calculate confidence based on detection stability
+        confidence = min(self.ball_update_cnt, 20)
+        
+        ball_real_radius_m = 0.04  # meters
+
+        # Focal length estimation (you should calibrate this)
+        focal_length_px = 600  # rough estimate for typical webcam
+
+        # Distance = (real_size * focal_length) / apparent_size
+        distance_m = (ball_real_radius_m * focal_length_px) / self.ball_radius
+
+
+        return {
+            'valid': True,
+            'x': self.ball_x,
+            'y': self.ball_y,
+            'radius': self.ball_radius,
+            'distance': distance_m,
+            'color': self.locked_target[4] if self.locked_target else 'unknown',
+            'confidence': confidence
+        }
+
+    def stop(self):
+        """Stop the target detection system."""
+        self.terminate()
 
     def terminate(self):
-        self.running = False
-        if self.thread:
-            self.thread.join(timeout=1.0)
+        """Terminate the ball tracking thread and clean up resources."""
+        if self.running:
+            self.running = False
+            if self.thread is not None and self.thread.is_alive():
+                self.thread.join(timeout=1.0)
+        print("% Ball:: Terminated")
+
+    def is_target_visible(self, min_confidence=1):
+        """
+        Check if a target is currently visible with sufficient confidence.
+
+        Args:
+            min_confidence (int): Minimum confidence level required (0-20)
+
+        Returns:
+            bool: True if target is visible with required confidence
+        """
+        if not self.ball_valid:
+            return False
+
+        confidence = min(self.ball_update_cnt, 20)
+        return confidence >= min_confidence
+
+    def get_status(self):
+        """
+        Get detailed status information about the target detector.
+
+        Returns:
+            dict: Status information including target data and system state
+        """
+        target_info = self.get_target()
+
+        return {
+            'system_running': self.running,
+            'target_detected': self.ball_valid,
+            'detection_color': self.detection_color,
+            'image_size': (self.image_width, self.image_height),
+            'target_info': target_info,
+            'update_count': self.ball_update_cnt,
+            'last_update_time': self.ball_time.isoformat() if self.ball_time else None
+        }
+
+    def get_target_distance(self):
+        """
+        Get the estimated distance to the locked target in meters.
+        This is a rough estimation based on ball radius in pixels.
+
+        Returns:
+            float or None: Distance in meters if target is locked, None otherwise
+        """
+        if not self.ball_valid or self.ball_radius == 0:
+            return None
+
+        # Rough distance estimation based on ball radius
+        # This is a simplified model - you may want to calibrate this
+        # Typical soccer ball is ~22cm diameter, so radius ~11cm = 0.11m
+        ball_real_radius_m = 0.025  # meters
+
+        # Focal length estimation (you should calibrate this)
+        focal_length_px = 600  # rough estimate for typical webcam
+
+        # Distance = (real_size * focal_length) / apparent_size
+        distance_m = (ball_real_radius_m * focal_length_px) / self.ball_radius
+
+        return distance_m
 
 
 # Global instance

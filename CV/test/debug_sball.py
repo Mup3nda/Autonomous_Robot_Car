@@ -1,10 +1,7 @@
 import cv2
 import numpy as np
-import imutils
-from picamera2 import Picamera2
 import time
 from collections import deque
-
 from sball_saray import SBall   
 
 
@@ -17,16 +14,10 @@ class DummyService:
         pass
 
 
-# -----------------------------
+# -----------------------------a
 # Initialize
 # -----------------------------
-picam2 = Picamera2()
-config = picam2.create_preview_configuration(
-    main={"size": (640, 480), "format": "RGB888"}
-)
-picam2.configure(config)
-picam2.start()
-time.sleep(2.0)
+cap = cv2.VideoCapture(f'http://10.197.218.199:7123/stream.mjpg')
 
 pts = deque(maxlen=32)
 
@@ -34,9 +25,9 @@ pts = deque(maxlen=32)
 ball = SBall(cam=None, gpio=None, service=DummyService())
 
 # Choose color here
-ball.set_detection_color("red_orange")
-# ball.set_detection_color("blue")
-# ball.set_detection_color("white")
+#ball.set_detection_color("red_orange")
+ball.set_detection_color("blue")
+#ball.set_detection_color("white")
 # ball.set_detection_color("all")
 
 
@@ -45,8 +36,8 @@ ball.set_detection_color("red_orange")
 # -----------------------------
 while True:
 
-    frame = picam2.capture_array()
-    frame = imutils.resize(frame, width=600)
+    ret, frame = cap.read()
+    #frame = imutils.resize(frame, width=600)
 
     result = ball.debug_detect_only(frame)
 
@@ -87,5 +78,5 @@ while True:
     if key == ord('q'):
         break
 
-picam2.stop()
+#picam2.stop()
 cv2.destroyAllWindows()

@@ -8,6 +8,6 @@ while True:
     cv2.imshow("cam", frame)
     if cv2.waitKey(1) == ord('q'):
         break
-cv2.release()
+cap.release()
 cv2.destroyAllWindows()
 
