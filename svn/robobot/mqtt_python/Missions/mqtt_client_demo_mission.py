@@ -31,7 +31,7 @@ from Objectives.drive_turn_pi_objective import DriveTurnPiObjective
 from Objectives.line_turn_image_objective import LineTurnImageObjective
 from Objectives.drive_to_line_objective import DriveToLineObjective
 from Objectives.drive_one_meter_objective import DriveOneMeterObjective
-from Objectives.navigate_to_blue_ball_objective import NavigateToBallObjective
+from Objectives.navigate_to_blue_ball_objective import NavigateToBlueBallObjective
 from Objectives.look_for_blue_ball_objective import LookForBlueBallObjective
 from Objectives.search_and_navigate_to_blue_ball_objective import SearchAndNavigateToBlueBall
 from Objectives.drive_square_world_points_objective import DriveSquareWorldPointsObjective
@@ -50,7 +50,7 @@ def build_objectives():
     if service.args.look_ball:
         return [LookForBlueBallObjective()]
     if service.args.nav_ball:
-        return [NavigateToBallObjective()]
+        return [NavigateToBlueBallObjective()]
     if service.args.square_world:
         return [DriveSquareWorldPointsObjective()]
     return [LineTurnImageObjective()]
