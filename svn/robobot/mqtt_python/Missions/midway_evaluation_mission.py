@@ -24,6 +24,7 @@ from Objectives.search_and_navigate_to_blue_ball_objective import SearchAndNavig
 from Objectives.arm_up_objective import ArmUpObjective
 from Objectives.arm_down_objective import ArmDownObjective
 from Objectives.drive_to_line_objective import DriveToLineObjective
+from Objectives.search_and_navigate_to_aruco_objective import SearchAndNavigateToAruco
 
 # Roundabout tuning parameters.
 CIRCLE_RADIUS_M = 0.8

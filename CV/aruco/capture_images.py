@@ -8,17 +8,18 @@ CHESSBOARD_SIZE = (8, 6)
 
 os.makedirs(SAVE_DIR, exist_ok=True)
 
-picam2 = Picamera2()
-camera_config = picam2.create_preview_configuration(
-    main={"size": (640, 480), "format": "RGB888"}
-)
-picam2.configure(camera_config)
-picam2.start()  # ← lowercase 's'
+# picam2 = Picamera2()
+# camera_config = picam2.create_preview_configuration(
+#     main={"size": (640, 480), "format": "RGB888"}
+# )
+# picam2.configure(camera_config)
+# picam2.start()  # ← lowercase 's'
 
 count = 0
 
 while True:
     frame = picam2.capture_array()  # ← Read from Pi camera, not cap.read()
+    frame =
 
     display = frame.copy()
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)  # ← RGB2GRAY (Picamera2 gives RGB)

@@ -1,13 +1,15 @@
 
 from collections import deque
+import math
 import numpy as np                  # Numerical operations
 import argparse                     # Command-line argument parsing
 import cv2                          # OpenCV for image processing
 from flask import Flask, Response   # Web server for MJPEG streaming
 import logging
 import yaml
-from scam import cam
+#from scam import cam
 from uservice import service
+from target_detector import TargetDetector
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -47,7 +49,8 @@ class ArucoDetector(TargetDetector):
     #ARUCO_DICT = cv2.aruco.DICT_4X4_50
     ARUCO_DICT = cv2.aruco.DICT_4X4_100
     
-    def __init__(self, camera_config='/home/local/Autonomous_Robot_Car/CV/aruco/oliver_calibration.yaml', target_id=None):
+    def __init__(self, cam, gpio, service, camera_config='/home/local/Autonomous_Robot_Car/CV/aruco/oliver_calibration.yaml', target_id=None):
+        super().__init__()
         self.detected_markers = {}
         self.aruco_dict = None
         self.camera_matrix = None
@@ -58,11 +61,18 @@ class ArucoDetector(TargetDetector):
         self.camera_config = camera_config
         self.target_id = target_id
         self.last_frame = None
+        self.cam = cam
+        self.gpio = gpio
+        self.service = service
         
         
     def start(self):
         # Initialize any necessary resources for target detection
-        cam.setup()
+        #self.cam.setup()
+        if not self.cam.useCam:
+            print("% Ball:: Camera not available")
+            return
+        
         self.camera_matrix, self.dist_coeffs = self.load_camera_calibrations(self.camera_config)
         self.aruco_dict, self.parameters, self.detector = self.initialize_aruco_detector()
         
@@ -70,7 +80,6 @@ class ArucoDetector(TargetDetector):
     
     def stop(self):
         # Clean up any resources if necessary
-        cam.terminate()
         logger.info("% ArucoDetector:: Stopped")
     
     def set_target_id(self, target_id):
@@ -122,9 +131,11 @@ class ArucoDetector(TargetDetector):
         return obj_points
     
     def detect_aruco(self, cam, detector, camera_matrix, dist_coeffs, target_id=None):
-        ok, frame, timestamp = cam.getImage()
+        ok, frame, timestamp = self.cam.getImage()
         if not ok or frame is None:
+            print("% Unable to get frame from camera")
             return None, {}
+
 
         detected_markers = {}
         # Detect markers in the frame with detectMarkers method
@@ -170,8 +181,8 @@ class ArucoDetector(TargetDetector):
                 pixel_y = float(np.mean(image_points[:, 1]))
 
                 detected_markers[current_id] = {
-                    "x": float(x),        # tvec x — lateral offset (meters)
-                    "y": float(y),        # tvec y — vertical offset (meters)
+                    "x": float(pixel_x),        # tvec x — lateral offset (meters)
+                    "y": float(pixel_y),        # tvec y — vertical offset (meters)
                     "z": float(z),        # tvec z — forward depth (meters)
                     "distance": distance, # Euclidean 3D distance (meters)
                     "pixel_x": pixel_x,  # pixel x center of marker (used by Nav)
@@ -184,7 +195,7 @@ class ArucoDetector(TargetDetector):
 
     def get_target(self):
         frame, self.detected_markers = self.detect_aruco(
-            cam,
+            self.cam,
             self.detector,
             self.camera_matrix,
             self.dist_coeffs,
@@ -202,6 +213,11 @@ class ArucoDetector(TargetDetector):
             return None
         image_width = frame.shape[1] if frame is not None else 820
 
+        # Bearing: horizontal angle from camera forward axis to marker.
+        # tvec x is lateral (positive = right), tvec z is depth (forward).
+        # Negate x so positive bearing = target is to the left, matching SWorldPoint convention.
+        bearing = math.atan2(-target["x"], target["z"])
+
         return {
             "id":       selected_id,
             "x":        target["pixel_x"],  # pixel x center — required by Nav for rotation
@@ -210,6 +226,7 @@ class ArucoDetector(TargetDetector):
             "tvec_y":   target["y"],        # vertical offset in meters (camera frame)
             "z":        target["z"],        # forward depth in meters (camera frame)
             "distance": target["distance"], # Euclidean 3D distance in meters
+            "bearing":  bearing,            # horizontal angle to marker (radians, positive = left)
             "image_width": image_width,     # required by Nav for pixel-to-angle conversion
             "valid":    True,
         }
@@ -217,61 +234,61 @@ class ArucoDetector(TargetDetector):
     def get_all_targets(self):
         return self.detected_markers.copy()
     
-    def run_mjpeg_stream(self, cam, detector, camera_matrix, dist_coeffs, args, target_id=None):
-        app = Flask(__name__)
+    # def run_mjpeg_stream(self, cam, detector, camera_matrix, dist_coeffs, args, target_id=None):
+    #     app = Flask(__name__)
         
-        def generate():
-            """Generator that yields JPEG frames in multipart format"""
-            tick = 0
-            while True:
-                tick += 1
+    #     def generate():
+    #         """Generator that yields JPEG frames in multipart format"""
+    #         tick = 0
+    #         while True:
+    #             tick += 1
                 
-                target = self.get_target()
-                frame = self.last_frame
+    #             target = self.get_target()
+    #             frame = self.last_frame
                 
-                # frame, _ = self.detect_aruco(cam, detector, camera_matrix, dist_coeffs, target_id=target_id)
-                if frame is None:
-                    break
+    #             # frame, _ = self.detect_aruco(cam, detector, camera_matrix, dist_coeffs, target_id=target_id)
+    #             if frame is None:
+    #                 break
                 
-                if tick % 5 == 0:
-                    if target is None:
-                        logger.info("% get_target: None")
-                    else:
-                        logger.info(
-                            f"% get_target: id={target['id']}, "
-                            f"dist={target['distance']:.3f}m, "
-                            f"x={target['x']:.1f}, y={target['y']:.1f}"
-                        )
+    #             if tick % 5 == 0:
+    #                 if target is None:
+    #                     logger.info("% get_target: None")
+    #                 else:
+    #                     logger.info(
+    #                         f"% get_target: id={target['id']}, "
+    #                         f"dist={target['distance']:.3f}m, "
+    #                         f"x={target['x']:.1f}, y={target['y']:.1f}"
+    #                     )
                 
-                ok, buffer = cv2.imencode(
-                    '.jpg',
-                    frame,
-                    [int(cv2.IMWRITE_JPEG_QUALITY), args['jpeg_quality']]
-                )
-                if not ok:
-                    continue
+    #             ok, buffer = cv2.imencode(
+    #                 '.jpg',
+    #                 frame,
+    #                 [int(cv2.IMWRITE_JPEG_QUALITY), args['jpeg_quality']]
+    #             )
+    #             if not ok:
+    #                 continue
                 
-                yield(
-                    b'--frame\r\n'
-                    b'Content-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n'
-                )
-        @app.route('/')
-        def index():
-            """Simple HTML page embedding the video stream"""
-            return '<html><body><h3>Ollie Classified Stream</h3><img src="/video" /></body></html>'
+    #             yield(
+    #                 b'--frame\r\n'
+    #                 b'Content-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n'
+    #             )
+    #     @app.route('/')
+    #     def index():
+    #         """Simple HTML page embedding the video stream"""
+    #         return '<html><body><h3>Ollie Classified Stream</h3><img src="/video" /></body></html>'
         
-        @app.route('/video')
-        def video():
-            """Endpoint that serves the raw MJPEG stream"""
-            return Response(generate(), mimetype='multipart/x-mixed-replace; boundary=frame')
+    #     @app.route('/video')
+    #     def video():
+    #         """Endpoint that serves the raw MJPEG stream"""
+    #         return Response(generate(), mimetype='multipart/x-mixed-replace; boundary=frame')
         
-        try:
-            app.run(host=args['host'],
-                    port=args['port'],
-                    threaded=True)    
-        finally:
-            cam.terminate()
-            cv2.destroyAllWindows()
+    #     try:
+    #         app.run(host=args['host'],
+    #                 port=args['port'],
+    #                 threaded=True)    
+    #     finally:
+    #         self.cam.terminate()
+    #         cv2.destroyAllWindows()
 
     def run_local_gui(self, cam, detector, camera_matrix, dist_coeffs, args, target_id=None):
         try:
@@ -302,7 +319,7 @@ class ArucoDetector(TargetDetector):
                     break
                 
         finally:
-            cam.terminate()
+            self.cam.terminate()
             cv2.destroyAllWindows()
 
     def display_text(self, frame, image_points, x , y, z, distance):
@@ -323,7 +340,7 @@ class ArucoDetector(TargetDetector):
         # cv2.putText(frame, f"Distance={distance:.3f}", (org[0], org[1]+60), font, 0.7, (200, 100, 0), 1,cv2.LINE_AA)
 
 
-aruco = ArucoDetector()
+#aruco = ArucoDetector()
 
 
 if __name__=='__main__':

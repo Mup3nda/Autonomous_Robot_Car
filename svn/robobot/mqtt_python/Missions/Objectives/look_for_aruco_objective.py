@@ -31,11 +31,11 @@ class LookForArucoObjective(Objective):
 		self.tick_count = 0
 		self.state = LookForArucoState.SEARCHING
 
-		self.detector = ArucoDetector(target_id=self.marker_id)
+		self.detector = ArucoDetector(cam=ctx.cam, gpio=ctx.gpio, service=ctx.service, target_id=self.marker_id)
 		self.detector.start()
 
 		print(
-			f"% Objective: Look For {self.color.capitalize()} Ball (turn_rate={self.turn_rate:.2f}, "
+			f"% Objective: Look For {self.marker_id} (turn_rate={self.turn_rate:.2f}, "
 			f"min_conf={self.min_confidence})"
 		)
 
@@ -52,17 +52,17 @@ class LookForArucoObjective(Objective):
 			target = self.detector.get_target()
 			if target is not None:
 				ctx.memory["last_visible_target"] = target
-			print(f"% Look For {self.color.capitalize()} Ball: target detected, stopping rotation")
+			print(f"% Look For {self.marker_id} target detected, stopping rotation")
 			return
 
 		ctx.actions.drive.rc(0.0, self.turn_rate)
 
 		if self.tick_count % self.print_interval == 0:
-			print(f"% Look For {self.color.capitalize()} Ball: searching...")
+			print(f"% Look For {self.marker_id}: searching...")
 
 	def stop(self, ctx: MissionContext):
 		ctx.actions.drive.stop()
 		if self.detector and hasattr(self.detector, "stop"):
 			self.detector.stop()
 		self.state = LookForArucoState.DONE
-		print(f"% Look For {self.color.capitalize()} Ball objective stopped")
+		print(f"% Look For {self.marker_id} objective stopped")

@@ -75,7 +75,7 @@ class Nav:
 
                 self.target = self.detector.get_target()
 
-                if self.target['radius'] is None:
+                if self.target is None:
 
                     if should_log:
                         print("No target detected")
@@ -145,7 +145,7 @@ class Nav:
                     print(f"Y error: {y_error}, Rotation error: {rotation_error}")
                     print(f"Target info: {self.target}")
                     
-                    if self.target['radius'] is None:
+                    if self.target is None:
                         print("Lost target during forward motion")
                         self.ctx.actions.drive.rc(-0.2, 0)
                         time.sleep(0.100)

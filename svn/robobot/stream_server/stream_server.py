@@ -94,9 +94,10 @@ class StreamingServer(socketserver.ThreadingMixIn, server.HTTPServer):
 
 # # 1296x972
 picam2 = Picamera2()
+picam2.configure(picam2.create_video_configuration(main={"size": (820, 616)}))
 #picam2.configure(picam2.create_video_configuration(main={"size": (640, 480)}))
 # higher resolution and lower framerate (5 FPS (200000 microseconds between frames))
-picam2.configure(picam2.create_video_configuration(main={"size": (820, 616)},controls={'FrameDurationLimits': (200000, 500000)}))
+#picam2.configure(picam2.create_video_configuration(main={"size": (820, 616)},controls={'FrameDurationLimits': (200000, 500000)}))
 #picam2.configure(picam2.create_video_configuration(main={"size": (1296, 972)},controls={'FrameDurationLimits': (200000, 500000)}))
 #picam2.configure(picam2.create_video_configuration(main={"size": (1296, 972)},controls={'FrameDurationLimits': (200000, 200000)}))
 #picam2.configure(picam2.create_video_configuration(main={"size": (1296, 972)},controls={'FrameDurationLimits': (50000, 200000)}))
