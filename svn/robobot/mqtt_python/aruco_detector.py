@@ -13,7 +13,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-class ArucoDetector:
+class ArucoDetector(TargetDetector):
     CUBE_MARKER_SIZE = 0.0350
     PLATFORM_MARKER_SIZE = 0.0350
     DROP_AREA_MARKER_SIZE = 0.100
