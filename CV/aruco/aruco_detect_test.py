@@ -96,7 +96,7 @@ def intiatialize_camera():
     #cap = cv2.VideoCapture(0)
 
     camera_config = picam2.create_preview_configuration(
-        main={"size": (640, 480), "format": "RGB888"}
+        main={"size": (820, 616), "format": "RGB888"}
     )
     picam2.configure(camera_config)
     picam2.start()
