@@ -39,49 +39,49 @@ CIRCLE_TIMEOUT_S = 40.0
 def build_objectives():
     objectives = [
         ArmUpObjective(),
-        DriveToLineObjective(
-            follow_left=True,
-            follow_speed=0.8,
-            search_speed=0.35,
-            centering_speed=0.3,
-            lost_line_timeout_s=0.3,
-            ),
-        DriveToWaypointObjective(
-            waypoint=(0.2, 0.5), #10 cm forward from current position
-            reset_origin=True,
-            print_interval=20,
-            nav_mode="smooth",
-            ),
-        DriveToWaypointObjective(
-        waypoint=(0.25, -0.1), #10 cm forward from current position
-        reset_origin=True,
-        print_interval=20,
-        nav_mode="smooth",
-        ),
-        DriveToWaypointObjective(
-        waypoint=(0.2, -0.2), #10 cm forward from current position
-        reset_origin=True,
-        print_interval=20,
-        nav_mode="smooth",
-        ),
-         DriveToWaypointObjective(
-        waypoint=(0.4, -0.35), #10 cm forward from current position
-        reset_origin=True,
-        print_interval=20,
-        nav_mode="smooth",
-        ),
-        DriveToWaypointObjective(
-        waypoint=(0.15, 0.0), #10 cm forward from current position
-        reset_origin=True,
-        print_interval=20,
-        nav_mode="smooth",
-        ),
+        #DriveToLineObjective(
+        #    follow_left=True,
+        #    follow_speed=0.8,
+        #    search_speed=0.35,
+        #    centering_speed=0.3,
+        #    lost_line_timeout_s=0.5,
+        #    ),
+        #DriveToWaypointObjective(
+        #    waypoint=(0.2, 0.5), #10 cm forward from current position
+        #    reset_origin=True,
+        #    print_interval=20,
+        #    nav_mode="smooth",
+        #    ),
+        #DriveToWaypointObjective(
+        #waypoint=(0.25, -0.1), #10 cm forward from current position
+        #reset_origin=True,
+        #print_interval=20,
+        #nav_mode="smooth",
+        #),
+        #DriveToWaypointObjective(
+        #waypoint=(0.2, -0.2), #10 cm forward from current position
+        #reset_origin=True,
+        #print_interval=20,
+        #nav_mode="smooth",
+        #),
+        # DriveToWaypointObjective(
+        #waypoint=(0.4, -0.35), #10 cm forward from current position
+        #reset_origin=True,
+        #print_interval=20,
+        #nav_mode="smooth",
+        #),
+        #DriveToWaypointObjective(
+        #waypoint=(0.15, 0.0), #10 cm forward from current position
+        #reset_origin=True,
+        #print_interval=20,
+        #nav_mode="smooth",
+        #),
         DriveToLineObjective(
             follow_left=False,
             follow_speed=0.75,
             search_speed=0.35,
             centering_speed=0.3,
-            lost_line_timeout_s=3.0,
+            lost_line_timeout_s=1,
             ),
         # DriveCircleObjective(
         #     radius_m=CIRCLE_RADIUS_M,
