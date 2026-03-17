@@ -44,3 +44,4 @@ __pycache__
 *.pyo
 *.pyd
 *.log
+svn/robobot/mqtt_python/Missions/logfile.txt*

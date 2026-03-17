@@ -20,6 +20,7 @@ from robot_actions import RobotActions
 from mission_context import MissionContext
 from Objectives.drive_circle_objective import DriveCircleObjective
 from Objectives.drive_to_waypoint_objective import DriveToWaypointObjective
+from Objectives.drive_turn_angle_objective import DriveTurnAngleObjective
 from Objectives.search_and_navigate_to_blue_ball_objective import SearchAndNavigateToBlueBall
 from Objectives.arm_up_objective import ArmUpObjective
 from Objectives.arm_down_objective import ArmDownObjective
@@ -42,7 +43,7 @@ CIRCLE_REVOLUTIONS = 1.5
 CIRCLE_FORWARD_CMD = 0.28
 CIRCLE_TURN_CMD = None  # Set e.g. 0.24 to override auto radius-based turning.
 CIRCLE_TURN_RATE_SCALE = 1.0
-CIRCLE_CLOCKWISE = False
+CIRCLE_CLOCKWISE = True
 CIRCLE_TIMEOUT_S = 40.0
 
 # Step 4: Exit line follow
@@ -61,17 +62,48 @@ def build_objectives():
             centering_speed=0.3,
             lost_line_timeout_s=0.3,
             ),
-        # Step 2: Align to circle entry point via waypoint
         DriveToWaypointObjective(
-            waypoint=(0.2, 0.5),
+            waypoint=(0.20, 0.0),
             reset_origin=True,
             print_interval=20,
             nav_mode=WAYPOINT_NAV_MODE,
             ),
+        DriveTurnAngleObjective(
+            angle_deg=60.0,
+            linear_cmd=0.0,
+            timeout_s=6.0,
+        ),
+        DriveToWaypointObjective(
+            waypoint=(0.05,0.0),
+            reset_origin=True,
+            print_interval=20,
+            nav_mode=WAYPOINT_NAV_MODE,
+            ),
+        # DriveToWaypointObjective(
+        #     waypoint=(0.1, 0.4),
+        #     reset_origin=True,
+        #     print_interval=20,
+        #     nav_mode=WAYPOINT_NAV_MODE,
+        #     ),
+        # DriveToWaypointObjective(
+        #     waypoint=(0.09, -0.2),
+        #     reset_origin=True,
+        #     print_interval=20,
+        #     nav_mode=WAYPOINT_NAV_MODE,
+        #     ),  
+
+        # We are tamhemtial to the circle
+        # DriveToWaypointObjective(
+        #     waypoint=(0.3, 0.35),
+        #     reset_origin=True,
+        #     print_interval=20,
+        #     nav_mode=WAYPOINT_NAV_MODE,
+        #     ),
+                    
         # Step 3: Execute roundabout
         DriveCircleObjective(
-            radius_m=CIRCLE_RADIUS_M,
-            revolutions=CIRCLE_REVOLUTIONS,
+            radius_m=0.35,   # 35 cm from robot center to circle center
+            revolutions=1.5, # one full circle + half circle
             forward_cmd=CIRCLE_FORWARD_CMD,
             turn_cmd=CIRCLE_TURN_CMD,
             turn_rate_scale=CIRCLE_TURN_RATE_SCALE,
@@ -109,15 +141,15 @@ def build_objectives():
         #     print_interval=20,
         #     nav_mode="smooth",
         # ),
-        DriveToLineObjective(
-            follow_left=False,
-            follow_speed=0.75,
-            search_speed=0.35,
-            centering_speed=0.3,
-            lost_line_timeout_s=3.0,
-            ),
-         SearchAndNavigateToBlueBall(),
-         ArmDownObjective(),
+        # DriveToLineObjective(
+        #     follow_left=False,
+        #     follow_speed=0.75,
+        #     search_speed=0.35,
+        #     centering_speed=0.3,
+        #     lost_line_timeout_s=3.0,
+        #     ),
+        #  SearchAndNavigateToBlueBall(),
+        #  ArmDownObjective(),
         # Next objectives for midpoint demo can be appended here.
         # DriveToLineObjective(),
         # FollowLineOpenSpaceObjective(),
