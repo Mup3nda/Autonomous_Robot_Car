@@ -19,13 +19,24 @@ from mission_runner import MissionRunner
 from robot_actions import RobotActions
 from mission_context import MissionContext
 from Objectives.drive_circle_objective import DriveCircleObjective
-# from Objectives.drive_to_waypoint_objective import DriveToWaypointObjective
+from Objectives.drive_to_waypoint_objective import DriveToWaypointObjective
 from Objectives.search_and_navigate_to_blue_ball_objective import SearchAndNavigateToBlueBall
 from Objectives.arm_up_objective import ArmUpObjective
 from Objectives.arm_down_objective import ArmDownObjective
 from Objectives.drive_to_line_objective import DriveToLineObjective
 
-# Roundabout tuning parameters.
+# Roundabout three-step tuning parameters.
+# Step 1: Entry line follow
+LINE_ENTRY_FOLLOW_LEFT = True
+LINE_ENTRY_FOLLOW_SPEED = 0.8
+LINE_ENTRY_SEARCH_SPEED = 0.35
+LINE_ENTRY_TIMEOUT_S = 0.3  # How long to wait after line disappears before handing to waypoint
+
+# Step 2: Waypoint alignment (position robot at circle entry point)
+WAYPOINT_FOR_CIRCLE_M = (0.3, 0.0)  # Distance (forward, sideways) from line end to circle entry
+WAYPOINT_NAV_MODE = "smooth"  # "smooth" (drive+turn together) or "sequential" (rotate-then-drive)
+
+# Step 3: Circle roundabout
 CIRCLE_RADIUS_M = 0.8
 CIRCLE_REVOLUTIONS = 1.5
 CIRCLE_FORWARD_CMD = 0.28
@@ -33,6 +44,10 @@ CIRCLE_TURN_CMD = None  # Set e.g. 0.24 to override auto radius-based turning.
 CIRCLE_TURN_RATE_SCALE = 1.0
 CIRCLE_CLOCKWISE = False
 CIRCLE_TIMEOUT_S = 40.0
+
+# Step 4: Exit line follow
+LINE_EXIT_FOLLOW_LEFT = False
+LINE_EXIT_FOLLOW_SPEED = 0.75
 
 
 # Add objectives in the list below in the exact order they should execute.
@@ -46,6 +61,14 @@ def build_objectives():
             centering_speed=0.3,
             lost_line_timeout_s=0.3,
             ),
+        # Step 2: Align to circle entry point via waypoint
+        DriveToWaypointObjective(
+            waypoint=WAYPOINT_FOR_CIRCLE_M,
+            reset_origin=True,
+            print_interval=20,
+            nav_mode=WAYPOINT_NAV_MODE,
+            ),
+        # Step 3: Execute roundabout
         DriveCircleObjective(
             radius_m=CIRCLE_RADIUS_M,
             revolutions=CIRCLE_REVOLUTIONS,
