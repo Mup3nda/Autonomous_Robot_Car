@@ -7,6 +7,7 @@ from flask import Flask, Response   # Web server for MJPEG streaming
 import logging
 import yaml
 from scam import cam
+from uservice import service
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -46,7 +47,7 @@ class ArucoDetector:
     #ARUCO_DICT = cv2.aruco.DICT_4X4_50
     ARUCO_DICT = cv2.aruco.DICT_4X4_100
     
-    def __init__(self, camera_config='CV/aruco/oliver_calibration.yaml', target_id=None):
+    def __init__(self, camera_config='/home/local/Autonomous_Robot_Car/CV/aruco/oliver_calibration.yaml', target_id=None):
         self.detected_markers = {}
         self.aruco_dict = None
         self.camera_matrix = None
@@ -81,6 +82,8 @@ class ArucoDetector:
         ap.add_argument("-v", "--video", metavar="PATH",  help="Path to video file (optional, default: Pi camera)")
         ap.add_argument("-s", "--stream", action="store_true", help="Serve MJPEG stream in browser instead of cv2.imshow")
         ap.add_argument("-t", "--target-id", type=int, default=None, metavar="ID", help="Detect only this ArUco marker ID (default: detect all)")
+        ap.add_argument("--camera-host", default="localhost", metavar="IP", help="Host/IP of existing camera stream server (default: localhost)")
+        ap.add_argument("--camera-port", type=int, default=7123, metavar="PORT", help="Port of existing camera stream server (default: 7123)")
         ap.add_argument("-H", "--host", default="0.0.0.0", metavar="IP",  help="Host/IP to bind the MJPEG server        (default: 0.0.0.0)")
         ap.add_argument("-p", "--port", type=int, default=5000,   metavar="PORT", help="Port to serve the MJPEG stream on       (default: 5000)")
         ap.add_argument("-q", "--jpeg-quality", type=int, default=70, metavar="1-100",  help="JPEG compression quality for streaming  (default: 70)")
@@ -160,6 +163,7 @@ class ArucoDetector:
                 # Extract the translation vector components and Euclidean distance
                 x, y, z = tvec.flatten()
                 distance = float(np.linalg.norm(tvec))
+                #logger.info(f"% Marker {current_id}: distance={distance:.3f} m")
 
                 # Pixel center of the marker corners in the image (used by Nav for rotation)
                 pixel_x = float(np.mean(image_points[:, 0]))
@@ -197,6 +201,7 @@ class ArucoDetector:
         if target is None:
             return None
         image_width = frame.shape[1] if frame is not None else 820
+
         return {
             "id":       selected_id,
             "x":        target["pixel_x"],  # pixel x center — required by Nav for rotation
@@ -217,10 +222,26 @@ class ArucoDetector:
         
         def generate():
             """Generator that yields JPEG frames in multipart format"""
+            tick = 0
             while True:
-                frame, _ = self.detect_aruco(cam, detector, camera_matrix, dist_coeffs, target_id=target_id)
+                tick += 1
+                
+                target = self.get_target()
+                frame = self.last_frame
+                
+                # frame, _ = self.detect_aruco(cam, detector, camera_matrix, dist_coeffs, target_id=target_id)
                 if frame is None:
                     break
+                
+                if tick % 5 == 0:
+                    if target is None:
+                        logger.info("% get_target: None")
+                    else:
+                        logger.info(
+                            f"% get_target: id={target['id']}, "
+                            f"dist={target['distance']:.3f}m, "
+                            f"x={target['x']:.1f}, y={target['y']:.1f}"
+                        )
                 
                 ok, buffer = cv2.imencode(
                     '.jpg',
@@ -254,12 +275,26 @@ class ArucoDetector:
 
     def run_local_gui(self, cam, detector, camera_matrix, dist_coeffs, args, target_id=None):
         try:
+            tick = 0
             while True:
-                frame, _ = self.detect_aruco(cam, detector, camera_matrix, dist_coeffs, target_id=target_id)
-                
+                tick += 1
+
+                target = self.get_target()
+                frame = self.last_frame
+
                 if frame is None:
                     break
-                
+
+                if target is None:
+                    if tick % 5 == 0:
+                        logger.info("% get_target: None")
+                else:
+                    if tick % 5 == 0:
+                        logger.info(
+                            f"% get_target: id={target['id']}, "
+                            f"dist={target['distance']:.3f}m, "
+                            f"x={target['x']:.1f}, y={target['y']:.1f}"
+                        )
                 cv2.imshow("Aruco Detect", frame)
                 
                 key = cv2.waitKey(1) & 0xFF
@@ -294,17 +329,31 @@ aruco = ArucoDetector()
 if __name__=='__main__':
     
     args = aruco.parse_arguments()
+
+    # Configure SCam input stream endpoint for standalone runs.
+    # SCam builds URL as: http://{service.host}:7123/stream.mjpg
+    service.host = args["camera_host"]
+
+    if args.get("camera_port", 7123) != 7123:
+        logger.warning("% camera_port is set to %s, but scam.py currently uses fixed port 7123", args["camera_port"])
+        logger.warning("% Update scam.py if you need a non-7123 camera stream port")
+
+    target_id = args.get('target_id')
+    aruco.set_target_id(target_id)
     
     aruco.start()
     
     logger.warning("Make sure you have included command arguments")
     logger.info("Make sure you use correct calibration file")
 
-    target_id = args.get("target_id")
-    if target_id is None:
-        logger.info("% ArucoDetector:: Detecting all known markers")
+    startup_target = aruco.get_target()
+    if startup_target is None:
+        logger.info("% Startup get_target: None")
     else:
-        logger.info(f"% ArucoDetector:: Detecting only marker ID {target_id}")
+        logger.info(
+            f"% Startup get_target: id={startup_target['id']}, "
+            f"dist={startup_target['distance']:.3f}m"
+        )
     
     if args.get("stream", False):
         aruco.run_mjpeg_stream(cam, aruco.detector, aruco.camera_matrix, aruco.dist_coeffs, args, target_id)
