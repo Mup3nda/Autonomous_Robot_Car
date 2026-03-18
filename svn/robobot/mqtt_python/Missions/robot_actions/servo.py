@@ -35,6 +35,7 @@ class ServoArmActions:
 
     def __init__(self, service, config_path=None):
         self.service = service
+        self.memory = None
 
         if config_path is None:
             import os
@@ -61,7 +62,36 @@ class ServoArmActions:
         print(f"[ServoArm] velocity={self.arm_velocity}")
         print(f"[ServoArm] servo_idx={self.servo_idx}")
 
-    def move_up(self, speed=None):
+    def bind_memory(self, memory):
+        """Bind mission memory so arm commands can persist desired state."""
+        self.memory = memory
+
+    def _store_state(self, target_pos, speed):
+        if self.memory is None:
+            return
+        self.memory["_arm_state"] = {
+            "target_pos": int(target_pos),
+            "speed": int(speed),
+        }
+
+    def move_to(self, position, speed=None, update_memory=True):
+        """Move arm to an explicit servo position."""
+        s = speed if speed is not None else self.arm_velocity
+        self.service.send("robobot/cmd/T0", f"servo {self.servo_idx} {int(position)} {int(s)}")
+        if update_memory:
+            self._store_state(position, s)
+
+    def hold_position(self, speed=None):
+        """Re-send the last commanded target position without changing memory state."""
+        if self.memory is None:
+            return
+        state = self.memory.get("_arm_state")
+        if not state:
+            return
+        hold_speed = speed if speed is not None else state.get("speed", self.arm_velocity)
+        self.move_to(state.get("target_pos", self.arm_mid_pos), speed=hold_speed, update_memory=False)
+
+    def move_up(self, speed=None, update_memory=True):
         """Move arm to full upright/resting position.
         
         Call this when the arm is not needed or when no ball is detected.
@@ -69,10 +99,9 @@ class ServoArmActions:
         Args:
             speed: Movement speed (optional, defaults to value in robot.ini)
         """
-        s = speed if speed is not None else self.arm_velocity
-        self.service.send("robobot/cmd/T0", f"servo {self.servo_idx} {self.arm_up_pos} {s}")
+        self.move_to(self.arm_up_pos, speed=speed, update_memory=update_memory)
 
-    def move_mid(self, speed=None):
+    def move_mid(self, speed=None, update_memory=True):
         """Move arm to mid position.
             
         Call this to move arm to a mid position which is responsible to push the box's down.
@@ -81,10 +110,9 @@ class ServoArmActions:
         Args:
             speed: Movement speed (optional, defaults to value in robot.ini)
         """
-        s = speed if speed is not None else self.arm_velocity
-        self.service.send("robobot/cmd/T0", f"servo {self.servo_idx} {self.arm_mid_pos} {s}")
+        self.move_to(self.arm_mid_pos, speed=speed, update_memory=update_memory)
 
-    def move_down(self, speed=None):
+    def move_down(self, speed=None, update_memory=True):
         """Move arm to full down/deployed position.
         
         Call this when ball is detected and arm needs to deploy.
@@ -92,5 +120,4 @@ class ServoArmActions:
         Args:
             speed: Movement speed (optional, defaults to value in robot.ini)
         """
-        s = speed if speed is not None else self.arm_velocity
-        self.service.send("robobot/cmd/T0", f"servo {self.servo_idx} {self.arm_down_pos} {s}")
+        self.move_to(self.arm_down_pos, speed=speed, update_memory=update_memory)

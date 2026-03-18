@@ -51,7 +51,7 @@ class NavigateToArucoObjective(Objective):
         self.tick_count = 0
         
         # Create detector for the target ArUco marker
-        detector = ArucoDetector(target_id=self.marker_id)
+        detector = ArucoDetector(cam=ctx.cam, gpio=ctx.gpio, service=ctx.service, target_id=self.marker_id)
         
         # Setup navigation action with this detector
         ctx.actions.navigation.setup_detector(detector)
