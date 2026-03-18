@@ -4,6 +4,7 @@ from enum import IntEnum
 
 from mission_context import MissionContext
 from objective import Objective
+#from Autonomous_Robot_Car.svn.robobot.mqtt_python.aruco_detector import ArucoDetector
 from aruco_detector import ArucoDetector
 
 

@@ -50,7 +50,14 @@ class ArucoDetector(TargetDetector):
     #ARUCO_DICT = cv2.aruco.DICT_4X4_50
     ARUCO_DICT = cv2.aruco.DICT_4X4_100
     
-    def __init__(self, cam, gpio, service, camera_config='/home/local/Autonomous_Robot_Car/CV/aruco/oliver_calibration.yaml', target_id=None):
+    def __init__(self,
+                 cam, 
+                 gpio, 
+                 service, 
+                 camera_config='/home/local/Autonomous_Robot_Car/CV/aruco/oliver_calibration.yaml', 
+                 target_id=None, 
+                 manage_camera=False
+    ):
         super().__init__()
         self.detected_markers = {}
         self.aruco_dict = None
@@ -67,11 +74,23 @@ class ArucoDetector(TargetDetector):
         self.service = service
         
         
+        # Contructor fields
+        self.manage_camera = manage_camera
+        self.camera_started_by_detector = False
+        self.frame_fail_count = 0
+        self.fail_log_iteration = 20
+        
+        
+        
+        
     def start(self):
         # Initialize any necessary resources for target detection
-        self.cam.setup()
+        if self.manage_camera:
+            self.cam.setup()
+            self.camera_started_by_detector = True
+            
         if not self.cam.useCam:
-            print("% Ball:: Camera not available")
+            print("% ArucoDetector:: Camera not available")
             return
         
         self.camera_matrix, self.dist_coeffs = self.load_camera_calibrations(self.camera_config)
@@ -81,7 +100,9 @@ class ArucoDetector(TargetDetector):
     
     def stop(self):
         # Clean up any resources if necessary
-        logger.info("% ArucoDetector:: Stopped")
+        if self.manage_camera and self.camera_started_by_detector:
+            self.cam.terminate()
+            logger.info("% ArucoDetector:: Stopped")
     
     def set_target_id(self, target_id):
         self.target_id = target_id
@@ -134,10 +155,16 @@ class ArucoDetector(TargetDetector):
     
     def detect_aruco(self, detector, camera_matrix, dist_coeffs, target_id=None):
         ok, frame, timestamp = self.cam.getImage()
+        
         if not ok or frame is None:
-            print("% Unable to get frame from camera")
+            self.frame_fail_count +=1
+            if self.frame_fail_count == 1 or self.frame_fail_count % self.fail_log_iteration == 0:
+                print("% Unable to get frame from camera")
             return None, {}
-
+        
+        if self.frame_fail_count > 0:
+            print("% Camera recovered after {self.frame_fail_count} failed frames")
+            self.frame_fail_count = 0
 
         detected_markers = {}
         # Detect markers in the frame with detectMarkers method
@@ -217,6 +244,7 @@ class ArucoDetector(TargetDetector):
         )
         if not self.detected_markers:
             return None
+        
         if self.target_id is not None:
             selected_id = self.target_id
             target = self.detected_markers.get(self.target_id)
@@ -225,6 +253,7 @@ class ArucoDetector(TargetDetector):
             target = self.detected_markers[selected_id]
         if target is None:
             return None
+        
         image_width = frame.shape[1] if frame is not None else 820
 
         # Bearing: horizontal angle from camera forward axis to marker.
@@ -358,7 +387,7 @@ class ArucoDetector(TargetDetector):
 
 if __name__=='__main__':
     
-    aruco = ArucoDetector(cam=cam, service=service, gpio=gpio)
+    aruco = ArucoDetector(cam=cam, gpio=gpio, service=service, manage_camera = True)
     
     args = aruco.parse_arguments()
 

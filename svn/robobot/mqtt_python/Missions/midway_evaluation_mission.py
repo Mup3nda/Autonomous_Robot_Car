@@ -112,6 +112,7 @@ def build_objectives():
     ]
     return objectives
 
+
 if __name__ == "__main__":
     if service.process_running("midway-evaluation-mission"):
         print("% midway-evaluation-mission is already running - terminating")
