@@ -1,11 +1,16 @@
 import cv2
 import os
-from picamera2 import Picamera2
 
-SAVE_DIR = "calib_images"
+raspi = False
+
+# if raspi:
+#     from picamera2 import Picamera2
+
+SAVE_DIR = "calib_images/usb_cam"
 NUM_IMAGES = 30  
 CHESSBOARD_SIZE = (8, 6)
-
+# Chessboard settings
+#CHESSBOARD_SIZE = (7, 7) #(8, 6)
 os.makedirs(SAVE_DIR, exist_ok=True)
 
 # picam2 = Picamera2()
@@ -15,14 +20,22 @@ os.makedirs(SAVE_DIR, exist_ok=True)
 # picam2.configure(camera_config)
 # picam2.start()  # ← lowercase 's'
 
-count = 0
 
+#cap = cv2.VideoCapture(f'http://10.197.218.199:7123/stream.mjpg')
+
+if not raspi:
+    cap = cv2.VideoCapture(0) 
+    #cap = cv2.VideoCapture(f'http://0.0.0.0:7124/usb_camera')
+
+count = 0
 while True:
-    frame = picam2.capture_array()  # ← Read from Pi camera, not cap.read()
-    frame =
+    ret, frame = cap.read()
+    h, w, _ = frame.shape # (1080,1920)
+    
+    print(f"Frame size ({h, w})")
 
     display = frame.copy()
-    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)  # ← RGB2GRAY (Picamera2 gives RGB)
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
     found, corners = cv2.findChessboardCorners(gray, CHESSBOARD_SIZE, None)
 
@@ -34,7 +47,7 @@ while True:
         cv2.putText(display, "No chessboard found", (10, 30),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
 
-    cv2.imshow("Picamera2", display)
+    cv2.imshow("Calibration", display)
     key = cv2.waitKey(1) & 0xFF
 
     if key == 32 and found:  # SPACE
@@ -45,8 +58,12 @@ while True:
         if count >= NUM_IMAGES:
             break
 
-    elif key == 27:  # ESC
+    elif key == ord('q'):
         break
 
-picam2.stop()  # ← Stop Pi camera on exit
+if raspi:
+    cap.stop()
+else:
+    cap.release() 
+
 cv2.destroyAllWindows()
