@@ -78,7 +78,7 @@ class ArucoDetector(TargetDetector):
         self.manage_camera = manage_camera
         self.camera_started_by_detector = False
         self.frame_fail_count = 0
-        self.fail_log_iteration = 20
+        self.fail_log_iteration = 5
         
         
         
@@ -96,13 +96,13 @@ class ArucoDetector(TargetDetector):
         self.camera_matrix, self.dist_coeffs = self.load_camera_calibrations(self.camera_config)
         self.aruco_dict, self.parameters, self.detector = self.initialize_aruco_detector()
         
-        logger.info("% ArucoDetector:: Setup complete")
+        print("% ArucoDetector:: Setup complete")
     
     def stop(self):
         # Clean up any resources if necessary
         if self.manage_camera and self.camera_started_by_detector:
             self.cam.terminate()
-            logger.info("% ArucoDetector:: Stopped")
+            print("% ArucoDetector:: Stopped")
     
     def set_target_id(self, target_id):
         self.target_id = target_id
@@ -183,7 +183,7 @@ class ArucoDetector(TargetDetector):
                     continue
 
                 if current_id not in self.MARKER_SIZES:
-                    logger.info("Did not find the marker id in the defined list")
+                    print("Did not find the marker id in the defined list")
                     continue
             
                 _marker_size = self.MARKER_SIZES[current_id]
@@ -295,9 +295,9 @@ class ArucoDetector(TargetDetector):
                 
                 if tick % 2 == 0:
                     if target is None:
-                        logger.info("% No target found")
+                        print("% No target found")
                     else:
-                        logger.info(
+                        print(
                             f"ID: {target['id']}, "
                             f"dist:{target['distance']:.3f}m, "
                             f"(x={target['x']:.1f}, y={target['y']:.1f})"
@@ -347,10 +347,10 @@ class ArucoDetector(TargetDetector):
 
                 if target is None:
                     if tick % 2 == 0:
-                        logger.info("% No target found")
+                        print("% No target found")
                 else:
                     if tick % 2 == 0:
-                        logger.info(
+                        print(
                             f"ID: {target['id']}, "
                             f"dist:{target['distance']:.3f}m, "
                             f"(x={target['x']:.1f}, y={target['y']:.1f})"
@@ -408,13 +408,13 @@ if __name__=='__main__':
     aruco.start()
     
     logger.warning("Make sure you have included command arguments")
-    logger.info("Make sure you use correct calibration file")
+    print("Make sure you use correct calibration file")
 
     startup_target = aruco.get_target()
     if startup_target is None:
-        logger.info("% Startup get_target: None")
+        print("% Startup get_target: None")
     else:
-        logger.info(
+        print(
             f"% Startup get_target: id={startup_target['id']}, "
             f"dist={startup_target['distance']:.3f}m"
         )
