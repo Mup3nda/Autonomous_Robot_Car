@@ -9,8 +9,8 @@ and saves the calibration parameters to a YAML file.
 """
  
 # Chessboard settings
-CHESSBOARD_SIZE = (8, 6)
-SQUARE_SIZE = 21  # mm
+CHESSBOARD_SIZE = (7, 7) #(8, 6)
+SQUARE_SIZE = 31  # 21mm
  
 # Prepare object points based on the chessboard size and square size
 # objp will hold the 3D coordinates of the chessboard corners in the world space
