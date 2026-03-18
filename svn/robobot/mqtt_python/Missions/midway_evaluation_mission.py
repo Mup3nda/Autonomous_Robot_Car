@@ -103,7 +103,7 @@ def build_objectives():
         #NavigateToBlueBall(),
         
         
-        SearchAndNavigateToAruco(marker_id=53),
+        SearchAndNavigateToAruco(marker_id=0),
         ArmDownObjective(),
         # Next objectives for midpoint demo can be appended here.
         # DriveToLineObjective(),
