@@ -25,6 +25,7 @@ CENTERED_CONFIDENCE = 8
 CENTERED_MIN_TIME_S = 2.0
 CENTERING_TIMEOUT_S = 4.0
 FOLLOW_VALID_CONFIDENCE = 1
+FOLLOW_RAMP_TIME_S = 1.2
 LOST_LINE_TIMEOUT_S = 5
 STOPPED_VELOCITY_EPS = 0.001
 FOLLOW_LEFT = False  # Set to True to follow line on left side instead of right
@@ -35,6 +36,7 @@ class DriveToLineState(IntEnum):
     SEARCHING = 1
     STOPPED = 2
     CENTERING = 3
+    RAMPING = 4
     LINE_FOLLOWING = 10
     DONE = 99
 
@@ -49,6 +51,7 @@ class DriveToLineObjective(Objective):
         follow_speed=FOLLOW_SPEED,
         search_speed=SEARCH_SPEED,
         centering_speed=CENTERING_SPEED,
+        follow_ramp_time_s=FOLLOW_RAMP_TIME_S,
         lost_line_timeout_s=LOST_LINE_TIMEOUT_S,
     ):
         super().__init__()
@@ -56,6 +59,7 @@ class DriveToLineObjective(Objective):
         self.follow_speed = float(follow_speed)
         self.search_speed = float(search_speed)
         self.centering_speed = float(centering_speed)
+        self.follow_ramp_time_s = max(0.0, float(follow_ramp_time_s))
         self.lost_line_timeout_s = float(lost_line_timeout_s)
 
     def start(self, ctx):
@@ -65,9 +69,16 @@ class DriveToLineObjective(Objective):
         self.along_line_started = False
         self.centering_start_time = 0.0  # Wall-clock when centering started
         self.centering_deadline = 0.0  # Hard timeout for centering phase
+        self.follow_ramp_start_time = 0.0  # Wall-clock when follow speed ramp starts
         ctx.start_local_progress(self.SEARCH_PROGRESS_KEY)
         ctx.actions.drive.leds(0, 100, 0)  # Green LED
         print("% Driving to line ---------------------- right ir start ---")
+
+    def _line_lost(self, ctx):
+        return (
+            not ctx.actions.edge.is_line_valid(confidence=FOLLOW_VALID_CONFIDENCE)
+            and ctx.actions.edge.last_seen_time_passed() > self.lost_line_timeout_s
+        )
 
     def tick(self, ctx):
         """Update objective state and control the robot."""
@@ -102,7 +113,29 @@ class DriveToLineObjective(Objective):
             centered_long_enough = now - self.centering_start_time > CENTERED_MIN_TIME_S
             timed_out = now >= self.centering_deadline
             if (centered and centered_long_enough) or timed_out:
-                ctx.actions.edge.start_following(velocity=self.follow_speed, follow_left=self.follow_left)
+                if self.follow_ramp_time_s > 0.0 and self.follow_speed > self.centering_speed:
+                    self.follow_ramp_start_time = now
+                    self.state = DriveToLineState.RAMPING
+                else:
+                    ctx.actions.edge.start_following(velocity=self.follow_speed, follow_left=self.follow_left)
+                    self.state = DriveToLineState.LINE_FOLLOWING
+        elif self.state == DriveToLineState.RAMPING:
+            # State 4: Gradually ramp follow speed to avoid steering jerk and oscillation.
+            now = t.time()
+            ramp_elapsed = now - self.follow_ramp_start_time
+            if self.follow_ramp_time_s <= 0.0:
+                alpha = 1.0
+            else:
+                alpha = max(0.0, min(1.0, ramp_elapsed / self.follow_ramp_time_s))
+            ramp_speed = self.centering_speed + (self.follow_speed - self.centering_speed) * alpha
+
+            ctx.actions.edge.start_following(velocity=ramp_speed, follow_left=self.follow_left)
+
+            if self._line_lost(ctx):
+                ctx.actions.edge.stop_following()
+                ctx.actions.drive.stop()
+                self.state = DriveToLineState.STOPPED
+            elif alpha >= 1.0:
                 self.state = DriveToLineState.LINE_FOLLOWING
         elif self.state == DriveToLineState.STOPPED:
             # State 2: Stopped after timeout - wait for robot to settle
@@ -110,7 +143,7 @@ class DriveToLineObjective(Objective):
                 self.state = DriveToLineState.DONE  # Mark as done
         elif self.state == DriveToLineState.LINE_FOLLOWING:
             # State 10: Following line - check if line is still valid
-            if not ctx.actions.edge.is_line_valid(confidence=FOLLOW_VALID_CONFIDENCE) and ctx.actions.edge.last_seen_time_passed() > self.lost_line_timeout_s:
+            if self._line_lost(ctx):
                 # Lost the line - stop and try to recover
                 ctx.actions.edge.stop_following()
                 ctx.actions.drive.stop()
