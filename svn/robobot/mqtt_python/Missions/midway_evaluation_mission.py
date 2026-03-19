@@ -86,132 +86,132 @@ LINE_EXIT_FOLLOW_SPEED = 0.75
 def build_objectives():
     objectives = [
         ArmUpObjective(),
-        DriveToLineObjective(
-            follow_left=True,
-            follow_speed=0.4,
-            search_speed=0.25,
-            centering_speed=0.2,
-            lost_line_timeout_s=0,
-            ),
-        DriveToWaypointObjective(
-            waypoint=ENTRY_LEG_1_WAYPOINT_M,
-            reset_origin=True,
-            print_interval=20,
-            nav_mode=WAYPOINT_NAV_MODE,
-            ),
-        DriveTurnAngleObjective(
-            angle_deg=ENTRY_TURN_1_DEG,
-            linear_cmd=0.0,
-            timeout_s=6.0,
-        ),
-        DriveToWaypointObjective(
-            waypoint=ENTRY_LEG_2_WAYPOINT_M,
-            reset_origin=False,
-            print_interval=20,
-            nav_mode=WAYPOINT_NAV_MODE,
-            ),
-        DriveTurnAngleObjective(
-            angle_deg=ENTRY_TURN_2_DEG,
-            linear_cmd=0.0,
-            timeout_s=6.0,
-        ),
-        DriveCircleObjective(
-        DriveTurnAngleObjective(
-            angle_deg=ENTRY_TURN_2_DEG,
-            linear_cmd=0.0,
-            timeout_s=6.0,
-        ),
-        DriveCircleObjective(
-            radius_m=CIRCLE_RADIUS_M,
-            revolutions=1.5, # one full circle + half circle
-            forward_cmd=CIRCLE_FORWARD_CMD,
-            turn_cmd=CIRCLE_TURN_CMD,
-            turn_rate_scale=CIRCLE_TURN_RATE_SCALE,
-            revolutions=1.5, # one full circle + half circle
-            forward_cmd=CIRCLE_FORWARD_CMD,
-            turn_cmd=CIRCLE_TURN_CMD,
-            turn_rate_scale=CIRCLE_TURN_RATE_SCALE,
-            clockwise=CIRCLE_CLOCKWISE,
-            timeout_s=CIRCLE_TIMEOUT_S,
-        ),
-        DriveTurnAngleObjective(
-            angle_deg=90.0,
-            linear_cmd=0.0,
-            timeout_s=6.0,
-        ),
-        
-        # AlignToCircleTangentObjective(
-        #     radius_m=CIRCLE_RADIUS_M,
-        #     clockwise=CIRCLE_CLOCKWISE,
-        #     center_line_y_m=CIRCLE_CENTER_LINE_Y_M,
-        #     max_turn_cmd=0.35,
-        #     min_turn_cmd=0.12,
-        #     heading_tolerance_deg=2.0,
-        #     timeout_s=6.0,
-        # ),
-        # DriveToWaypointObjective(
-        #     waypoint=(0.1, 0.4),
-        #     reset_origin=True,
-        #     print_interval=20,
-        #     nav_mode=WAYPOINT_NAV_MODE,
+        #DriveToLineObjective(
+        #    follow_left=True,
+        #    follow_speed=0.4,
+        #    search_speed=0.25,
+        #    centering_speed=0.2,
+        #    lost_line_timeout_s=0,
+        #    ),
+        #DriveToWaypointObjective(
+        #    waypoint=ENTRY_LEG_1_WAYPOINT_M,
+        #    reset_origin=True,
+        #    print_interval=20,
+        #    nav_mode=WAYPOINT_NAV_MODE,
+        #    ),
+        #DriveTurnAngleObjective(
+        #    angle_deg=ENTRY_TURN_1_DEG,
+        #    linear_cmd=0.0,
+        #    timeout_s=6.0,
+        #),
+        #DriveToWaypointObjective(
+        #    waypoint=ENTRY_LEG_2_WAYPOINT_M,
+        #    reset_origin=False,
+        #    print_interval=20,
+        #    nav_mode=WAYPOINT_NAV_MODE,
+        #    ),
+        #DriveTurnAngleObjective(
+        #    angle_deg=ENTRY_TURN_2_DEG,
+        #    linear_cmd=0.0,
+        #    timeout_s=6.0,
+        #),
+        #DriveCircleObjective(
+        #DriveTurnAngleObjective(
+        #    angle_deg=ENTRY_TURN_2_DEG,
+        #    linear_cmd=0.0,
+        #    timeout_s=6.0,
+        #),
+        #DriveCircleObjective(
+        #    radius_m=CIRCLE_RADIUS_M,
+        #    revolutions=1.5, # one full circle + half circle
+        #    forward_cmd=CIRCLE_FORWARD_CMD,
+        #    turn_cmd=CIRCLE_TURN_CMD,
+        #    turn_rate_scale=CIRCLE_TURN_RATE_SCALE,
+        #    revolutions=1.5, # one full circle + half circle
+        #    forward_cmd=CIRCLE_FORWARD_CMD,
+        #    turn_cmd=CIRCLE_TURN_CMD,
+        #    turn_rate_scale=CIRCLE_TURN_RATE_SCALE,
+        #    clockwise=CIRCLE_CLOCKWISE,
+        #    timeout_s=CIRCLE_TIMEOUT_S,
+        #),
+        #DriveTurnAngleObjective(
+        #    angle_deg=90.0,
+        #    linear_cmd=0.0,
+        #    timeout_s=6.0,
+        #),
+        #
+        ## AlignToCircleTangentObjective(
+        ##     radius_m=CIRCLE_RADIUS_M,
+        ##     clockwise=CIRCLE_CLOCKWISE,
+        ##     center_line_y_m=CIRCLE_CENTER_LINE_Y_M,
+        ##     max_turn_cmd=0.35,
+        ##     min_turn_cmd=0.12,
+        ##     heading_tolerance_deg=2.0,
+        ##     timeout_s=6.0,
+        ## ),
+        ## DriveToWaypointObjective(
+        ##     waypoint=(0.1, 0.4),
+        ##     reset_origin=True,
+        ##     print_interval=20,
+        ##     nav_mode=WAYPOINT_NAV_MODE,
+        ##     ),
+        ## DriveToWaypointObjective(
+        ##     waypoint=(0.09, -0.2),
+        ##     reset_origin=True,
+        ##     print_interval=20,
+        ##     nav_mode=WAYPOINT_NAV_MODE,
+        ##     ),  
+#
+        ## We are tamhemtial to the circle
+        ## DriveToWaypointObjective(
+        ##     waypoint=(0.3, 0.35),
+        ##     reset_origin=True,
+        ##     print_interval=20,
+        ##     nav_mode=WAYPOINT_NAV_MODE,
+        ##     ),
+        #            
+#
+#
+        ## Removed roundabout waypoint chain (kept as comment for reference):
+        ## DriveToWaypointObjective(
+        ##     waypoint=(0.2, 0.5),
+        ##     reset_origin=True,
+        ##     print_interval=20,
+        ##     nav_mode="smooth",
+        ## ),
+        ## DriveToWaypointObjective(
+        ##     waypoint=(0.25, -0.1),
+        ##     reset_origin=True,
+        ##     print_interval=20,
+        ##     nav_mode="smooth",
+        ## ),
+        ## DriveToWaypointObjective(
+        ##     waypoint=(0.2, -0.2),
+        ##     reset_origin=True,
+        ##     print_interval=20,
+        ##     nav_mode="smooth",
+        ## ),
+        ## DriveToWaypointObjective(
+        ##     waypoint=(0.4, -0.35),
+        ##     reset_origin=True,
+        ##     print_interval=20,
+        ##     nav_mode="smooth",
+        ## ),
+        ## DriveToWaypointObjective(
+        ##     waypoint=(0.15, 0.0),
+        ##     reset_origin=True,
+        ##     print_interval=20,
+        ##     nav_mode="smooth",
+        ## ),
+        # DriveToLineObjective(
+        #     follow_left=False,
+        #     follow_speed=0.75,
+        #     search_speed=0.35,
+        #     centering_speed=0.3,
+        #     lost_line_timeout_s=3.0,
         #     ),
-        # DriveToWaypointObjective(
-        #     waypoint=(0.09, -0.2),
-        #     reset_origin=True,
-        #     print_interval=20,
-        #     nav_mode=WAYPOINT_NAV_MODE,
-        #     ),  
-
-        # We are tamhemtial to the circle
-        # DriveToWaypointObjective(
-        #     waypoint=(0.3, 0.35),
-        #     reset_origin=True,
-        #     print_interval=20,
-        #     nav_mode=WAYPOINT_NAV_MODE,
-        #     ),
-                    
-
-
-        # Removed roundabout waypoint chain (kept as comment for reference):
-        # DriveToWaypointObjective(
-        #     waypoint=(0.2, 0.5),
-        #     reset_origin=True,
-        #     print_interval=20,
-        #     nav_mode="smooth",
-        # ),
-        # DriveToWaypointObjective(
-        #     waypoint=(0.25, -0.1),
-        #     reset_origin=True,
-        #     print_interval=20,
-        #     nav_mode="smooth",
-        # ),
-        # DriveToWaypointObjective(
-        #     waypoint=(0.2, -0.2),
-        #     reset_origin=True,
-        #     print_interval=20,
-        #     nav_mode="smooth",
-        # ),
-        # DriveToWaypointObjective(
-        #     waypoint=(0.4, -0.35),
-        #     reset_origin=True,
-        #     print_interval=20,
-        #     nav_mode="smooth",
-        # ),
-        # DriveToWaypointObjective(
-        #     waypoint=(0.15, 0.0),
-        #     reset_origin=True,
-        #     print_interval=20,
-        #     nav_mode="smooth",
-        # ),
-         DriveToLineObjective(
-             follow_left=False,
-             follow_speed=0.75,
-             search_speed=0.35,
-             centering_speed=0.3,
-             lost_line_timeout_s=3.0,
-             ),
-          SearchAndNavigateToBlueBall(),
-          ArmDownObjective(),
+        #  SearchAndNavigateToBlueBall(),
+        ArmDownObjective(),
         # Next objectives for midpoint demo can be appended here.
         # DriveToLineObjective(),
         # FollowLineOpenSpaceObjective(),

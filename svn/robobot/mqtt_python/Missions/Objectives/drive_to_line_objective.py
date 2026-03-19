@@ -50,7 +50,6 @@ class DriveToLineObjective(Objective):
         follow_speed=FOLLOW_SPEED,
         search_speed=SEARCH_SPEED,
         centering_speed=CENTERING_SPEED,
-        follow_ramp_time_s=FOLLOW_RAMP_TIME_S,
         lost_line_timeout_s=LOST_LINE_TIMEOUT_S,
     ):
         super().__init__()
@@ -58,7 +57,6 @@ class DriveToLineObjective(Objective):
         self.follow_speed = float(follow_speed)
         self.search_speed = float(search_speed)
         self.centering_speed = float(centering_speed)
-        self.follow_ramp_time_s = max(0.0, float(follow_ramp_time_s))
         self.lost_line_timeout_s = float(lost_line_timeout_s)
 
     def start(self, ctx):
@@ -112,29 +110,7 @@ class DriveToLineObjective(Objective):
             centered_long_enough = now - self.centering_start_time > CENTERED_MIN_TIME_S
             timed_out = now >= self.centering_deadline
             if (centered and centered_long_enough) or timed_out:
-                if self.follow_ramp_time_s > 0.0 and self.follow_speed > self.centering_speed:
-                    self.follow_ramp_start_time = now
-                    self.state = DriveToLineState.RAMPING
-                else:
-                    ctx.actions.edge.start_following(velocity=self.follow_speed, follow_left=self.follow_left)
-                    self.state = DriveToLineState.LINE_FOLLOWING
-        elif self.state == DriveToLineState.RAMPING:
-            # State 4: Gradually ramp follow speed to avoid steering jerk and oscillation.
-            now = t.time()
-            ramp_elapsed = now - self.follow_ramp_start_time
-            if self.follow_ramp_time_s <= 0.0:
-                alpha = 1.0
-            else:
-                alpha = max(0.0, min(1.0, ramp_elapsed / self.follow_ramp_time_s))
-            ramp_speed = self.centering_speed + (self.follow_speed - self.centering_speed) * alpha
-
-            ctx.actions.edge.start_following(velocity=ramp_speed, follow_left=self.follow_left)
-
-            if self._line_lost(ctx):
-                ctx.actions.edge.stop_following()
-                ctx.actions.drive.stop()
-                self.state = DriveToLineState.STOPPED
-            elif alpha >= 1.0:
+                ctx.actions.edge.start_following(velocity=self.follow_speed, follow_left=self.follow_left)
                 self.state = DriveToLineState.LINE_FOLLOWING
         elif self.state == DriveToLineState.STOPPED:
             # State 2: Stopped after timeout - wait for robot to settle
