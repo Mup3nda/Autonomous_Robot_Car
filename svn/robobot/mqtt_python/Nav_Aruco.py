@@ -42,7 +42,7 @@ class Nav:
         
         # desired vertical position of the ball
         self.DESIRED_Y = 545
-        self.DESIRED_DISTANCE = 0.40
+        self.DESIRED_DISTANCE = 0.41
 
         # tolerances
         self.ROTATION_TOLERANCE = 0.015
