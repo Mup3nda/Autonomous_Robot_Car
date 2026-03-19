@@ -41,6 +41,7 @@ WAYPOINT_NAV_MODE = "smooth"  # "smooth" (drive+turn together) or "sequential" (
 
 # Step 3: Circle roundabout
 CIRCLE_RADIUS_M = 0.36
+CIRCLE_RADIUS_M = 0.36
 CIRCLE_REVOLUTIONS = 1.5
 CIRCLE_FORWARD_CMD = 0.28
 CIRCLE_TURN_CMD = None  # Set e.g. 0.24 to override auto radius-based turning.
@@ -57,6 +58,15 @@ ENTRY_LEG_2_WAYPOINT_M = (
     ENTRY_LEG_1_WAYPOINT_M[1] + ENTRY_ADVANCE_AFTER_TURN_1_M * math.sin(math.radians(ENTRY_TURN_1_DEG)),
 )
 
+# Compute second in-place turn so heading is tangent to the circle.
+# Assumption: in the local frame, the circle center lies on the original
+# entry-line axis (y=0), and the second turn is done in place so robot center
+# stays on that line point while aligning tangent heading.
+_entry_offset_y_m = ENTRY_ADVANCE_AFTER_TURN_1_M * math.sin(math.radians(ENTRY_TURN_1_DEG))
+_tangent_cos = (_entry_offset_y_m / CIRCLE_RADIUS_M) if CIRCLE_CLOCKWISE else (-_entry_offset_y_m / CIRCLE_RADIUS_M)
+_tangent_cos = max(-1.0, min(1.0, _tangent_cos))
+CIRCLE_ENTRY_TANGENT_HEADING_DEG = math.degrees(math.acos(_tangent_cos))
+ENTRY_TURN_2_DEG = CIRCLE_ENTRY_TANGENT_HEADING_DEG - ENTRY_TURN_1_DEG
 # Compute second in-place turn so heading is tangent to the circle.
 # Assumption: in the local frame, the circle center lies on the original
 # entry-line axis (y=0), and the second turn is done in place so robot center
@@ -106,7 +116,17 @@ def build_objectives():
             timeout_s=6.0,
         ),
         DriveCircleObjective(
+        DriveTurnAngleObjective(
+            angle_deg=ENTRY_TURN_2_DEG,
+            linear_cmd=0.0,
+            timeout_s=6.0,
+        ),
+        DriveCircleObjective(
             radius_m=CIRCLE_RADIUS_M,
+            revolutions=1.5, # one full circle + half circle
+            forward_cmd=CIRCLE_FORWARD_CMD,
+            turn_cmd=CIRCLE_TURN_CMD,
+            turn_rate_scale=CIRCLE_TURN_RATE_SCALE,
             revolutions=1.5, # one full circle + half circle
             forward_cmd=CIRCLE_FORWARD_CMD,
             turn_cmd=CIRCLE_TURN_CMD,
@@ -150,6 +170,7 @@ def build_objectives():
         #     nav_mode=WAYPOINT_NAV_MODE,
         #     ),
                     
+
 
         # Removed roundabout waypoint chain (kept as comment for reference):
         # DriveToWaypointObjective(
