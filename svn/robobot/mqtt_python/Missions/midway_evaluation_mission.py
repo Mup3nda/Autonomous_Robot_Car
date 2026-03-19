@@ -86,10 +86,10 @@ LINE_EXIT_FOLLOW_SPEED = 0.75
 # Add objectives in the list below in the exact order they should execute.
 def build_objectives():
     objectives = [
-        # DriveToLineObjective(follow_left=LINE_ENTRY_FOLLOW_LEFT,
-        #                     follow_speed=LINE_ENTRY_FOLLOW_SPEED,
-        #                     search_speed=LINE_ENTRY_SEARCH_SPEED,
-        #                     lost_line_timeout_s=LINE_ENTRY_TIMEOUT_S),
+        DriveToLineObjective(follow_left=LINE_ENTRY_FOLLOW_LEFT,
+                            follow_speed=LINE_ENTRY_FOLLOW_SPEED,
+                            search_speed=LINE_ENTRY_SEARCH_SPEED,
+                            lost_line_timeout_s=LINE_ENTRY_TIMEOUT_S),
         ArmUpObjective(),
         DriveToWaypointObjective(waypoint=(0.0,0.0), nav_mode=WAYPOINT_NAV_MODE,reset_origin=True),
          SearchAndNavigateToBlueBall(),
@@ -97,7 +97,7 @@ def build_objectives():
          DriveToWaypointObjective(waypoint=(0.0,0.0), nav_mode=WAYPOINT_NAV_MODE,reset_origin=False),
         ArmUpObjective(),
         
-        SearchAndNavigateToAruco(marker_id=53),
+        SearchAndNavigateToAruco(marker_id=53,turn_rate=0.3),
         ArmDownObjective(wait_after_s=2.0),
         DriveToWaypointObjective(waypoint=(0.0,0.0), nav_mode=WAYPOINT_NAV_MODE,reset_origin=False),
         ArmUpObjective(),
