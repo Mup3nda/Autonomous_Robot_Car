@@ -116,8 +116,8 @@ class SEdge:
     # velocity ramping for smoother line-follow acceleration/deceleration
     velocity = 0.0
     targetVelocity = 0.0
-    maxAccelUp = 0.25    # m/s^2, limit when increasing speed
-    maxAccelDown = 0.7   # m/s^2, limit when decreasing speed
+    maxAccelUp = 0.15    # m/s^2, limit when increasing speed
+    maxAccelDown = 0.6   # m/s^2, limit when decreasing speed
     # PID logging
     pidLogDir = ""
     pidLogFiles = {}
