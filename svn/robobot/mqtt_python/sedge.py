@@ -82,11 +82,11 @@ class SEdge:
             'maxIntegral': 1.5
         },
         'medium': {
-            'Kp': 1.0,    # Moderate proportional gain
-            'Ki': 0.45,    # Moderate integral gain
-            'Kd': 0.11,   # Moderate derivative gain
-            'derivativeAlpha': 0.5,   # Moderate filtering
-            'maxIntegral': 1.1
+          'Kp': 0.72,    # Reduced proportional gain to lower oscillation at ~0.45 m/s
+          'Ki': 0.20,    # Reduced integral gain to avoid windup-driven wobble
+          'Kd': 0.18,    # Increased derivative damping
+          'derivativeAlpha': 0.40,   # More low-pass filtering on derivative term
+          'maxIntegral': 0.75
         },
         'fast': {
             'Kp': 0.8,   # Original proportional gain (works well at 0.95 m/s)
