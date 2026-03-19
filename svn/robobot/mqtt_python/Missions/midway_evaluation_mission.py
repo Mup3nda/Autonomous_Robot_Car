@@ -134,8 +134,8 @@ def build_objectives():
             timeout_s=CIRCLE_TIMEOUT_S,
         ),
         DriveToWaypointObjective(
-            waypoint=(1.0,0.4),
-            relative_heading_deg=30.0,
+            waypoint=(-0.1,0.4),
+            relative_heading_deg=0.0,
             reset_origin=True,
             print_interval=20,
             nav_mode=WAYPOINT_NAV_MODE,
