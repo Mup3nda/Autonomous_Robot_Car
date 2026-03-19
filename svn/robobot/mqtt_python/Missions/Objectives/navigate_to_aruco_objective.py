@@ -38,7 +38,7 @@ class NavigateToArucoObjective(Objective):
         "sequential" (rotate-then-drive) or "smooth" (simultaneous drive+turn)
     """
     
-    def __init__(self, marker_id=53, desired_distance=0.41, print_interval=20, nav_mode="sequential"): #NavMode "sequential" or "smooth". Sequential is Nav.py Smooth is NavSmooth.py
+    def __init__(self, marker_id=53, desired_distance=0.41, print_interval=20, nav_mode="aruco"): #NavMode "aruco" for aruco controller. Sequential is Nav.py Smooth is NavSmooth.py
         super().__init__()
         self.desired_distance = desired_distance
         self.print_interval = print_interval

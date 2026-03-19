@@ -37,8 +37,8 @@ class Nav:
         self.K_STEER = 1.5
 
         # forward controller using Y position
-        #self.K_FORWARD = 0.0015
-        self.K_FORWARD = 0.5
+        self.K_FORWARD = 0.0015
+        #self.K_FORWARD = 0.5
         
         # desired vertical position of the ball
         self.DESIRED_Y = 545
@@ -95,12 +95,12 @@ class Nav:
                 rotation_error = pixel_error * (self.CAMERA_FOV / img_width)
 
                 # ---------- y error ----------
-                #ball_y = self.target["y"]
-                #y_error = self.DESIRED_Y - ball_y
-                distance = self.target["distance"]
-                distance_error = - self.DESIRED_DISTANCE + distance
+                ball_y = self.target["y"]
+                y_error = self.DESIRED_Y - ball_y
+                #distance = self.target["distance"]
+                #distance_error = - self.DESIRED_DISTANCE + distance
 
-                print(f"Distance: {distance}, Error: {distance_error}")
+                #print(f"Distance: {distance}, Error: {distance_error}")
 
                 # ---------------------------------------------------
                 # ROTATION PHASE
@@ -145,7 +145,7 @@ class Nav:
 
                 if self.forward_phase:
 
-                    #print(f"Y error: {y_error}, Rotation error: {rotation_error}")
+                    print(f"Y error: {y_error}, Rotation error: {rotation_error}")
                     print(f"Target info: {self.target}")
                     
                     if self.target is None:
@@ -155,7 +155,7 @@ class Nav:
                         continue
                    
                     #if y_error <= self.Y_TOLERANCE:
-                    if distance_error <= self.DISTANCE_TOLERANCE:
+                    if y_error <= self.DISTANCE_TOLERANCE:
                         
                         print("Target reached")
                         #time.sleep(1.5)
@@ -167,7 +167,7 @@ class Nav:
                         continue
 
                     # proportional forward controller
-                    linear_speed = self.K_FORWARD * distance_error
+                    linear_speed = self.K_FORWARD * y_error
 
                     # clamp forward speed
                     if linear_speed > self.MAX_LINEAR_SPEED:
@@ -185,10 +185,10 @@ class Nav:
 
                     self.ctx.actions.drive.rc(linear_speed, angular_speed)
 
-                    #if should_log:
-                        #print(
-                            #f"Forward | y_err={y_error:.1f} rot_err={rotation_error:.3f} v={linear_speed:.3f} w={angular_speed:.3f}"
-                        #)
+                    if should_log:
+                        print(
+                            f"Forward | y_err={y_error:.1f} rot_err={rotation_error:.3f} v={linear_speed:.3f} w={angular_speed:.3f}"
+                        )
 
                 time.sleep(0.03)
 
