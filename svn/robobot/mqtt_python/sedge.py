@@ -112,6 +112,11 @@ class SEdge:
     topicCmdT0 = ""
     lostLineCnt = 0
     u = 0 # turn rate control signal
+    # velocity ramping for smoother line-follow acceleration/deceleration
+    velocity = 0.0
+    targetVelocity = 0.0
+    maxAccelUp = 0.25    # m/s^2, limit when increasing speed
+    maxAccelDown = 0.7   # m/s^2, limit when decreasing speed
 
 
     ##########################################################
@@ -396,18 +401,42 @@ class SEdge:
     ##########################################################
 
     def lineControl(self, velocity, followLeft = True, refPosition = 0):
-      self.velocity = velocity
+      self.targetVelocity = max(0.0, velocity)
       self.followLeft = followLeft
       self.refPosition = refPosition
-      # Select and apply the appropriate PID profile
-      self.selectAndApplyProfile(velocity)
       # velocity 0 (or negative) is turning off line control
       wasActive = self.lineCtrl
-      self.lineCtrl = velocity > 0.001
+      self.lineCtrl = self.targetVelocity > 0.001
       # Reset PID when starting new control session
       if self.lineCtrl and not wasActive:
         self.resetPID()
+        self.velocity = 0.0
+      elif not self.lineCtrl:
+        self.velocity = 0.0
       pass
+
+    ##########################################################
+
+    def updateVelocityRamp(self, dt):
+      """Move current velocity toward target velocity with acceleration limits."""
+      if dt < 0.001:
+        dt = 0.001
+      # keep target in valid range
+      if self.targetVelocity > self.maxWheelVel:
+        self.targetVelocity = self.maxWheelVel
+      elif self.targetVelocity < 0:
+        self.targetVelocity = 0
+      delta = self.targetVelocity - self.velocity
+      if delta > 0:
+        step = min(delta, self.maxAccelUp * dt)
+      else:
+        step = max(delta, -self.maxAccelDown * dt)
+      self.velocity += step
+      # final clamp for safety
+      if self.velocity > self.maxWheelVel:
+        self.velocity = self.maxWheelVel
+      elif self.velocity < 0:
+        self.velocity = 0
 
     ##########################################################
 
@@ -427,6 +456,10 @@ class SEdge:
       dt = self.edge_nInterval / 1000.0  # convert ms to seconds
       if dt < 0.001:  # safety check
         dt = 0.05  # assume 50ms if invalid
+      # Apply acceleration-limited ramp toward requested velocity
+      self.updateVelocityRamp(dt)
+      # Tune PID profile based on currently achieved velocity
+      self.selectAndApplyProfile(self.velocity)
       #
       # PID Controller
       # Proportional term
