@@ -24,6 +24,7 @@
 
 from datetime import *
 import time as t
+import os
 from threading import Thread
 import cv2 as cv
 from ulog import flog
@@ -117,6 +118,11 @@ class SEdge:
     targetVelocity = 0.0
     maxAccelUp = 0.25    # m/s^2, limit when increasing speed
     maxAccelDown = 0.7   # m/s^2, limit when decreasing speed
+    # PID logging
+    pidLogDir = ""
+    pidLogFiles = {}
+    pidLogFlushDecimation = 20
+    pidLogCount = 0
 
 
     ##########################################################
@@ -125,6 +131,7 @@ class SEdge:
       from uservice import service
       sendBlack = False
       loops = 0
+      self.initPIDLogging()
       # turn line sensor on (command 'lip 1')
       print("% Edge (sedge.py):: turns on line sensor")
       self.topicCmdT0 = "robobot/cmd/T0"
@@ -182,6 +189,49 @@ class SEdge:
           print(f"% Edge (sedge.py):: got no data after {loops} (continues edge_n_wUpdCnt={self.edge_n_wUpdCnt}, edgeUpdCnt={self.edgeUpdCnt}, edge_nUpdCnt={self.edge_nUpdCnt})")
           break
       pass
+
+    ##########################################################
+
+    def initPIDLogging(self):
+      """Create one CSV log file per PID profile in the pid folder."""
+      if len(self.pidLogFiles) > 0:
+        return
+      self.pidLogDir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "pid")
+      os.makedirs(self.pidLogDir, exist_ok=True)
+      ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
+      header = (
+        "timestamp,edge_upd_cnt,profile,target_velocity,velocity,dt,error,pos_left,pos_right,"
+        "P,I,D,Y,line_integral,line_deriv_filtered,line_valid,crossing,high,average,"
+        "edge0,edge1,edge2,edge3,edge4,edge5,edge6,edge7\n"
+      )
+      for profile in ("slow", "medium", "fast"):
+        fn = os.path.join(self.pidLogDir, f"pid_{profile}.csv")
+        f = open(fn, "w", encoding="ascii")
+        f.write(f"# PID telemetry log for profile '{profile}'\n")
+        f.write(f"# generated_at,{ts}\n")
+        f.write(header)
+        self.pidLogFiles[profile] = f
+      print(f"% Edge:: PID logs initialized in {self.pidLogDir}")
+
+    def logPIDSample(self, dt, e, P, I, D):
+      """Write one PID control sample to the active profile log file."""
+      if self.currentProfile not in self.pidLogFiles:
+        return
+      f = self.pidLogFiles[self.currentProfile]
+      row = (
+        f"{datetime.now().timestamp():.6f},{self.edge_nUpdCnt},{self.currentProfile},"
+        f"{self.targetVelocity:.4f},{self.velocity:.4f},{dt:.5f},{e:.5f},"
+        f"{self.posLeft:.5f},{self.posRight:.5f},{P:.5f},{I:.5f},{D:.5f},{self.lineY:.5f},"
+        f"{self.lineIntegral:.5f},{self.lineDerivFiltered:.5f},"
+        f"{1 if self.lineValid else 0},{1 if self.crossingLine else 0},"
+        f"{self.high},{self.average:.2f},"
+        f"{self.edge_n[0]},{self.edge_n[1]},{self.edge_n[2]},{self.edge_n[3]},"
+        f"{self.edge_n[4]},{self.edge_n[5]},{self.edge_n[6]},{self.edge_n[7]}\n"
+      )
+      f.write(row)
+      self.pidLogCount += 1
+      if self.pidLogCount % self.pidLogFlushDecimation == 0:
+        f.flush()
 
     ##########################################################
 
@@ -502,6 +552,8 @@ class SEdge:
       #
       # Save error for next iteration
       self.lineE0 = e
+      # Save PID tuning telemetry per active profile
+      self.logPIDSample(dt, e, P, I, D)
       #
       # make response
       par = f"rc {self.velocity:.3f} {self.lineY:.3f} {t.time()}"
@@ -526,6 +578,13 @@ class SEdge:
     def terminate(self):
       from uservice import service
       self.need_data = False
+      for f in self.pidLogFiles.values():
+        try:
+          f.flush()
+          f.close()
+        except:
+          pass
+      self.pidLogFiles = {}
       print("% Edge (sedge.py):: turn off line sensor")
       service.send(self.topicCmdT0, "lip 0")
       # try:

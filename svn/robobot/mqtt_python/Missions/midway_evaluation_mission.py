@@ -86,12 +86,6 @@ LINE_EXIT_FOLLOW_SPEED = 0.75
 def build_objectives():
     objectives = [
         ArmUpObjective(),
-        DriveToWaypointObjective(
-            waypoint=(0.1,0.0),
-            reset_origin=True,
-            print_interval=20,
-            nav_mode=WAYPOINT_NAV_MODE,
-            ),
         DriveToLineObjective(
             follow_left=True,
             follow_speed=0.45,
