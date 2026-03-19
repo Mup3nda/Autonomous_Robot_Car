@@ -82,10 +82,10 @@ class SEdge:
         },
         'medium': {
             'Kp': 1.0,    # Moderate proportional gain
-            'Ki': 0.43,    # Moderate integral gain
+            'Ki': 0.45,    # Moderate integral gain
             'Kd': 0.11,   # Moderate derivative gain
             'derivativeAlpha': 0.5,   # Moderate filtering
-            'maxIntegral': 1.2
+            'maxIntegral': 1.1
         },
         'fast': {
             'Kp': 0.8,   # Original proportional gain (works well at 0.95 m/s)
@@ -318,6 +318,8 @@ class SEdge:
       self.crossingLine = self.average >= self.crossingThreshold
       # is line valid (high above threshold)
       self.lineValid = self.high >= self.lineValidThreshold
+      if self.lineValid:
+        self.lineLastSeenTime = datetime.now()
       # find line position
       # from left side - stop at first value above half of the brightest
       if self.lineValid:

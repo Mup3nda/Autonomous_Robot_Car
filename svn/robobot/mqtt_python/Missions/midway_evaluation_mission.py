@@ -86,59 +86,50 @@ LINE_EXIT_FOLLOW_SPEED = 0.75
 def build_objectives():
     objectives = [
         ArmUpObjective(),
-        #DriveToLineObjective(
-        #    follow_left=True,
-        #    follow_speed=0.4,
-        #    search_speed=0.25,
-        #    centering_speed=0.2,
-        #    lost_line_timeout_s=0,
-        #    ),
-        #DriveToWaypointObjective(
-        #    waypoint=ENTRY_LEG_1_WAYPOINT_M,
-        #    reset_origin=True,
-        #    print_interval=20,
-        #    nav_mode=WAYPOINT_NAV_MODE,
-        #    ),
-        #DriveTurnAngleObjective(
-        #    angle_deg=ENTRY_TURN_1_DEG,
-        #    linear_cmd=0.0,
-        #    timeout_s=6.0,
-        #),
-        #DriveToWaypointObjective(
-        #    waypoint=ENTRY_LEG_2_WAYPOINT_M,
-        #    reset_origin=False,
-        #    print_interval=20,
-        #    nav_mode=WAYPOINT_NAV_MODE,
-        #    ),
-        #DriveTurnAngleObjective(
-        #    angle_deg=ENTRY_TURN_2_DEG,
-        #    linear_cmd=0.0,
-        #    timeout_s=6.0,
-        #),
-        #DriveCircleObjective(
-        #DriveTurnAngleObjective(
-        #    angle_deg=ENTRY_TURN_2_DEG,
-        #    linear_cmd=0.0,
-        #    timeout_s=6.0,
-        #),
-        #DriveCircleObjective(
-        #    radius_m=CIRCLE_RADIUS_M,
-        #    revolutions=1.5, # one full circle + half circle
-        #    forward_cmd=CIRCLE_FORWARD_CMD,
-        #    turn_cmd=CIRCLE_TURN_CMD,
-        #    turn_rate_scale=CIRCLE_TURN_RATE_SCALE,
-        #    revolutions=1.5, # one full circle + half circle
-        #    forward_cmd=CIRCLE_FORWARD_CMD,
-        #    turn_cmd=CIRCLE_TURN_CMD,
-        #    turn_rate_scale=CIRCLE_TURN_RATE_SCALE,
-        #    clockwise=CIRCLE_CLOCKWISE,
-        #    timeout_s=CIRCLE_TIMEOUT_S,
-        #),
-        #DriveTurnAngleObjective(
-        #    angle_deg=90.0,
-        #    linear_cmd=0.0,
-        #    timeout_s=6.0,
-        #),
+        DriveToLineObjective(
+            follow_left=True,
+            follow_speed=0.55,
+            search_speed=0.25,
+            centering_speed=0.4,
+            lost_line_timeout_s=0,
+            instant_stop=True,
+            ),
+        DriveToWaypointObjective(
+            waypoint=ENTRY_LEG_1_WAYPOINT_M,
+            reset_origin=True,
+            print_interval=20,
+            nav_mode=WAYPOINT_NAV_MODE,
+            ),
+        DriveTurnAngleObjective(
+            angle_deg=ENTRY_TURN_1_DEG,
+            linear_cmd=0.0,
+            timeout_s=6.0,
+        ),
+        DriveToWaypointObjective(
+            waypoint=ENTRY_LEG_2_WAYPOINT_M,
+            reset_origin=False,
+            print_interval=20,
+            nav_mode=WAYPOINT_NAV_MODE,
+            ),
+        DriveTurnAngleObjective(
+            angle_deg=ENTRY_TURN_2_DEG,
+            linear_cmd=0.0,
+            timeout_s=6.0,
+        ),
+        DriveCircleObjective(
+            radius_m=CIRCLE_RADIUS_M,
+            revolutions=1.5, # one full circle + half circle
+            forward_cmd=CIRCLE_FORWARD_CMD,
+            turn_cmd=CIRCLE_TURN_CMD,
+            turn_rate_scale=CIRCLE_TURN_RATE_SCALE,
+            clockwise=CIRCLE_CLOCKWISE,
+            timeout_s=CIRCLE_TIMEOUT_S,
+        ),
+        DriveTurnAngleObjective(
+            angle_deg=90.0,
+            linear_cmd=0.0,
+            timeout_s=6.0,
+        ),
         #
         ## AlignToCircleTangentObjective(
         ##     radius_m=CIRCLE_RADIUS_M,
@@ -203,14 +194,15 @@ def build_objectives():
         ##     print_interval=20,
         ##     nav_mode="smooth",
         ## ),
-        # DriveToLineObjective(
-        #     follow_left=False,
-        #     follow_speed=0.75,
-        #     search_speed=0.35,
-        #     centering_speed=0.3,
-        #     lost_line_timeout_s=3.0,
-        #     ),
-        #  SearchAndNavigateToBlueBall(),
+         DriveToLineObjective(
+             follow_left=False,
+             follow_speed=0.85,
+             search_speed=0.35,
+             centering_speed=0.3,
+             lost_line_timeout_s=0.5,
+             instant_stop=False,
+             ),
+        SearchAndNavigateToBlueBall(),
         ArmDownObjective(),
         # Next objectives for midpoint demo can be appended here.
         # DriveToLineObjective(),
