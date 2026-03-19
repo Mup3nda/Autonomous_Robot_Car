@@ -1,5 +1,7 @@
 """Drive action commands: motor control, LED, and servo control."""
 
+import time
+
 class DriveActions:
     """Provides high-level drive control commands.
     
@@ -10,6 +12,8 @@ class DriveActions:
     def __init__(self, service, gpio):
         self.service = service
         self.gpio = gpio
+        self.current_v = 0.0
+        self.current_w = 0.0
 
     def rc(self, v, w):
         """Send motor command to robot.
@@ -18,11 +22,23 @@ class DriveActions:
             v: Forward/backward throttle (-1.0 to 1.0, where 0.2 = 20% forward)
             w: Rotation rate (-1.0 to 1.0, where 0.5 = rotation direction)
         """
+        self.current_v = v
+        self.current_w = w
         self.service.send("robobot/cmd/ti", f"rc {v} {w}")
 
-    def stop(self):
+    def stop(self,instant = True):
         """Stop all robot movement (throttle and rotation to 0)."""
+        # Ramp down for smoothness
+        start_v = self.current_v
+        start_w = self.current_w
+        steps = 5
+        if not instant:
+            for i in range(steps):
+                factor = (steps - i - 1) / steps
+                self.rc(start_v * factor, start_w * factor)
+                time.sleep(0.05)
         self.rc(0.0, 0.0)
+        
 
     def leds(self, r, g, b, led=16):
         """Control LED color.

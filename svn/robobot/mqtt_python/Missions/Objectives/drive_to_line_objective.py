@@ -93,7 +93,7 @@ class DriveToLineObjective(Objective):
             search_elapsed = t.time() - search_marker["time_s"]
             if search_dist > SEARCH_MAX_DISTANCE_M or search_elapsed > SEARCH_TIMEOUT_S:
                 # Stop if traveled >1m or >15s timeout without finding line
-                ctx.actions.drive.stop()
+                ctx.actions.drive.stop(instant=False)
                 self.state = DriveToLineState.STOPPED
             if ctx.actions.edge.is_line_valid(confidence=LINE_FOUND_CONFIDENCE):
                 # Line detected! Switch to centering mode at low speed
@@ -145,7 +145,7 @@ class DriveToLineObjective(Objective):
             if self._line_lost(ctx):
                 # Lost the line - stop and try to recover
                 ctx.actions.edge.stop_following()
-                ctx.actions.drive.stop()
+                ctx.actions.drive.stop(instant=False)
                 self.state = DriveToLineState.STOPPED  # Go to stopped state
         else:
             # Final state - log results and mark complete
@@ -159,11 +159,11 @@ class DriveToLineObjective(Objective):
                 f"# drive to line {self.dist_to_line:.3f}m, then along line "
                 f"{along_line_dist:.3f}m in {along_line_time:.3f} seconds"
             )
-            ctx.actions.drive.stop()
+            ctx.actions.drive.stop(instant=False)
             self._done = True  # Mark objective as complete
 
     def stop(self, ctx):
         """Clean up: turn off LED and stop the robot."""
         ctx.actions.drive.leds(0, 0, 0)  # Turn off LEDs
-        ctx.actions.drive.stop()  # Stop all movement
+        ctx.actions.drive.stop(instant=False)  # Stop all movement
         print("% Driving to line ------------------------- end")
