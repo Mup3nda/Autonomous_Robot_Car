@@ -95,8 +95,8 @@ def build_objectives():
             instant_stop=True,
             ),
         DriveToWaypointObjective(
-            waypoint=(1.9,1.0),
-            relative_heading_deg=40.0,
+            waypoint=(1.92,1.0),
+            relative_heading_deg=30.0,
             reset_origin=False,
             print_interval=20,
             nav_mode=WAYPOINT_NAV_MODE,
@@ -133,6 +133,13 @@ def build_objectives():
             clockwise=CIRCLE_CLOCKWISE,
             timeout_s=CIRCLE_TIMEOUT_S,
         ),
+        DriveToWaypointObjective(
+            waypoint=(1.0,0.4),
+            relative_heading_deg=30.0,
+            reset_origin=True,
+            print_interval=20,
+            nav_mode=WAYPOINT_NAV_MODE,
+            ),
         #DriveTurnAngleObjective(
         #    angle_deg=90.0,
         #    linear_cmd=0.0,
