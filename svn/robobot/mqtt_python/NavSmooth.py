@@ -65,7 +65,7 @@ class NavSmooth:
         self.ultima_vez = time.time()
         self.w_cmd = 0.0
 
-        self.print_every_n_ticks = 5
+        self.print_every_n_ticks = 1
         self.debug_tick = 0
 
     def start(self):
@@ -104,6 +104,8 @@ class NavSmooth:
                     tol_rot = self.TOLERANCIA_R
 
                 error = self.target["distance"] - self.desired_distance
+                target_bearing = self.target.get("bearing")
+                target_id = self.target.get("id")
 
                 if abs(error) <= self.TOLERANCIA_D:
                     print("Target reached.")
@@ -178,8 +180,9 @@ class NavSmooth:
                 self.ctx.actions.drive.rc(velocidad, self.w_cmd)
                 if should_log:
                     print(
-                        f"Error: {error:.3f} m, Rot: {error_rot:.3f}, "
-                        f"V: {velocidad:.3f}, W: {self.w_cmd:.3f}"
+                        f"[NAVSMOOTH] id={target_id} dist={self.target['distance']:.3f}m "
+                        f"dist_err={error:.3f}m bearing={target_bearing} rot_err={error_rot:.3f} "
+                        f"tol_rot={tol_rot:.3f} v={velocidad:.3f} w={self.w_cmd:.3f}"
                     )
 
                 self.ultimo_error = error
