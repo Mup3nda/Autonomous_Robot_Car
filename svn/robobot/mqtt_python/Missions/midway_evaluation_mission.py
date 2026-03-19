@@ -31,10 +31,10 @@ from Objectives.search_and_navigate_to_aruco_objective import SearchAndNavigateT
 
 # Roundabout three-step tuning parameters.
 # Step 1: Entry line follow
-LINE_ENTRY_FOLLOW_LEFT = True
-LINE_ENTRY_FOLLOW_SPEED = 0.8
+LINE_ENTRY_FOLLOW_LEFT = False
+LINE_ENTRY_FOLLOW_SPEED = 0.45
 LINE_ENTRY_SEARCH_SPEED = 0.35
-LINE_ENTRY_TIMEOUT_S = 0.3  # How long to wait after line disappears before handing to waypoint
+LINE_ENTRY_TIMEOUT_S = 0.35  # How long to wait after line disappears before handing to waypoint
 
 # Step 2: Waypoint alignment (position robot at circle entry point)
 WAYPOINT_FOR_CIRCLE_M = (0.3, 0.0)  # Distance (forward, sideways) from line end to circle entry
@@ -86,151 +86,22 @@ LINE_EXIT_FOLLOW_SPEED = 0.75
 # Add objectives in the list below in the exact order they should execute.
 def build_objectives():
     objectives = [
+        # DriveToLineObjective(follow_left=LINE_ENTRY_FOLLOW_LEFT,
+        #                     follow_speed=LINE_ENTRY_FOLLOW_SPEED,
+        #                     search_speed=LINE_ENTRY_SEARCH_SPEED,
+        #                     lost_line_timeout_s=LINE_ENTRY_TIMEOUT_S),
         ArmUpObjective(),
-        DriveToLineObjective(
-            follow_left=True,
-            follow_speed=0.4,
-            search_speed=0.35,
-            centering_speed=0.3,
-            lost_line_timeout_s=0.0,
-            instant_stop=True,
-            ),
-        DriveToWaypointObjective(
-            waypoint=(0.25,0.0),
-            relative_heading_deg=None,
-            reset_origin=True,
-            print_interval=20,
-            nav_mode=WAYPOINT_NAV_MODE,
-            ), 
-        DriveToWaypointObjective(
-            waypoint=(0.1,-0.3),
-            relative_heading_deg=None,
-            reset_origin=True,
-            print_interval=20,
-            nav_mode=WAYPOINT_NAV_MODE,
-            ),
-        DriveToWaypointObjective(
-        waypoint=(0.1,0.1),
-        relative_heading_deg=None,
-        reset_origin=True,
-        print_interval=20,
-        nav_mode=WAYPOINT_NAV_MODE,
-        ),
-        #DriveToWaypointObjective(
-        #    waypoint=ENTRY_LEG_1_WAYPOINT_M,
-        #    reset_origin=True,
-        #    print_interval=20,
-        #    nav_mode=WAYPOINT_NAV_MODE,
-        #    ),
-        #DriveTurnAngleObjective(
-        #    angle_deg=ENTRY_TURN_1_DEG,
-        #    linear_cmd=0.0,
-        #    timeout_s=6.0,
-        #),
-        #DriveToWaypointObjective(
-        #    waypoint=ENTRY_LEG_2_WAYPOINT_M,
-        #    reset_origin=False,
-        #    print_interval=20,
-        #    nav_mode=WAYPOINT_NAV_MODE,
-        #    ),
-        #DriveTurnAngleObjective(
-        #    angle_deg=ENTRY_TURN_2_DEG,
-        #    linear_cmd=0.0,
-        #    timeout_s=6.0,
-        #),
-        #DriveCircleObjective(
-        #    radius_m=CIRCLE_RADIUS_M,
-        #    revolutions=1.5, # one full circle + half circle
-        #    forward_cmd=CIRCLE_FORWARD_CMD,
-        #    turn_cmd=CIRCLE_TURN_CMD,
-        #    turn_rate_scale=CIRCLE_TURN_RATE_SCALE,
-        #    clockwise=CIRCLE_CLOCKWISE,
-        #    timeout_s=CIRCLE_TIMEOUT_S,
-        #),
-        DriveTurnAngleObjective(
-            angle_deg=90.0,
-            linear_cmd=0.0,
-            timeout_s=6.0,
-        ),
-        #
-        ## AlignToCircleTangentObjective(
-        ##     radius_m=CIRCLE_RADIUS_M,
-        ##     clockwise=CIRCLE_CLOCKWISE,
-        ##     center_line_y_m=CIRCLE_CENTER_LINE_Y_M,
-        ##     max_turn_cmd=0.35,
-        ##     min_turn_cmd=0.12,
-        ##     heading_tolerance_deg=2.0,
-        ##     timeout_s=6.0,
-        ## ),
-        ## DriveToWaypointObjective(
-        ##     waypoint=(0.1, 0.4),
-        ##     reset_origin=True,
-        ##     print_interval=20,
-        ##     nav_mode=WAYPOINT_NAV_MODE,
-        ##     ),
-        ## DriveToWaypointObjective(
-        ##     waypoint=(0.09, -0.2),
-        ##     reset_origin=True,
-        ##     print_interval=20,
-        ##     nav_mode=WAYPOINT_NAV_MODE,
-        ##     ),  
-#
-        ## We are tamhemtial to the circle
-        ## DriveToWaypointObjective(
-        ##     waypoint=(0.3, 0.35),
-        ##     reset_origin=True,
-        ##     print_interval=20,
-        ##     nav_mode=WAYPOINT_NAV_MODE,
-        ##     ),
-        #            
-#
-#
-        ## Removed roundabout waypoint chain (kept as comment for reference):
-        ## DriveToWaypointObjective(
-        ##     waypoint=(0.2, 0.5),
-        ##     reset_origin=True,
-        ##     print_interval=20,
-        ##     nav_mode="smooth",
-        ## ),
-        ## DriveToWaypointObjective(
-        ##     waypoint=(0.25, -0.1),
-        ##     reset_origin=True,
-        ##     print_interval=20,
-        ##     nav_mode="smooth",
-        ## ),
-        ## DriveToWaypointObjective(
-        ##     waypoint=(0.2, -0.2),
-        ##     reset_origin=True,
-        ##     print_interval=20,
-        ##     nav_mode="smooth",
-        ## ),
-        ## DriveToWaypointObjective(
-        ##     waypoint=(0.4, -0.35),
-        ##     reset_origin=True,
-        ##     print_interval=20,
-        ##     nav_mode="smooth",
-        ## ),
-        ## DriveToWaypointObjective(
-        ##     waypoint=(0.15, 0.0),
-        ##     reset_origin=True,
-        ##     print_interval=20,
-        ##     nav_mode="smooth",
-        ## ),
-         DriveToLineObjective(
-             follow_left=False,
-             follow_speed=0.8,
-             search_speed=0.35,
-             centering_speed=0.3,
-             lost_line_timeout_s=0.5,
-             instant_stop=False,
-             ),
-        #ArmDownObjective(),
-        #SearchAndNavigateToBlueBall(),
-        #ArmDownObjective(),
-        # Next objectives for midpoint demo can be appended here.
-        # DriveToLineObjective(),
-        # FollowLineOpenSpaceObjective(),
-        # ExtraShowcaseObjective(),
+        DriveToWaypointObjective(waypoint=(0.0,0.0), nav_mode=WAYPOINT_NAV_MODE,reset_origin=True),
+         SearchAndNavigateToBlueBall(),
+         ArmDownObjective(wait_after_s=2.0),
+         DriveToWaypointObjective(waypoint=(0.0,0.0), nav_mode=WAYPOINT_NAV_MODE,reset_origin=False),
+        ArmUpObjective(),
+        
+        SearchAndNavigateToAruco(marker_id=53),
+        ArmDownObjective(wait_after_s=2.0),
+        DriveToWaypointObjective(waypoint=(0.0,0.0), nav_mode=WAYPOINT_NAV_MODE,reset_origin=False),
+        ArmUpObjective(),
+        
     ]
     return objectives
 

@@ -6,8 +6,8 @@ import os
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from Autonomous_Robot_Car.svn.robobot.mqtt_python.Nav_Aruco import Nav as Nav_Aruco #import nav2  for the new version
-from Autonomous_Robot_Car.svn.robobot.mqtt_python.Nav_Balls import Nav as Nav_Balls
+from Nav_Aruco import Nav as Nav_Aruco #import nav2  for the new version
+from Nav_Balls import Nav as Nav_Balls
 from NavSmooth import NavSmooth
 
 

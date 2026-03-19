@@ -158,7 +158,7 @@ class Nav:
                     if y_error <= self.DISTANCE_TOLERANCE:
                         
                         print("Target reached")
-                        #time.sleep(1.5)
+                        time.sleep(1.5)
                         self.ctx.actions.drive.stop()
                         self.hasReachedTarget = True
                         self.is_running = False
