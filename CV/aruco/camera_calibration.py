@@ -1,0 +1,100 @@
+import numpy as np
+import cv2
+import glob
+import yaml
+import sys
+ 
+"""
+After capturing images of a chessboard pattern, this script calibrates the camera
+and saves the calibration parameters to a YAML file.
+"""
+ 
+# Chessboard settings
+#CHESSBOARD_SIZE = (7, 7) #(8, 6)
+CHESSBOARD_SIZE = (8, 6) #(8, 6)
+SQUARE_SIZE = 31  # 21mm
+
+ 
+# Prepare object points based on the chessboard size and square size
+# objp will hold the 3D coordinates of the chessboard corners in the world space
+objp = np.zeros((CHESSBOARD_SIZE[0]*CHESSBOARD_SIZE[1], 3), np.float32)
+ 
+# Generate the grid points in the chessboard pattern
+# objp[:, :2] will hold the x, y coordinates of the corners
+objp[:, :2] = np.mgrid[0:CHESSBOARD_SIZE[0], 0:CHESSBOARD_SIZE[1]].T.reshape(-1, 2)
+ 
+# Scale the points by the size of each square
+objp *= SQUARE_SIZE
+ 
+# Arrays to store points
+objpoints = []  # 3D points
+imgpoints = []  # 2D points
+image_size = None
+ 
+# Load images from the specified directory
+images = glob.glob("calib_images/usb_cam/*.jpg")
+
+if not images:
+    print("No images found in calib_images/usb_cam")
+    print("Capture calibration images first, then run this script again.")
+    sys.exit(1)
+ 
+for fname in images:
+    img = cv2.imread(fname)
+    
+    if fname == images[0]:
+        h, w, _ = img.shape
+
+    if img is None:
+        print(f"Skipping unreadable image: {fname}")
+        continue
+
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    image_size = gray.shape[::-1]
+ 
+    # Find the chessboard corners
+    found, corners = cv2.findChessboardCorners(gray, CHESSBOARD_SIZE, None)
+ 
+    # If corners are found, continue
+    if found:
+        objpoints.append(objp)
+        # Refine the corner locations
+        corners2 = cv2.cornerSubPix(
+            gray, corners, (11, 11), (-1, -1),
+            (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
+        )
+        # Append the refined corners to imgpoints list
+        imgpoints.append(corners2)
+
+if not imgpoints:
+    print("No chessboard corners were detected in the provided images.")
+    print("Check CHESSBOARD_SIZE and make sure the board is clearly visible in the images.")
+    sys.exit(1)
+ 
+# Calibrate the camera using the collected object points and image points
+ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(
+    objpoints, imgpoints, image_size, None, None
+)
+ 
+
+# Print with readable numbers
+np.set_printoptions(precision=2, suppress=True)
+
+print("Camera matrix:\n", mtx)
+print("Distortion coefficients:\n", dist)
+print("Reprojection error:", ret)
+print(f"Resolution: {str(h)}x{str(w)}")
+ 
+ 
+calib_data = {
+    "camera_matrix": mtx.tolist(),
+    "dist_coeff": dist.tolist(),
+    "reprojection_error": float(ret),
+    "resolution": f"{str(h)}x{str(w)}"
+}
+ 
+# Save the calibration data to a YAML file
+with open("usb_cam.yaml", "w") as f:
+    yaml.dump(calib_data, f)
+ 
+print("Saved calibration.yaml")
