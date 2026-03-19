@@ -26,7 +26,7 @@ class DriveTurnAngleObjective(Objective):
         self,
         angle_deg=30.0,
         linear_cmd=0.0,
-        turn_cmd=0.35,
+        turn_cmd=0.8,
         timeout_s=8.0,
         settle_velocity_threshold=0.01,
         settle_turnrate_threshold=0.01,

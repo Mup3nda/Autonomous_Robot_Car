@@ -81,11 +81,11 @@ class SEdge:
             'maxIntegral': 1.5
         },
         'medium': {
-            'Kp': 1.1,    # Moderate proportional gain
-            'Ki': 0.3,    # Moderate integral gain
+            'Kp': 1.0,    # Moderate proportional gain
+            'Ki': 0.43,    # Moderate integral gain
             'Kd': 0.11,   # Moderate derivative gain
-            'derivativeAlpha': 0.55,   # Moderate filtering
-            'maxIntegral': 1.35
+            'derivativeAlpha': 0.5,   # Moderate filtering
+            'maxIntegral': 1.2
         },
         'fast': {
             'Kp': 0.75,   # Original proportional gain (works well at 0.95 m/s)

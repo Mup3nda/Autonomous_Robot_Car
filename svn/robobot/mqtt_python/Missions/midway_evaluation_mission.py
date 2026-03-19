@@ -40,7 +40,7 @@ WAYPOINT_FOR_CIRCLE_M = (0.3, 0.0)  # Distance (forward, sideways) from line end
 WAYPOINT_NAV_MODE = "smooth"  # "smooth" (drive+turn together) or "sequential" (rotate-then-drive)
 
 # Step 3: Circle roundabout
-CIRCLE_RADIUS_M = 0.359
+CIRCLE_RADIUS_M = 0.36
 CIRCLE_REVOLUTIONS = 1.5
 CIRCLE_FORWARD_CMD = 0.28
 CIRCLE_TURN_CMD = None  # Set e.g. 0.24 to override auto radius-based turning.
@@ -51,15 +51,21 @@ CIRCLE_TIMEOUT_S = 40.0
 # Entry alignment before starting circle drive.
 ENTRY_TURN_1_DEG = 68.0
 ENTRY_ADVANCE_AFTER_TURN_1_M = 0.20
-ENTRY_LEG_1_WAYPOINT_M = (0.20, 0.0)
+ENTRY_LEG_1_WAYPOINT_M = (0.25, 0.0)
 ENTRY_LEG_2_WAYPOINT_M = (
     ENTRY_LEG_1_WAYPOINT_M[0] + ENTRY_ADVANCE_AFTER_TURN_1_M * math.cos(math.radians(ENTRY_TURN_1_DEG)),
     ENTRY_LEG_1_WAYPOINT_M[1] + ENTRY_ADVANCE_AFTER_TURN_1_M * math.sin(math.radians(ENTRY_TURN_1_DEG)),
 )
 
-# Circle-center geometry in the same frame as ENTRY_LEG_* waypoints.
-# y = 0 corresponds to the line that contains the circle center.
-CIRCLE_CENTER_LINE_Y_M = 0.0
+# Compute second in-place turn so heading is tangent to the circle.
+# Assumption: in the local frame, the circle center lies on the original
+# entry-line axis (y=0), and the second turn is done in place so robot center
+# stays on that line point while aligning tangent heading.
+_entry_offset_y_m = ENTRY_ADVANCE_AFTER_TURN_1_M * math.sin(math.radians(ENTRY_TURN_1_DEG))
+_tangent_cos = (_entry_offset_y_m / CIRCLE_RADIUS_M) if CIRCLE_CLOCKWISE else (-_entry_offset_y_m / CIRCLE_RADIUS_M)
+_tangent_cos = max(-1.0, min(1.0, _tangent_cos))
+CIRCLE_ENTRY_TANGENT_HEADING_DEG = math.degrees(math.acos(_tangent_cos))
+ENTRY_TURN_2_DEG = CIRCLE_ENTRY_TANGENT_HEADING_DEG - ENTRY_TURN_1_DEG
 
 # Step 4: Exit line follow
 LINE_EXIT_FOLLOW_LEFT = False
@@ -72,10 +78,10 @@ def build_objectives():
         ArmUpObjective(),
         DriveToLineObjective(
             follow_left=True,
-            follow_speed=0.5,
-            search_speed=0.35,
-            centering_speed=0.17,
-            lost_line_timeout_s=1.5,
+            follow_speed=0.4,
+            search_speed=0.25,
+            centering_speed=0.2,
+            lost_line_timeout_s=0,
             ),
         DriveToWaypointObjective(
             waypoint=ENTRY_LEG_1_WAYPOINT_M,
@@ -94,15 +100,35 @@ def build_objectives():
             print_interval=20,
             nav_mode=WAYPOINT_NAV_MODE,
             ),
-        AlignToCircleTangentObjective(
-            radius_m=CIRCLE_RADIUS_M,
-            clockwise=CIRCLE_CLOCKWISE,
-            center_line_y_m=CIRCLE_CENTER_LINE_Y_M,
-            max_turn_cmd=0.35,
-            min_turn_cmd=0.12,
-            heading_tolerance_deg=2.0,
+        DriveTurnAngleObjective(
+            angle_deg=ENTRY_TURN_2_DEG,
+            linear_cmd=0.0,
             timeout_s=6.0,
         ),
+        DriveCircleObjective(
+            radius_m=CIRCLE_RADIUS_M,
+            revolutions=1.5, # one full circle + half circle
+            forward_cmd=CIRCLE_FORWARD_CMD,
+            turn_cmd=CIRCLE_TURN_CMD,
+            turn_rate_scale=CIRCLE_TURN_RATE_SCALE,
+            clockwise=CIRCLE_CLOCKWISE,
+            timeout_s=CIRCLE_TIMEOUT_S,
+        ),
+        DriveTurnAngleObjective(
+            angle_deg=90.0,
+            linear_cmd=0.0,
+            timeout_s=6.0,
+        ),
+        
+        # AlignToCircleTangentObjective(
+        #     radius_m=CIRCLE_RADIUS_M,
+        #     clockwise=CIRCLE_CLOCKWISE,
+        #     center_line_y_m=CIRCLE_CENTER_LINE_Y_M,
+        #     max_turn_cmd=0.35,
+        #     min_turn_cmd=0.12,
+        #     heading_tolerance_deg=2.0,
+        #     timeout_s=6.0,
+        # ),
         # DriveToWaypointObjective(
         #     waypoint=(0.1, 0.4),
         #     reset_origin=True,
@@ -124,16 +150,7 @@ def build_objectives():
         #     nav_mode=WAYPOINT_NAV_MODE,
         #     ),
                     
-        # Step 3: Execute roundabout
-        DriveCircleObjective(
-            radius_m=CIRCLE_RADIUS_M,
-            revolutions=1.5, # one full circle + half circle
-            forward_cmd=CIRCLE_FORWARD_CMD,
-            turn_cmd=CIRCLE_TURN_CMD,
-            turn_rate_scale=CIRCLE_TURN_RATE_SCALE,
-            clockwise=CIRCLE_CLOCKWISE,
-            timeout_s=CIRCLE_TIMEOUT_S,
-        ),
+
         # Removed roundabout waypoint chain (kept as comment for reference):
         # DriveToWaypointObjective(
         #     waypoint=(0.2, 0.5),
@@ -165,15 +182,15 @@ def build_objectives():
         #     print_interval=20,
         #     nav_mode="smooth",
         # ),
-        # DriveToLineObjective(
-        #     follow_left=False,
-        #     follow_speed=0.75,
-        #     search_speed=0.35,
-        #     centering_speed=0.3,
-        #     lost_line_timeout_s=3.0,
-        #     ),
-        #  SearchAndNavigateToBlueBall(),
-        #  ArmDownObjective(),
+         DriveToLineObjective(
+             follow_left=False,
+             follow_speed=0.75,
+             search_speed=0.35,
+             centering_speed=0.3,
+             lost_line_timeout_s=3.0,
+             ),
+          SearchAndNavigateToBlueBall(),
+          ArmDownObjective(),
         # Next objectives for midpoint demo can be appended here.
         # DriveToLineObjective(),
         # FollowLineOpenSpaceObjective(),
