@@ -80,9 +80,6 @@ class ArucoDetector(TargetDetector):
         self.frame_fail_count = 0
         self.fail_log_iteration = 5
         
-        
-        
-        
     def start(self):
         # Initialize any necessary resources for target detection
         if self.manage_camera:
