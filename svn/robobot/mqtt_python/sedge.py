@@ -75,8 +75,8 @@ class SEdge:
     # PID profiles for different velocities
     pidProfiles = {
         'slow': {
-            'Kp': 1.5,    # More aggressive proportional gain for slow speeds
-            'Ki': 0.4,    # Increased integral gain
+            'Kp': 1.1,    # More aggressive proportional gain for slow speeds
+            'Ki': 0.2,    # Increased integral gain
             'Kd': 0.15,   # Increased derivative gain
             'derivativeAlpha': 0.5,    # More low-pass filtering for noise reduction
             'maxIntegral': 1.5

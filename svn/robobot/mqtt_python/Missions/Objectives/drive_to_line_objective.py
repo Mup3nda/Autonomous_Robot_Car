@@ -52,6 +52,7 @@ class DriveToLineObjective(Objective):
         centering_speed=CENTERING_SPEED,
         lost_line_timeout_s=LOST_LINE_TIMEOUT_S,
         instant_stop=True,
+        max_duration=0.0,
     ):
         super().__init__()
         self.follow_left = bool(follow_left)
@@ -60,6 +61,7 @@ class DriveToLineObjective(Objective):
         self.centering_speed = float(centering_speed)
         self.lost_line_timeout_s = float(lost_line_timeout_s)
         self.instant_stop = bool(instant_stop)
+        self.max_duration = float(max_duration)
     def start(self, ctx):
         """Initialize local progress trackers without resetting global odometry."""
         self.state = DriveToLineState.START
@@ -68,6 +70,7 @@ class DriveToLineObjective(Objective):
         self.centering_start_time = 0.0  # Wall-clock when centering started
         self.centering_deadline = 0.0  # Hard timeout for centering phase
         self.follow_ramp_start_time = 0.0  # Wall-clock when follow speed ramp starts
+        self.start_time = t.time()
         ctx.start_local_progress(self.SEARCH_PROGRESS_KEY)
         ctx.actions.drive.leds(0, 100, 0)  # Green LED
         print("% Driving to line ---------------------- right ir start ---")
@@ -125,7 +128,15 @@ class DriveToLineObjective(Objective):
         elif self.state == DriveToLineState.LINE_FOLLOWING:
             # State 10: Following line - check if line is still valid
             
+            if self.max_duration > 0 and (t.time() - self.start_time) > self.max_duration:
+                print(f"DriveToLineObjective: Stopping due to max duration of {self.max_duration:.1f}s reached.")
+                ctx.actions.edge.stop_following()
+                ctx.actions.drive.stop(instant=self.instant_stop)
+                self.state = DriveToLineState.STOPPED
+                return
+
             if self._line_lost(ctx):
+
                 # Lost the line - stop and try to recover
                 ctx.actions.edge.stop_following()
                 ctx.actions.drive.stop(instant=self.instant_stop)
