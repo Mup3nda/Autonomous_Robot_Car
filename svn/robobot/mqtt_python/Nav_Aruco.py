@@ -1,11 +1,10 @@
 import threading
 import time
 #import scam as cam
+#from scam_usb import cam_usb as cam
 
-import scam_usb as cam
 
-
-class Nav:
+class NavAruco:
     """Navigation controller to center a detected target and move towards it."""
 
     def __init__(self):
