@@ -17,6 +17,8 @@ from target_detector import TargetDetector
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+CAM_CONFIG_PATH = "/home/local/Autonomous_Robot_Car/svn/robobot/calibrations/usb_cam_640x480.yaml"
+
 
 class ArucoDetector(TargetDetector):
     CUBE_MARKER_SIZE = 0.0350
@@ -56,7 +58,7 @@ class ArucoDetector(TargetDetector):
                  cam, 
                  gpio, 
                  service, 
-                 camera_config='/home/local/Autonomous_Robot_Car/CV/aruco/oliver_calibration.yaml', 
+                 camera_config=CAM_CONFIG_PATH, 
                  target_id=None, 
                  manage_camera=False
     ):
