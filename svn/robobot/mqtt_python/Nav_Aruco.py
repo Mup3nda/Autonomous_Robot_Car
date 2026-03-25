@@ -1,6 +1,7 @@
 import threading
 import time
-import scam as cam
+#import scam as cam
+import scam_usb as cam_usb
 
 
 class Nav:
