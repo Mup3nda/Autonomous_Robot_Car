@@ -1,6 +1,7 @@
 from spose import pose
 from sir import ir
-from scam import cam
+from scam_usb import cam_usb as cam
+#from scam import cam
 from sedge import edge
 from sgpio import gpio
 from uservice import service

@@ -40,6 +40,7 @@ CIRCLE_TIMEOUT_S = 40.0
 def build_objectives():
     objectives = [
         ArmUpObjective(),
+        #ArmDownObjective(),
         # DriveToLineObjective(
         #     follow_left=True,
         #     follow_speed=0.8,
@@ -101,7 +102,6 @@ def build_objectives():
         # ),
         #SearchAndNavigateToBlueBall(),
         #NavigateToBlueBall(),
-        
         
         SearchAndNavigateToAruco(marker_id=0),
         ArmDownObjective(),

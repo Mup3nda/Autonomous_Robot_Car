@@ -7,7 +7,9 @@ import cv2                          # OpenCV for image processing
 from flask import Flask, Response   # Web server for MJPEG streaming
 import logging
 import yaml
-from scam import cam
+
+from scam_usb import cam_usb as cam
+#from scam import cam
 from sgpio import gpio
 from uservice import service
 from target_detector import TargetDetector
