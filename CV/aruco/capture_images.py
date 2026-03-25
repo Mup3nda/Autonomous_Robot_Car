@@ -6,7 +6,7 @@ raspi = False
 # if raspi:
 #     from picamera2 import Picamera2
 
-SAVE_DIR = "calib_images/usb_cam"
+SAVE_DIR = "calib_images/usb_cam_820_616"
 NUM_IMAGES = 30  
 CHESSBOARD_SIZE = (8, 6)
 # Chessboard settings
@@ -25,6 +25,8 @@ os.makedirs(SAVE_DIR, exist_ok=True)
 
 if not raspi:
     cap = cv2.VideoCapture(0) 
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 820)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 616)
     #cap = cv2.VideoCapture(f'http://0.0.0.0:7124/usb_camera')
 
 count = 0

@@ -12,7 +12,7 @@ and saves the calibration parameters to a YAML file.
 # Chessboard settings
 #CHESSBOARD_SIZE = (7, 7) #(8, 6)
 CHESSBOARD_SIZE = (8, 6) #(8, 6)
-SQUARE_SIZE = 31  # 21mm
+SQUARE_SIZE = 20.5  # 21mm
 
  
 # Prepare object points based on the chessboard size and square size
@@ -30,12 +30,15 @@ objp *= SQUARE_SIZE
 objpoints = []  # 3D points
 imgpoints = []  # 2D points
 image_size = None
+
+PATH = "CV/aruco/calib_images/usb_cam_640x480"
+SAVE_FILE = "CV/aruco/usb_cam_640x480"
  
 # Load images from the specified directory
-images = glob.glob("calib_images/usb_cam/*.jpg")
+images = glob.glob(f"{PATH}/*.jpg")
 
 if not images:
-    print("No images found in calib_images/usb_cam")
+    print(f"No images found in {PATH}")
     print("Capture calibration images first, then run this script again.")
     sys.exit(1)
  
@@ -94,7 +97,7 @@ calib_data = {
 }
  
 # Save the calibration data to a YAML file
-with open("usb_cam.yaml", "w") as f:
+with open(f"{SAVE_FILE}.yaml", "w") as f:
     yaml.dump(calib_data, f)
  
-print("Saved calibration.yaml")
+print(f"Saved {SAVE_FILE}.yaml")
