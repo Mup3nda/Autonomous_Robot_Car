@@ -1,10 +1,9 @@
 import threading
 import time
-#import scam as cam
-import scam_usb as cam
+import scam as cam
 
 
-class NavAruco:
+class Nav:
     """Navigation controller to center a detected target and move towards it."""
 
     def __init__(self):
@@ -38,12 +37,12 @@ class NavAruco:
         self.K_STEER = 1.5
 
         # forward controller using Y position
-        #self.K_FORWARD = 0.0015
-        self.K_FORWARD = 0.5
+        self.K_FORWARD = 0.0015
+        #self.K_FORWARD = 0.5
         
         # desired vertical position of the ball
         self.DESIRED_Y = 545
-        self.DESIRED_DISTANCE = 0.41
+        self.DESIRED_DISTANCE = 0.40
 
         # tolerances
         self.ROTATION_TOLERANCE = 0.015
@@ -96,12 +95,12 @@ class NavAruco:
                 rotation_error = pixel_error * (self.CAMERA_FOV / img_width)
 
                 # ---------- y error ----------
-                #ball_y = self.target["y"]
-                #y_error = self.DESIRED_Y - ball_y
-                distance = self.target["distance"]
-                distance_error = - self.DESIRED_DISTANCE + distance
+                ball_y = self.target["y"]
+                y_error = self.DESIRED_Y - ball_y
+                #distance = self.target["distance"]
+                #distance_error = - self.DESIRED_DISTANCE + distance
 
-                print(f"Distance: {distance}, Error: {distance_error}")
+                #print(f"Distance: {distance}, Error: {distance_error}")
 
                 # ---------------------------------------------------
                 # ROTATION PHASE
@@ -146,7 +145,7 @@ class NavAruco:
 
                 if self.forward_phase:
 
-                    #print(f"Y error: {y_error}, Rotation error: {rotation_error}")
+                    print(f"Y error: {y_error}, Rotation error: {rotation_error}")
                     print(f"Target info: {self.target}")
                     
                     if self.target is None:
@@ -156,10 +155,10 @@ class NavAruco:
                         continue
                    
                     #if y_error <= self.Y_TOLERANCE:
-                    if distance_error <= self.DISTANCE_TOLERANCE:
+                    if y_error <= self.DISTANCE_TOLERANCE:
                         
                         print("Target reached")
-                        #time.sleep(1.5)
+                        time.sleep(1.5)
                         self.ctx.actions.drive.stop()
                         self.hasReachedTarget = True
                         self.is_running = False
@@ -168,7 +167,7 @@ class NavAruco:
                         continue
 
                     # proportional forward controller
-                    linear_speed = self.K_FORWARD * distance_error
+                    linear_speed = self.K_FORWARD * y_error
 
                     # clamp forward speed
                     if linear_speed > self.MAX_LINEAR_SPEED:
@@ -186,10 +185,10 @@ class NavAruco:
 
                     self.ctx.actions.drive.rc(linear_speed, angular_speed)
 
-                    #if should_log:
-                        #print(
-                            #f"Forward | y_err={y_error:.1f} rot_err={rotation_error:.3f} v={linear_speed:.3f} w={angular_speed:.3f}"
-                        #)
+                    if should_log:
+                        print(
+                            f"Forward | y_err={y_error:.1f} rot_err={rotation_error:.3f} v={linear_speed:.3f} w={angular_speed:.3f}"
+                        )
 
                 time.sleep(0.03)
 

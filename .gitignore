@@ -65,16 +65,6 @@ __pycache__
 *.pyo
 *.pyd
 *.log
+svn/robobot/mqtt_python/Missions/logfile.txt*
+svn/robobot/mqtt_python/pid/
 
-CV/__pycache__
-svn/robobot/teensy_interface
-svn/robobot/teensy_interface/log_20260316_114345.788/log_t0_pose.txt
-svn/robobot/mqtt_python/Missions/__pycache__
-svn/robobot/mqtt_python/Missions/Objectives/__pycache__
-svn/robobot/stream_server/__pycache__
-svn/robobot/mqtt_python/Missions/robot_actions/__pycache__
-svn/robobot/mqtt_python/Missions/robot_actions/__pycache__
-svn/robobot/teensy_firmware_6.3/libraries
-svn/robobot/mqtt_python/Missions/robot_actions/__pycache__
-svn/robobot/teensy_firmware_8/libraries
-svn/robobot/mqtt_python/Missions/logs
