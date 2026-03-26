@@ -7,13 +7,17 @@ import cv2                          # OpenCV for image processing
 from flask import Flask, Response   # Web server for MJPEG streaming
 import logging
 import yaml
-from scam import cam
+
+from scam_usb import cam_usb as cam
+#from scam import cam
 from sgpio import gpio
 from uservice import service
 from target_detector import TargetDetector
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+CAM_CONFIG_PATH = "/home/local/Autonomous_Robot_Car/svn/robobot/calibrations/usb_cam_640x480.yaml"
 
 
 class ArucoDetector(TargetDetector):
@@ -54,7 +58,7 @@ class ArucoDetector(TargetDetector):
                  cam, 
                  gpio, 
                  service, 
-                 camera_config='/home/local/Autonomous_Robot_Car/CV/aruco/oliver_calibration.yaml', 
+                 camera_config=CAM_CONFIG_PATH, 
                  target_id=None, 
                  manage_camera=False
     ):
@@ -79,9 +83,6 @@ class ArucoDetector(TargetDetector):
         self.camera_started_by_detector = False
         self.frame_fail_count = 0
         self.fail_log_iteration = 5
-        
-        
-        
         
     def start(self):
         # Initialize any necessary resources for target detection

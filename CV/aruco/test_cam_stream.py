@@ -12,8 +12,8 @@ while True:
     
     print(f"Frame: {h, w, c}")
     
-    ch0 = frame[:,:,1]
-    cv2.imshow("Channel One", ch0)
+    # ch0 = frame[:,:,1]
+    # cv2.imshow("Channel One", ch0)
     
     key = cv2.waitKey(1) & 0xFF
     if key == ord('q'):

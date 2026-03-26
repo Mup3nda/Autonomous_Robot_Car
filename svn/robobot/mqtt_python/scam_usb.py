@@ -21,7 +21,7 @@ class SUsbCam:
   def setup(self):
     if self.useCam:
       #self.cap = cv.VideoCapture(f'http://{service.host}:7124/usb_camera')
-      self.cap = cv.VideoCapture(f'http://{self.camhost}:{self.port}/usb_camera')
+      self.cap = cv.VideoCapture(f'http://{self.camhost}:{self.port}/usb_stream.mjpg')
       if self.cap.isOpened():
         print(f"% SUsbCam:: Connected to {service.host}")
         self.th = Thread(target=cam_usb.run)
