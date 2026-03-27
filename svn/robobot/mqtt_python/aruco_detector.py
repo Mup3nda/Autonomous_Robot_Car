@@ -424,8 +424,10 @@ class ArucoDetector(TargetDetector):
 
 
 if __name__=='__main__':
-    
-    aruco = ArucoDetector(cam=cam, gpio=gpio, service=service, manage_camera = True)
+
+    from scam_usb import cam_usb
+
+    aruco = ArucoDetector(cam=cam_usb, gpio=gpio, service=service, manage_camera = True)
     
     args = aruco.parse_arguments()
 
