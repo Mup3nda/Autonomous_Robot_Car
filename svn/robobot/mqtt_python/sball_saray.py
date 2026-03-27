@@ -297,7 +297,7 @@ class SBall(TargetDetector):
         ball_real_radius_m = 0.04  # meters
 
         # Focal length estimation (you should calibrate this)
-        focal_length_px = 600  # rough estimate for typical webcam
+        focal_length_px = 530.54  # rough estimate for typical webcam
 
         # Distance = (real_size * focal_length) / apparent_size
         distance_m = (ball_real_radius_m * focal_length_px) / self.ball_radius
@@ -360,29 +360,6 @@ class SBall(TargetDetector):
             'last_update_time': self.ball_time.isoformat() if self.ball_time else None
         }
 
-    def get_target_distance(self):
-        """
-        Get the estimated distance to the locked target in meters.
-        This is a rough estimation based on ball radius in pixels.
-
-        Returns:
-            float or None: Distance in meters if target is locked, None otherwise
-        """
-        if not self.ball_valid or self.ball_radius == 0:
-            return None
-
-        # Rough distance estimation based on ball radius
-        # This is a simplified model - you may want to calibrate this
-        # Typical soccer ball is ~22cm diameter, so radius ~11cm = 0.11m
-        ball_real_radius_m = 0.025  # meters
-
-        # Focal length estimation (you should calibrate this)
-        focal_length_px = 600  # rough estimate for typical webcam
-
-        # Distance = (real_size * focal_length) / apparent_size
-        distance_m = (ball_real_radius_m * focal_length_px) / self.ball_radius
-
-        return distance_m
 
 
 # Global instance
