@@ -86,10 +86,10 @@ LINE_EXIT_FOLLOW_SPEED = 0.75
 # Add objectives in the list below in the exact order they should execute.
 def build_objectives():
     objectives = [
-        DriveToWaypointObjective(waypoint=(0.0,0.0), nav_mode=WAYPOINT_NAV_MODE,reset_origin=True),
+        #DriveToWaypointObjective(waypoint=(0.0,0.0), nav_mode=WAYPOINT_NAV_MODE,reset_origin=True),
         SearchAndNavigateToGolfBall(),
         ArmDownObjective(wait_after_s=2.0),
-        DriveToWaypointObjective(waypoint=(0.0,0.0), nav_mode=WAYPOINT_NAV_MODE,reset_origin=False),
+        #DriveToWaypointObjective(waypoint=(0.0,0.0), nav_mode=WAYPOINT_NAV_MODE,reset_origin=False),
         ArmUpObjective()        
     ]
     return objectives
