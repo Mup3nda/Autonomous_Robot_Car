@@ -42,7 +42,7 @@ class DriveToLineState(IntEnum):
     LINE_FOLLOWING = 10
     DONE = 99
 
-class DriveToLineObjective(Objective):
+class DriveToLineObjectiveIMU(Objective):
     name = "drive_to_line"
     SEARCH_PROGRESS_KEY = "drive_to_line_search"
     ALONG_LINE_PROGRESS_KEY = "drive_to_line_along"
