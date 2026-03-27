@@ -78,3 +78,5 @@ svn/robobot/teensy_firmware_6.3/libraries
 svn/robobot/mqtt_python/Missions/robot_actions/__pycache__
 svn/robobot/teensy_firmware_8/libraries
 svn/robobot/mqtt_python/Missions/logs
+svn/log
+svn/log/rebootinfo.txt
