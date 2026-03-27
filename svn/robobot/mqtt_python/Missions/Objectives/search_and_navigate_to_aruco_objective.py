@@ -30,7 +30,7 @@ class SearchAndNavigateToAruco(CompositeObjective):
                 marker_id = marker_id,
                 desired_distance=desired_distance,
                 print_interval=navigate_print_interval,
-                nav_mode="sequential"
+                nav_mode="aruco"
             ),
         ]
         super().__init__(objectives)

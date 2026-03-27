@@ -1,0 +1,85 @@
+name: Sync Branches from Main
+
+on:
+  workflow_dispatch:
+
+jobs:
+  sync:
+    name: Merge main into ${{ matrix.branch }}
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        branch:
+          - ArmtestFunction
+          - IMU_test
+          - OpenSpaceNavigation
+          - ServoControl
+          - VisualInertialOdometry
+          - aruco
+          - control
+          - cv-ball
+          - golf_ball
+          - line
+          - midway_evaluation
+          - test_aruco_platform
+          - test_control_balls
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Check if branch is behind main
+        id: check
+        run: |
+          git fetch origin main ${{ matrix.branch }}
+          BEHIND=$(git rev-list origin/${{ matrix.branch }}..origin/main --count)
+          echo "Branch ${{ matrix.branch }} is $BEHIND commits behind main"
+          echo "behind=$BEHIND" >> $GITHUB_OUTPUT
+
+      - name: Merge main into branch
+        if: steps.check.outputs.behind != '0'
+        run: |
+          git checkout ${{ matrix.branch }}
+
+          # Attempt merge with 'ours' strategy for content conflicts
+          if ! git merge origin/main \
+            -m "Merge main into ${{ matrix.branch }} to sync core code" \
+            --no-edit \
+            -X ours; then
+
+            # Resolve any remaining modify/delete conflicts
+            git diff --name-only --diff-filter=U | while read -r file; do
+              if git ls-tree origin/main -- "$file" | grep -q .; then
+                # File exists in main but deleted in our branch → keep our deletion
+                git rm -- "$file"
+              else
+                # File deleted in main but modified in our branch → keep our version
+                git add -- "$file"
+              fi
+            done
+
+            # Commit only if there are staged changes to resolve
+            git diff --cached --quiet || git commit \
+              -m "Merge main into ${{ matrix.branch }} to sync core code" \
+              --no-edit
+          fi
+
+          git push origin ${{ matrix.branch }}
+          echo "✓ Successfully merged main into ${{ matrix.branch }}"
+
+      - name: Skip (already up to date)
+        if: steps.check.outputs.behind == '0'
+        run: |
+          echo "✓ Branch ${{ matrix.branch }} is already up to date with main"
+

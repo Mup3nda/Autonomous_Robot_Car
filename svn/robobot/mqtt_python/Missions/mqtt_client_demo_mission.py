@@ -35,7 +35,7 @@ from Objectives.navigate_to_blue_ball_objective import NavigateToBlueBallObjecti
 from Objectives.look_for_blue_ball_objective import LookForBlueBallObjective
 from Objectives.search_and_navigate_to_blue_ball_objective import SearchAndNavigateToBlueBall
 from Objectives.drive_square_world_points_objective import DriveSquareWorldPointsObjective
-
+from Objectives.navigate_to_platform import NavigateToPlatform
 
 # This is a demo mission that can be used to test the robot and MQTT connection.
 def build_objectives():
@@ -53,6 +53,8 @@ def build_objectives():
         return [NavigateToBlueBallObjective()]
     if service.args.square_world:
         return [DriveSquareWorldPointsObjective()]
+    if service.args.platform:
+        return [NavigateToPlatform()]
     return [LineTurnImageObjective()]
 
 

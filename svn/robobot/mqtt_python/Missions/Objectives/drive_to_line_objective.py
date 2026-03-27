@@ -24,7 +24,7 @@ LINE_FOUND_CONFIDENCE = 4
 CENTERED_CONFIDENCE = 8
 CENTERED_MIN_TIME_S = 2.0
 CENTERING_TIMEOUT_S = 4.0
-FOLLOW_VALID_CONFIDENCE = 1
+FOLLOW_VALID_CONFIDENCE = 2
 LOST_LINE_TIMEOUT_S = 5
 STOPPED_VELOCITY_EPS = 0.001
 FOLLOW_LEFT = False  # Set to True to follow line on left side instead of right
@@ -35,6 +35,7 @@ class DriveToLineState(IntEnum):
     SEARCHING = 1
     STOPPED = 2
     CENTERING = 3
+    RAMPING = 4
     LINE_FOLLOWING = 10
     DONE = 99
 
@@ -50,6 +51,8 @@ class DriveToLineObjective(Objective):
         search_speed=SEARCH_SPEED,
         centering_speed=CENTERING_SPEED,
         lost_line_timeout_s=LOST_LINE_TIMEOUT_S,
+        instant_stop=True,
+        max_duration=0.0,
     ):
         super().__init__()
         self.follow_left = bool(follow_left)
@@ -57,7 +60,8 @@ class DriveToLineObjective(Objective):
         self.search_speed = float(search_speed)
         self.centering_speed = float(centering_speed)
         self.lost_line_timeout_s = float(lost_line_timeout_s)
-
+        self.instant_stop = bool(instant_stop)
+        self.max_duration = float(max_duration)
     def start(self, ctx):
         """Initialize local progress trackers without resetting global odometry."""
         self.state = DriveToLineState.START
@@ -65,9 +69,22 @@ class DriveToLineObjective(Objective):
         self.along_line_started = False
         self.centering_start_time = 0.0  # Wall-clock when centering started
         self.centering_deadline = 0.0  # Hard timeout for centering phase
+        self.follow_ramp_start_time = 0.0  # Wall-clock when follow speed ramp starts
+        self.start_time = t.time()
         ctx.start_local_progress(self.SEARCH_PROGRESS_KEY)
         ctx.actions.drive.leds(0, 100, 0)  # Green LED
         print("% Driving to line ---------------------- right ir start ---")
+
+    def _line_lost(self, ctx):
+        last_seen_time = ctx.actions.edge.last_seen_time_passed()
+        line_lost = not ctx.actions.edge.is_line_valid(confidence=FOLLOW_VALID_CONFIDENCE) \
+                    and last_seen_time > self.lost_line_timeout_s
+        
+        color = "\033[91m" if line_lost else "\033[92m"  # Red if lost, green if valid
+        reset = "\033[0m"
+        print(f"{color}Last seen time: {last_seen_time:.3f}s{reset}")
+        
+        return line_lost
 
     def tick(self, ctx):
         """Update objective state and control the robot."""
@@ -83,7 +100,7 @@ class DriveToLineObjective(Objective):
             search_elapsed = t.time() - search_marker["time_s"]
             if search_dist > SEARCH_MAX_DISTANCE_M or search_elapsed > SEARCH_TIMEOUT_S:
                 # Stop if traveled >1m or >15s timeout without finding line
-                ctx.actions.drive.stop()
+                ctx.actions.drive.stop(instant=self.instant_stop)
                 self.state = DriveToLineState.STOPPED
             if ctx.actions.edge.is_line_valid(confidence=LINE_FOUND_CONFIDENCE):
                 # Line detected! Switch to centering mode at low speed
@@ -110,10 +127,19 @@ class DriveToLineObjective(Objective):
                 self.state = DriveToLineState.DONE  # Mark as done
         elif self.state == DriveToLineState.LINE_FOLLOWING:
             # State 10: Following line - check if line is still valid
-            if not ctx.actions.edge.is_line_valid(confidence=FOLLOW_VALID_CONFIDENCE) and ctx.actions.edge.last_seen_time_passed() > self.lost_line_timeout_s:
+            
+            if self.max_duration > 0 and (t.time() - self.start_time) > self.max_duration:
+                print(f"DriveToLineObjective: Stopping due to max duration of {self.max_duration:.1f}s reached.")
+                ctx.actions.edge.stop_following()
+                ctx.actions.drive.stop(instant=self.instant_stop)
+                self.state = DriveToLineState.STOPPED
+                return
+
+            if self._line_lost(ctx):
+
                 # Lost the line - stop and try to recover
                 ctx.actions.edge.stop_following()
-                ctx.actions.drive.stop()
+                ctx.actions.drive.stop(instant=self.instant_stop)
                 self.state = DriveToLineState.STOPPED  # Go to stopped state
         else:
             # Final state - log results and mark complete
@@ -127,11 +153,11 @@ class DriveToLineObjective(Objective):
                 f"# drive to line {self.dist_to_line:.3f}m, then along line "
                 f"{along_line_dist:.3f}m in {along_line_time:.3f} seconds"
             )
-            ctx.actions.drive.stop()
+            ctx.actions.drive.stop(instant=self.instant_stop)
             self._done = True  # Mark objective as complete
 
     def stop(self, ctx):
         """Clean up: turn off LED and stop the robot."""
         ctx.actions.drive.leds(0, 0, 0)  # Turn off LEDs
-        ctx.actions.drive.stop()  # Stop all movement
+        ctx.actions.drive.stop(instant=self.instant_stop)  # Stop all movement
         print("% Driving to line ------------------------- end")

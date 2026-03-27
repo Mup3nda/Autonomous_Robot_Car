@@ -103,6 +103,8 @@ class UService:
                 help='Rotate to find ball in camera view')
     self.parser.add_argument('--nav-ball', action='store_true',
                 help='Navigate to the blue ball target')
+    self.parser.add_argument('--platform', action='store_true',
+                help='Navigate to the platform')
     self.parser.add_argument('--square-world', action='store_true',
           help='Drive a square using world-point navigation')
     self.parser.add_argument('-u', '--usestate', type=int, default = 0,

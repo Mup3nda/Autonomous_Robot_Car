@@ -1,4 +1,3 @@
-"""Navigate To ArUco Objective - Move towards a detected ArUco marker."""
 
 from enum import IntEnum
 
@@ -8,13 +7,13 @@ from objective import Objective
 from aruco_detector import ArucoDetector
 
 
-class NavigateToArucoState(IntEnum):
+class NavigateToPlatformState(IntEnum):
     MOVING = 0
     COMPLETE = 1
     DONE = 99
 
 
-class NavigateToArucoObjective(Objective):
+class NavigateToPlatform(Objective):
     """Move the robot towards a detected ArUco marker.
     
     This objective demonstrates how to use the Nav class with a TargetDetector:
@@ -26,7 +25,7 @@ class NavigateToArucoObjective(Objective):
     Parameters:
     -----------
     marker_id: Int
-        ArUco marker ID to navigate towards (default 53)
+        ArUco marker ID to navigate towards (default 5)
 
     desired_distance: Float
         Target distance to maintain from marker (default 0.41 = 41cm)
@@ -38,7 +37,7 @@ class NavigateToArucoObjective(Objective):
         "sequential" (rotate-then-drive) or "smooth" (simultaneous drive+turn)
     """
     
-    def __init__(self, marker_id=53, desired_distance=0.41, print_interval=20, nav_mode="aruco"): #NavMode "aruco" for aruco controller. Sequential is Nav.py Smooth is NavSmooth.py
+    def __init__(self, marker_id=5, desired_distance=0.41, print_interval=20, nav_mode="platform"): #NavMode "aruco" for aruco controller. Sequential is Nav.py Smooth is NavSmooth.py
         super().__init__()
         self.desired_distance = desired_distance
         self.print_interval = print_interval
@@ -48,7 +47,7 @@ class NavigateToArucoObjective(Objective):
 
     def start(self, ctx: MissionContext):
         """Initialize navigation to ArUco marker using NavigationAction."""
-        self.state = NavigateToArucoState.MOVING
+        self.state = NavigateToPlatformState.MOVING
         self.tick_count = 0
         
         # Create detector for the target ArUco marker
@@ -69,7 +68,7 @@ class NavigateToArucoObjective(Objective):
         
         # Check if navigation objective is complete
         if ctx.actions.navigation.is_complete():
-            self.state = NavigateToArucoState.COMPLETE
+            self.state = NavigateToPlatformState.COMPLETE
             self._done = True
             print(f"% Navigate To ArUco objective complete!")
         elif self.tick_count % self.print_interval == 0:

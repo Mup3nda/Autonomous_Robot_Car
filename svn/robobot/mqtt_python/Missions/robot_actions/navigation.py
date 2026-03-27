@@ -6,8 +6,9 @@ import os
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-#from Autonomous_Robot_Car.svn.robobot.mqtt_python.Nav_Aruco import Nav_Aruco #import nav2  for the new version
-from Nav_Aruco import Nav as NavAruco
+from Nav_Aruco import Nav as Nav_Aruco #import nav2  for the new version
+from Nav_Balls import Nav as Nav_Balls
+from Nav_Platform import Nav as Nav_Platform
 from NavSmooth import NavSmooth
 
 
@@ -71,7 +72,11 @@ class NavigationAction:
         if str(nav_mode).lower() == "smooth":
             self.nav = NavSmooth()
         elif str(nav_mode).lower() == "aruco":
-            self.nav = NavAruco()
+            self.nav = Nav_Aruco()
+        elif str(nav_mode).lower() == "platform":
+            self.nav = Nav_Platform()
+        else:
+            self.nav = Nav_Balls()
         self.nav.setup(self.detector, self.desired_distance, ctx)
     
     def start(self):
