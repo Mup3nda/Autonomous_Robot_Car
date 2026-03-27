@@ -15,19 +15,19 @@ class SUsbCam:
   useCam = True
   imageFailCnt = 0
   stop = False
-  camhost = '0.0.0.0'
+  camhost = 'localhost'
   port = 7124
 
   def setup(self):
     if self.useCam:
-      #self.cap = cv.VideoCapture(f'http://{service.host}:7124/usb_camera')
-      self.cap = cv.VideoCapture(f'http://{self.camhost}:{self.port}/usb_stream.mjpg')
+      stream_url = f'http://{self.camhost}:{self.port}/usb_stream.mjpg'
+      self.cap = cv.VideoCapture(stream_url)
       if self.cap.isOpened():
-        print(f"% SUsbCam:: Connected to {service.host}")
+        print(f"% SUsbCam:: Connected to {stream_url}")
         self.th = Thread(target=cam_usb.run)
         self.th.start()
       else:
-        print(f"% SUsbCam:: Failed to connect to {service.host}")
+        print(f"% SUsbCam:: Failed to connect to {stream_url}")
         self.terminate()
     else:
       print("% SUsbCam:: Camera disabled (in scam_usb.py)")
