@@ -5,10 +5,10 @@ from Objectives.look_for_ball_objective import LookForBallObjective
 from Objectives.navigate_to_ball_objective import NavigateToBallObjective
 
 
-class SearchAndNavigateToBlueBall(CompositeObjective):
-    """Run blue-ball search first, then start navigation to the detected ball."""
+class SearchAndNavigateToGolfBall(CompositeObjective):
+    """Run golf-ball search first, then start navigation to the detected ball."""
 
-    name = "Search_And_Navigate_To_Blue_Ball"
+    name = "Search_And_Navigate_To_Golf_Ball"
 
     def __init__(
         self,
@@ -29,6 +29,7 @@ class SearchAndNavigateToBlueBall(CompositeObjective):
                 desired_distance=desired_distance,
                 print_interval=navigate_print_interval,
                 nav_mode="sequential",
+                color="red_orange",
             ),
         ]
         super().__init__(objectives)
