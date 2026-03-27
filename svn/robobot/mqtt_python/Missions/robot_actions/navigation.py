@@ -7,7 +7,7 @@ import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
 #from Autonomous_Robot_Car.svn.robobot.mqtt_python.Nav_Aruco import Nav_Aruco #import nav2  for the new version
-from Nav_Aruco import NavAruco
+from Nav_Aruco import Nav as NavAruco
 from NavSmooth import NavSmooth
 
 
@@ -71,7 +71,7 @@ class NavigationAction:
         if str(nav_mode).lower() == "smooth":
             self.nav = NavSmooth()
         elif str(nav_mode).lower() == "aruco":
-            self.nav = Nav_Aruco()
+            self.nav = NavAruco()
         self.nav.setup(self.detector, self.desired_distance, ctx)
     
     def start(self):

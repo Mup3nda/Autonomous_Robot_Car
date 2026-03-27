@@ -15,7 +15,8 @@ class SUsbCam:
   useCam = True
   imageFailCnt = 0
   stop = False
-  camhost = 'localhost'
+  #camhost = 'localhost'
+  camhost = '0.0.0.0'
   port = 7124
 
   def setup(self):
