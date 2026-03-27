@@ -2,7 +2,7 @@ import cv2 as cv
 from threading import Thread
 import time as t
 from datetime import *
-from uservice import service
+
 
 class SUsbCam:
 
@@ -20,7 +20,10 @@ class SUsbCam:
   port = 7124
 
   def setup(self):
+    print("SETIING USB CAMERA. " + str(self.useCam))
+    
     if self.useCam:
+      print("SETIING USB CAMERA"*60)
       stream_url = f'http://{self.camhost}:{self.port}/usb_stream.mjpg'
       self.cap = cv.VideoCapture(stream_url)
       if self.cap.isOpened():
@@ -45,6 +48,7 @@ class SUsbCam:
         print("% SUsbCam:: could not open")
       fail = True
     if not fail:
+      from uservice import service
       self.getFrame = True
       cnt = 0  # timeout
       while self.getFrame and cnt < 100 and not service.stop:

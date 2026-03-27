@@ -68,3 +68,4 @@ __pycache__
 svn/robobot/mqtt_python/Missions/logfile.txt*
 svn/robobot/mqtt_python/pid/
 
+svn/log/ip_disp.out
