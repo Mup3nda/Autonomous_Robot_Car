@@ -34,3 +34,11 @@ python3 cam streamer started with PID:
 Teensy _interface started with PID:
 881 teensy_interfac
 Tue Feb 10 09:27:32 AM CET 2026
+================ Rebooted ================
+Fri Mar 27 06:15:51 PM CET 2026
+ip_disp started with PID:
+804 ip_disp
+python3 usb_cam streamer started with PID: 853
+853 python3
+908 teensy_interfac
+Fri Mar 27 06:15:53 PM CET 2026

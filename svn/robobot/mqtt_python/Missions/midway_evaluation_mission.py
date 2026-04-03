@@ -88,7 +88,7 @@ def build_objectives():
         ArmDownObjective(wait_after_s=2.0),
         ArmUpObjective(),
         
-        SearchAndNavigateToAruco(marker_id=0,turn_rate=0.3),
+        SearchAndNavigateToAruco(marker_id=53,turn_rate=0.4),
         ArmDownObjective(wait_after_s=2.0),
         ArmUpObjective(),
         

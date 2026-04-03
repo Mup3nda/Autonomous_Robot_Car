@@ -7,13 +7,6 @@ http://127.0.0.1:7124/usb_stream.mjpg
 --------------------------------
 
 
-Streams index: http://10.197.218.199:7124
-Available streams:
-
-http://10.197.218.199:7124/usb_stream.mjpg
---------------------------------
-
-
 Press Ctrl+C to stop the server
 
 % USE THE STREAMING ADRESS BELOW!!!!!!!
