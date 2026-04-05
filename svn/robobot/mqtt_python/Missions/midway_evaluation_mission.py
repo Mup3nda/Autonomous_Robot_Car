@@ -28,6 +28,9 @@ from Objectives.arm_up_objective import ArmUpObjective
 from Objectives.arm_down_objective import ArmDownObjective
 from Objectives.drive_to_line_objective import DriveToLineObjective
 from Objectives.search_and_navigate_to_aruco_objective import SearchAndNavigateToAruco
+from Objectives.search_and_navigate_to_golf_ball import SearchAndNavigateToGolfBall
+from Objectives.drive_until_end_ramp import DriveUntilEndRamp
+from Objectives.drive_to_line_objective_ramp_imu import DriveToLineObjectiveIMU
 
 # Roundabout three-step tuning parameters.
 # Step 1: Entry line follow
@@ -85,54 +88,12 @@ LINE_EXIT_FOLLOW_SPEED = 0.75
 # Add objectives in the list below in the exact order they should execute.
 def build_objectives():
     objectives = [
-        DriveToLineObjective(
-            follow_left=True,
+        DriveUntilEndRamp(follow_left=True,
             follow_speed=0.4,
             search_speed=0.25,
             centering_speed=0.2,
-            lost_line_timeout_s=0.3,
-            max_duration =6.5
-            ),
-        DriveToWaypointObjective(
-            waypoint=(0.4,0.0),
-            reset_origin=True,
-            print_interval=20,
-            nav_mode=WAYPOINT_NAV_MODE,
-            ),
-        DriveTurnAngleObjective(
-            angle_deg=90,
-            linear_cmd=0.0,
-            timeout_s=6.0,
-        ),
-        DriveCircleObjective(
-            radius_m=CIRCLE_RADIUS_M,
-            revolutions=1.65, # one full circle + half circle
-            forward_cmd=CIRCLE_FORWARD_CMD,
-            turn_cmd=CIRCLE_TURN_CMD,
-            turn_rate_scale=CIRCLE_TURN_RATE_SCALE,
-            clockwise=CIRCLE_CLOCKWISE,
-            timeout_s=CIRCLE_TIMEOUT_S,
-        ),
-        DriveTurnAngleObjective(
-            angle_deg=90.0,
-            linear_cmd=0.0,
-            timeout_s=6.0,
-        ),
-        DriveToLineObjective(follow_left=LINE_ENTRY_FOLLOW_LEFT,
-                            follow_speed=LINE_ENTRY_FOLLOW_SPEED,
-                            search_speed=LINE_ENTRY_SEARCH_SPEED,
-                            lost_line_timeout_s=LINE_ENTRY_TIMEOUT_S),
-        DriveToWaypointObjective(waypoint=(0.0,0.0), nav_mode=WAYPOINT_NAV_MODE,reset_origin=True),
-        SearchAndNavigateToBlueBall(),
-        ArmDownObjective(wait_after_s=2.0),
-        DriveToWaypointObjective(waypoint=(0.0,0.0), nav_mode=WAYPOINT_NAV_MODE,reset_origin=False),
-        ArmUpObjective(),
-        
-        SearchAndNavigateToAruco(marker_id=53,turn_rate=0.3),
-        ArmDownObjective(wait_after_s=2.0),
-        DriveToWaypointObjective(waypoint=(0.0,0.0), nav_mode=WAYPOINT_NAV_MODE,reset_origin=False),
-        ArmUpObjective(),
-        
+            lost_line_timeout_s=1.5),
+        SearchAndNavigateToGolfBall()
     ]
     return objectives
 

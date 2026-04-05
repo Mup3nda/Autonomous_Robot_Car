@@ -559,8 +559,8 @@ class SEdge:
       par = f"rc {self.velocity:.3f} {self.lineY:.3f} {t.time()}"
       service.send("robobot/cmd/ti", par) # send new turn command, maintaining velocity
       # debug print
-      if True: # self.edge_nUpdCnt % 20 == 0:
-        print(f"% Edge::followLine PID: e={e:.3f}, P={P:.3f}, I={I:.3f}, D={D:.3f}, y={self.lineY:.3f} -> {par}")
+      #if True: # self.edge_nUpdCnt % 20 == 0:
+        #print(f"% Edge::followLine PID: e={e:.3f}, P={P:.3f}, I={I:.3f}, D={D:.3f}, y={self.lineY:.3f} -> {par}")
 
     ##########################################################
 
