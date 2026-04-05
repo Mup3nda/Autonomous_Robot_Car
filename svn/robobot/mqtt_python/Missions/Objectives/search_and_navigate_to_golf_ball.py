@@ -29,7 +29,7 @@ class SearchAndNavigateToGolfBall(CompositeObjective):
                 desired_distance=desired_distance,
                 print_interval=navigate_print_interval,
                 nav_mode="sequential",
-                color="blue"
+                color="red_orange"
             ),
         ]
         super().__init__(objectives)

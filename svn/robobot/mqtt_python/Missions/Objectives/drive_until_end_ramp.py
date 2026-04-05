@@ -157,13 +157,13 @@ class DriveUntilEndRamp(Objective):
             # --- SMART RAMP DETECTION LOGIC (using mean of 10 samples) ---
             
             # UP THRESHOLD: If pitch_diff mean changes by more than 0.12 rad (~7 degrees), we are going up
-            if pitch_diff_mean > 0.3:
+            if pitch_diff_mean > 0.35:
                 if not self.on_ramp:
                     self.on_ramp = True
                     print(f"% [RAMP] Going UP! Mean pitch_diff (10 samples): {pitch_diff_mean:.3f} rad"* 10)
 
             # TOP THRESHOLD: If we were on the ramp, and pitch_diff mean drops below 0.05 rad (~3 degrees), we reached the top
-            if self.on_ramp and pitch_diff_mean < 0.08:
+            if self.on_ramp and pitch_diff_mean < 0.05:
                 print(f"% [RAMP] Reached the top! Mean pitch_diff (10 samples): {pitch_diff_mean:.3f} rad"* 10)
                 ctx.actions.edge.stop_following()
                 ctx.actions.drive.stop(instant=self.instant_stop)
