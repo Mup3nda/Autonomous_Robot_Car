@@ -32,21 +32,26 @@ class Nav:
         self.CAMERA_FOV = 1.047
 
         # visual servoing rotation gain
-        self.K_ROT = 5.0
+        self.K_ROT = 7.5
 
         # steering gain while moving
-        self.K_STEER = 1.5
+        self.K_STEER = 1.2
 
         # forward controller using Y position
         #self.K_FORWARD = 0.0015
-        self.K_FORWARD = 0.5
+        self.K_FORWARD = 0.75
+        self.I_FORWARD = 0.02
+        self.D_FORWARD = 1.25
+
+        self.ACC_ERROR = 0.0
+        self.LAST_ERROR = 0.0
         
         # desired vertical position of the ball
-        self.DESIRED_Y = 545
-        self.DESIRED_DISTANCE = 0.41
+        self.DESIRED_DISTANCE = 0.28
+        #self.DESIRED_DISTANCE = 0.41
 
         # tolerances
-        self.ROTATION_TOLERANCE = 0.015
+        self.ROTATION_TOLERANCE = 0.03
         self.DISTANCE_TOLERANCE = 0.010
         self.Y_TOLERANCE = 5
 
@@ -72,7 +77,7 @@ class Nav:
 
         while self.is_running:
             try:
-
+                
                 self.debug_tick += 1
                 should_log = (self.debug_tick % self.print_every_n_ticks) == 0
 
@@ -82,11 +87,15 @@ class Nav:
 
                     if should_log:
                         print("No target detected")
-
+                        self.ACC_ERROR = 0.0
                     time.sleep(0.05)
                     continue
 
                 now = time.time()
+                dt = now - self.last_time
+
+                if dt <= 0.0:
+                    dt = 0.05
 
                 img_width = self.target.get("image_width", 820)
                 img_center = img_width / 2.0
@@ -110,7 +119,6 @@ class Nav:
                 if self.rotation_phase:
 
                     if abs(rotation_error) > self.ROTATION_TOLERANCE:
-
                         angular_speed = self.K_ROT * rotation_error * abs(rotation_error)
 
                         MIN_W = 0.15
@@ -130,7 +138,7 @@ class Nav:
                                 f"Rotating | rot_error={rotation_error:.3f}  w={angular_speed:.3f}"
                             )
 
-                        time.sleep(0.01)
+                        time.sleep(0.001)
                         continue
 
                     else:
@@ -167,8 +175,14 @@ class Nav:
                         time.sleep(0.05)
                         continue
 
-                    # proportional forward controller
-                    linear_speed = self.K_FORWARD * distance_error
+                    # PID forward controller
+                    p_term = self.K_FORWARD * distance_error
+                    self.ACC_ERROR += distance_error * dt
+                    i_term = self.I_FORWARD * self.ACC_ERROR
+                    d_term = self.D_FORWARD * (distance_error - self.LAST_ERROR) / dt
+
+                    linear_speed = p_term + i_term + d_term
+
 
                     # clamp forward speed
                     if linear_speed > self.MAX_LINEAR_SPEED:
@@ -190,8 +204,9 @@ class Nav:
                         #print(
                             #f"Forward | y_err={y_error:.1f} rot_err={rotation_error:.3f} v={linear_speed:.3f} w={angular_speed:.3f}"
                         #)
-
-                time.sleep(0.03)
+                self.LAST_ERROR = distance_error
+                self.last_time = now
+                time.sleep(0.01)
 
             except Exception as e:
 

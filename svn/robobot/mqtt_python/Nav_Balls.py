@@ -28,7 +28,7 @@ class Nav:
         self.MAX_ANGULAR_SPEED = 0.4
 
         # camera parameters
-        self.CAMERA_FOV = 1.047
+        self.CAMERA_FOV = 65.0 * (3.14159 / 180.0)  # convert to radians
 
         # visual servoing rotation gain
         self.K_ROT = 5.0
@@ -87,7 +87,7 @@ class Nav:
 
                 now = time.time()
 
-                img_width = self.target.get("image_width", 820)
+                img_width = self.target.get("image_width", 640)
                 img_center = img_width / 2.0
 
                 # ---------- rotation error ----------

@@ -39,7 +39,8 @@ from simu import imu
 from spose import pose
 from sir import ir
 from srobot import robot
-from scam import cam
+#from scam import cam
+from scam_usb import cam_usb as cam
 from sedge import edge
 from sgpio import gpio
 from ulog import flog

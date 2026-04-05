@@ -1,0 +1,13 @@
+% usb_cam_stream: USB camera opened (640x480)
+
+Streams index: http://127.0.0.1:7124
+Available streams:
+
+http://127.0.0.1:7124/usb_stream.mjpg
+--------------------------------
+
+
+Press Ctrl+C to stop the server
+
+% USE THE STREAMING ADRESS BELOW!!!!!!!
+% USB WEBCAM streaming on http://0.0.0.0:7124/usb_stream.mjpg

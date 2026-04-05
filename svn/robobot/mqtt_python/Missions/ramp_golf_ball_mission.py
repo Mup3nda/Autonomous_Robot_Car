@@ -4,6 +4,8 @@ import os
 import sys
 import math
 
+from svn.robobot.mqtt_python.Missions.Objectives.search_and_navigate_to_golf_ball import SearchAndNavigateToGolfBall
+
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 ROOT_DIR = os.path.dirname(THIS_DIR)
 if THIS_DIR not in sys.path:
@@ -11,7 +13,9 @@ if THIS_DIR not in sys.path:
 if ROOT_DIR not in sys.path:
     sys.path.insert(0, ROOT_DIR)
 
-
+from scam import cam
+from sedge import edge
+from sgpio import gpio
 from uservice import service
 
 from mission_runner import MissionRunner
@@ -26,10 +30,8 @@ from Objectives.arm_up_objective import ArmUpObjective
 from Objectives.arm_down_objective import ArmDownObjective
 from Objectives.drive_to_line_objective import DriveToLineObjective
 from Objectives.search_and_navigate_to_aruco_objective import SearchAndNavigateToAruco
+from Objectives.drive_to_line_objective_imu import DriveToLineObjectiveIMU
 from Objectives.search_and_navigate_to_golf_ball import SearchAndNavigateToGolfBall
-from Objectives.drive_until_end_ramp import DriveUntilEndRamp
-from Objectives.drive_to_line_objective_ramp_imu import DriveToLineObjectiveIMU
-
 # Roundabout three-step tuning parameters.
 # Step 1: Entry line follow
 LINE_ENTRY_FOLLOW_LEFT = False
@@ -86,12 +88,10 @@ LINE_EXIT_FOLLOW_SPEED = 0.75
 # Add objectives in the list below in the exact order they should execute.
 def build_objectives():
     objectives = [
-        DriveUntilEndRamp(follow_left=True,
-            follow_speed=0.4,
-            search_speed=0.25,
-            centering_speed=0.2,
-            lost_line_timeout_s=1.5),
-        SearchAndNavigateToGolfBall()
+        ArmUpObjective(),
+        #DriveToLineObjectiveIMU(),
+        SearchAndNavigateToGolfBall(),
+        ArmUpObjective(),
     ]
     return objectives
 
@@ -107,7 +107,8 @@ if __name__ == "__main__":
         print("% Starting midway evaluation mission")
         service.setup("localhost")
         if service.connected:
-            ctx = MissionContext(service)
+            actions = RobotActions(service, gpio, cam, edge)
+            ctx = MissionContext(actions)
             ctx.actions.arm.bind_memory(ctx.memory)
             ctx.actions.arm.move_up()
             objectives = build_objectives()

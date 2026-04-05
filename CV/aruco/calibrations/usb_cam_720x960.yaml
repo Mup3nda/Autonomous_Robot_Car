@@ -1,0 +1,18 @@
+camera_matrix:
+- - 13686.508354226424      # fx (focal length x)
+  - 0.0                     # skew
+  - 488.07502731048174      # cx (principal point x / optical center x)
+- - 0.0                     # skew
+  - 2301.6655515117695      # fy (focal length y)
+  - 367.14530712642363      # cy (principal point y / optical center y)
+- - 0.0
+  - 0.0
+  - 1.0
+dist_coeff:
+- - 21.380569882269857      # k1 (radial distortion coefficient 1)
+  - -756.3161802802866      # k2 (radial distortion coefficient 2)
+  - 0.805080874990665       # p1 (tangential distortion coefficient 1)
+  - -0.08839964378088237    # p2 (tangential distortion coefficient 2)
+  - 13741.291410793636      # k3 (radial distortion coefficient 3)
+reprojection_error: 3.9961066146930535
+resolution: 720x960
