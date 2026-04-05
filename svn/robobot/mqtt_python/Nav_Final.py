@@ -32,16 +32,16 @@ class Nav:
         self.CAMERA_FOV = 1.047
 
         # visual servoing rotation gain
-        self.K_ROT = 5.0
+        self.K_ROT = 7.5
 
         # steering gain while moving
-        self.K_STEER = 1
+        self.K_STEER = 1.2
 
         # forward controller using Y position
         #self.K_FORWARD = 0.0015
-        self.K_FORWARD = 0.25
+        self.K_FORWARD = 0.75
         self.I_FORWARD = 0.02
-        self.D_FORWARD = 1
+        self.D_FORWARD = 1.25
 
         self.ACC_ERROR = 0.0
         self.LAST_ERROR = 0.0
@@ -51,7 +51,7 @@ class Nav:
         #self.DESIRED_DISTANCE = 0.41
 
         # tolerances
-        self.ROTATION_TOLERANCE = 0.015
+        self.ROTATION_TOLERANCE = 0.03
         self.DISTANCE_TOLERANCE = 0.010
         self.Y_TOLERANCE = 5
 
@@ -87,7 +87,7 @@ class Nav:
 
                     if should_log:
                         print("No target detected")
-
+                        self.ACC_ERROR = 0.0
                     time.sleep(0.05)
                     continue
 

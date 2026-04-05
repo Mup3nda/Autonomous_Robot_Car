@@ -84,7 +84,7 @@ LINE_EXIT_FOLLOW_SPEED = 0.75
 def build_objectives():
     objectives = [
         ArmUpObjective(),
-        SearchAndNavigateToBlueBall(),
+        SearchAndNavigateToBlueBall(turn_rate=1),
         ArmDownObjective(wait_after_s=2.0),
         ArmUpObjective(),
         
