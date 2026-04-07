@@ -28,6 +28,9 @@ class Nav:
         self.MAX_LINEAR_SPEED = 0.25
         self.MAX_ANGULAR_SPEED = 0.4
 
+
+        #NOTE: Maybe change to logitech 1.36 (78 degrees)
+        # camera parameters
         # camera parameters
         self.CAMERA_FOV = 1.047
 
