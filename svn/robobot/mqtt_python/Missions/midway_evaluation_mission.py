@@ -11,9 +11,7 @@ if THIS_DIR not in sys.path:
 if ROOT_DIR not in sys.path:
     sys.path.insert(0, ROOT_DIR)
 
-from scam import cam
-from sedge import edge
-from sgpio import gpio
+
 from uservice import service
 
 from mission_runner import MissionRunner
@@ -90,7 +88,7 @@ def build_objectives():
         ArmDownObjective(wait_after_s=2.0),
         ArmUpObjective(),
         
-        SearchAndNavigateToAruco(marker_id=53,turn_rate=0.3),
+        SearchAndNavigateToAruco(marker_id=0,turn_rate=0.3),
         ArmDownObjective(wait_after_s=2.0),
         ArmUpObjective(),
         
@@ -109,8 +107,7 @@ if __name__ == "__main__":
         print("% Starting midway evaluation mission")
         service.setup("localhost")
         if service.connected:
-            actions = RobotActions(service, gpio, cam, edge)
-            ctx = MissionContext(actions)
+            ctx = MissionContext(service)
             ctx.actions.arm.bind_memory(ctx.memory)
             ctx.actions.arm.move_up()
             objectives = build_objectives()

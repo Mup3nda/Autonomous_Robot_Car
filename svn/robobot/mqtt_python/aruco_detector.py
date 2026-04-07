@@ -7,17 +7,17 @@ import cv2                          # OpenCV for image processing
 from flask import Flask, Response   # Web server for MJPEG streaming
 import logging
 import yaml
-
-from scam_usb import cam_usb as cam
 #from scam import cam
+#from scam_usb import cam_usb as cam
 from sgpio import gpio
 from uservice import service
 from target_detector import TargetDetector
+from threading import Thread
+from datetime import datetime
+import time as t
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
-CAM_CONFIG_PATH = "/home/local/Autonomous_Robot_Car/svn/robobot/calibrations/usb_cam_640x480.yaml"
 
 
 class ArucoDetector(TargetDetector):
@@ -58,7 +58,7 @@ class ArucoDetector(TargetDetector):
                  cam, 
                  gpio, 
                  service, 
-                 camera_config=CAM_CONFIG_PATH, 
+                 camera_config='/home/local/Autonomous_Robot_Car/svn/robobot/calibrations/usb_cam_640x480.yaml', 
                  target_id=None, 
                  manage_camera=False
     ):
@@ -76,6 +76,10 @@ class ArucoDetector(TargetDetector):
         self.cam = cam
         self.gpio = gpio
         self.service = service
+        self.running = False
+        self.thread = None
+        self.update_interval = 0.033
+        
         
         
         # Contructor fields
@@ -84,7 +88,12 @@ class ArucoDetector(TargetDetector):
         self.frame_fail_count = 0
         self.fail_log_iteration = 5
         
+        
     def start(self):
+        self.setup()
+        
+        
+    def setup(self):
         # Initialize any necessary resources for target detection
         if self.manage_camera:
             self.cam.setup()
@@ -97,6 +106,11 @@ class ArucoDetector(TargetDetector):
         self.camera_matrix, self.dist_coeffs = self.load_camera_calibrations(self.camera_config)
         self.aruco_dict, self.parameters, self.detector = self.initialize_aruco_detector()
         
+        self.running = True
+        self.thread = Thread(target=self._tracking_loop, daemon=True)
+        self.thread.start()
+        
+        
         print("% ArucoDetector:: Setup complete")
     
     def stop(self):
@@ -104,10 +118,51 @@ class ArucoDetector(TargetDetector):
         if self.manage_camera and self.camera_started_by_detector:
             self.cam.terminate()
             print("% ArucoDetector:: Stopped")
+        
+        self.terminate()
     
+    def terminate(self):
+        if self.running:
+            self.running = False
+            if self.thread is not None and self.thread.is_alive():
+                self.thread.join(timeout=1.0)
+        print("% Aruco:: Terminated")
+       
+    def _tracking_loop(self):
+        while self.running and not self.service.stop:
+            start_time = t.time()
+            
+            ok, frame, timestamp = self.cam.getImage()
+            if not ok or frame is None:
+                self.frame_fail_count +=1
+                if self.frame_fail_count == 1 or self.frame_fail_count % self.fail_log_iteration == 0:
+                    print("% Unable to get frame from camera")
+                t.sleep(self.update_interval)
+                continue
+            
+            if self.frame_fail_count > 0:
+                print("% Camera recovered after {self.frame_fail_count} failed frames")
+                self.frame_fail_count = 0
+                
+            frame_out, detected = self.detect_aruco(
+                frame,
+                self.detector,
+                self.camera_matrix,
+                self.dist_coeffs,
+                target_id=self.target_id,
+            )
+            
+            self.last_frame = frame_out
+            self.detected_markers = detected
+            
+            elapsed = t.time() - start_time
+            if elapsed < self.update_interval:
+                t.sleep(self.update_interval - elapsed)
+            
+      
     def set_target_id(self, target_id):
         self.target_id = target_id
-    
+        
     def parse_arguments(self):
         """Set up command-line argument parser"""
         ap = argparse.ArgumentParser()
@@ -152,21 +207,10 @@ class ArucoDetector(TargetDetector):
             [-marker_size / 2, -marker_size / 2, 0]
         ], dtype=np.float32)
     
-        return obj_points
+        return obj_points  
     
-    def detect_aruco(self, detector, camera_matrix, dist_coeffs, target_id=None):
-        ok, frame, timestamp = self.cam.getImage()
+    def detect_aruco(self,frame, detector, camera_matrix, dist_coeffs, target_id=None):
         
-        if not ok or frame is None:
-            self.frame_fail_count +=1
-            if self.frame_fail_count == 1 or self.frame_fail_count % self.fail_log_iteration == 0:
-                print("% Unable to get frame from camera")
-            return None, {}
-        
-        if self.frame_fail_count > 0:
-            print("% Camera recovered after {self.frame_fail_count} failed frames")
-            self.frame_fail_count = 0
-
         detected_markers = {}
         # Detect markers in the frame with detectMarkers method
         corners, marker_ids, _ = detector.detectMarkers(frame)
@@ -235,14 +279,6 @@ class ArucoDetector(TargetDetector):
         return frame, detected_markers
 
     def get_target(self):
-        if self.detector is None or self.camera_matrix is None or self.dist_coeffs is None:
-            return None
-        frame, self.detected_markers = self.detect_aruco(
-            self.detector,
-            self.camera_matrix,
-            self.dist_coeffs,
-            target_id=self.target_id,
-        )
         if not self.detected_markers:
             return None
         
@@ -252,10 +288,11 @@ class ArucoDetector(TargetDetector):
         else:
             selected_id = min(self.detected_markers, key=lambda mid: self.detected_markers[mid]["distance"])
             target = self.detected_markers[selected_id]
+            
         if target is None:
             return None
         
-        image_width = frame.shape[1] if frame is not None else 820
+        image_width = self.last_frame.shape[1] if self.last_frame is not None else 820
 
         # Bearing: horizontal angle from camera forward axis to marker.
         # tvec x is lateral (positive = right), tvec z is depth (forward).
@@ -407,6 +444,8 @@ if __name__=='__main__':
     aruco.set_target_id(aruco.target_id)
     
     aruco.start()
+    #aruco.setup()
+    
     
     logger.warning("Make sure you have included command arguments")
     print("Make sure you use correct calibration file")

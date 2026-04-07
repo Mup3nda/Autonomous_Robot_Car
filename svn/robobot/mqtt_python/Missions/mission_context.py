@@ -7,9 +7,11 @@ from sgpio import gpio
 from uservice import service
 import time as t
 from datetime import datetime
+from robot_actions import RobotActions
 
 class MissionContext:
-    def __init__(self, actions):
+    def __init__(self, service):
+        actions = RobotActions(service, gpio, cam, edge)
         self.actions = actions
         self.pose = pose
         self.ir = ir
