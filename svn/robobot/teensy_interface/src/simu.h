@@ -62,8 +62,11 @@ public:
   UTime updTimeAcc[2];
   float gyro[2][3] = {{0}};
   float gyroOffset[2][3] = {{0}};
+  float gyroThreshold = 0.02; // Deadband threshold for gyro noise
   float acc[2][3] = {{0}};
+  float accThreshold = 0.02;  // Deadband threshold for accel noise
   bool inCalibration[2] = {false};
+
 
 private:
   std::string ini1, ini2;

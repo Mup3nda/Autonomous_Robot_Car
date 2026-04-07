@@ -118,8 +118,9 @@ void SImu::setup(int teensyNumber)
       fprintf(logfileAcc[1], "%% 1 \tTime (sec)\n");
       fprintf(logfileAcc[1], "%% 2-4 \tAccelerometer (x,y,z)\n");
     }
-  }
-}
+  }  
+  // Start gyro calibration on boot
+  calibrateGyro();}
 
 
 void SImu::subscribeDataFromTeensy()
@@ -189,8 +190,13 @@ bool SImu::decode(const char* msg, UTime & msgTime)
     // IMU 1 (pt. one only)
     int m = 0;
     updTimeAcc[m] = msgTime;
-    for (int i = 0; i < 3; i++)
+    for (int i = 0; i < 3; i++) {
       acc[m][i] = a[i];
+      // Apply threshold for noise reduction
+      if (acc[m][i] > -accThreshold && acc[m][i] < accThreshold) {
+        acc[m][i] = 0.0;
+      }
+    }
     updateAccCnt[m]++;
     // save to log
     toLog(true, m);
@@ -211,6 +217,10 @@ bool SImu::decode(const char* msg, UTime & msgTime)
     for (int i = 0; i < 3; i++)
     {
       gyro[m][i] = g[i] - gyroOffset[m][i];
+      // Apply deadband threshold for noise reduction
+      if (gyro[m][i] > -gyroThreshold && gyro[m][i] < gyroThreshold) {
+        gyro[m][i] = 0.0;
+      }
     }
     // notify users of a new update
     updateGyroCnt[m]++;
@@ -220,7 +230,7 @@ bool SImu::decode(const char* msg, UTime & msgTime)
     if (inCalibration[m])
     { // Gyro calibration can be handled ambulant
       for (int j = 0; j < 3; j++)
-        calibSum[m][j] = g[j];
+        calibSum[m][j] += g[j];
       calibCount[m]++;
       printf("# gyro %d, %d : %g %g %g\n", m, calibCount[m], calibSum[m][0]/float(calibCount[m]), calibSum[m][1]/float(calibCount[m]), calibSum[m][2]/float(calibCount[m]));
       if (calibCount[m] >= calibCountMax)
