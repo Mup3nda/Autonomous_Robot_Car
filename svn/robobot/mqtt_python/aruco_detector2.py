@@ -254,7 +254,7 @@ class ArucoDetector(TargetDetector):
                 
                 R, _ = cv2.Rodrigues(rvec)
                 n = R @ np.array([0, 0, 1])
-                lr_tilt_rad = math.atan2(n[0], n[2]) # tan(x,z)
+                lr_tilt_rad = math.atan2(n[0], -n[2]) # tan(x,-z) (point towards the aruco
                 lr_tilt_deg = math.degrees(lr_tilt_rad)
                 
                 
@@ -298,6 +298,7 @@ class ArucoDetector(TargetDetector):
             "id":       selected_id,
             "x":        target["pixel_x"],  # pixel x center — required by Nav for rotation
             "y":        target["pixel_y"],  # pixel y center
+            "tilt":     target["lr_tilt"]   # aruco marker titled
             "tvec_x":   target["x"],        # lateral offset in meters (camera frame)
             "tvec_y":   target["y"],        # vertical offset in meters (camera frame)
             "tvec_z":   target["z"],        # forward depth in meters (camera frame)

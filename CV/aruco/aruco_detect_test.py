@@ -14,6 +14,7 @@ import socket                       # For getting local IP address
 from flask import Flask, Response   # Web server for MJPEG streaming
 import logging
 import yaml
+import math
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -52,7 +53,7 @@ MARKER_SIZES = {
 
 distance_buffer = deque(maxlen=5)
 #camera_config = 'oliver_calibration.yaml'
-camera_config = 'myraspi_calibration.yaml'
+camera_config = '/home/muptech/Autonomous_Robot_Car/CV/aruco/calibrations/didier_raspi_cam.yaml'
 #ARUCO_DICT = cv2.aruco.DICT_4X4_50
 ARUCO_DICT = cv2.aruco.DICT_4X4_100
 
@@ -96,7 +97,7 @@ def intiatialize_camera():
     #cap = cv2.VideoCapture(0)
 
     camera_config = picam2.create_preview_configuration(
-        main={"size": (820, 616), "format": "RGB888"}
+        main={"size": (640, 480), "format": "RGB888"}
     )
     picam2.configure(camera_config)
     picam2.start()
@@ -187,6 +188,11 @@ def detect_aruco(picam2, detector, camera_matrix, dist_coeffs):
                 y_cm = y*100
                 z_cm = z*100
                 distance_cm = distance*100
+                
+                R, _ = cv2.Rodrigues(rvec)
+                n = R @ np.array([0, 0, 1])
+                lr_tilt_rad = math.atan2(n[0], -n[2]) # tan(x,-z) (point towards the aruco marker)
+                lr_tilt_deg = math.degrees(lr_tilt_rad)
             
                 
                 detected_markers[int(_marker_id)] = {
@@ -196,7 +202,7 @@ def detect_aruco(picam2, detector, camera_matrix, dist_coeffs):
                     "distance": float(round(distance_cm, 4))
                 }
                 
-                print(f"ID:{_marker_id}, x: {x_cm:.2f} cm, y: {y_cm:.2f} cm, z: {z_cm:.2f} cm, distance: {distance_cm:.2f} cm")
+                print(f"ID:{_marker_id}, x: {x_cm:.2f} cm, y: {y_cm:.2f} cm, distance: {distance_cm:.2f} cm, tilt = {lr_tilt_deg:.2f} degrees")
                 #print(list(detected_markers.keys()))
                 #print(detected_markers[0])
                 #print(detected_markers[0]['distance'])
