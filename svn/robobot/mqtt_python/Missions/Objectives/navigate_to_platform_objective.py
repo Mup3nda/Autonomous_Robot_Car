@@ -4,7 +4,7 @@ from enum import IntEnum
 from mission_context import MissionContext
 from objective import Objective
 #from Autonomous_Robot_Car.svn.robobot.mqtt_python.aruco_detector import ArucoDetector
-from aruco_detector import ArucoDetector
+from aruco_detector2 import ArucoDetector
 
 
 class NavigateToPlatformState(IntEnum):
@@ -74,12 +74,14 @@ class NavigateToPlatformObjective(Objective):
         elif self.tick_count % self.print_interval == 0:
             # Print status periodically
             target_info = ctx.actions.navigation.get_target_info()
-            if target_info:
-                print(
-                    f"% Navigating to marker {target_info.get('id')}: "
-                    f"dist={target_info.get('distance', 0):.2f}m "
-                    f"bearing={target_info.get('bearing')}° "
-                )
+            #NOTE: Uncomment
+            # if target_info:
+            #     print(
+            #         f"% Navigating to marker {target_info.get('id')}: "
+            #         f"dist= {target_info.get('distance', 0):.2f}m ",
+            #         f"bearing= {target_info.get('bearing'):.2f}",
+            #         f"tilt= {target_info.get('tilt'):.2f}"
+            #     )
 
     def stop(self, ctx: MissionContext):
         """Clean up when objective is stopped or interrupted."""

@@ -257,17 +257,18 @@ class ArucoDetector(TargetDetector):
                 lr_tilt_rad = math.atan2(n[0], -n[2]) # tan(x,-z) (point towards the aruco
                 lr_tilt_deg = -math.degrees(lr_tilt_rad)
                 
-                bearing_rad = atan2(-x,z)
+                bearing_rad = math.atan2(-x,z)
                 bearing_deg = math.degrees(bearing_rad)
 
                 detected_markers[current_id] = {
+                    "time_stamp": t.time(),
                     "x": float(x),        # tvec x — lateral offset (meters)
                     "y": float(y),        # tvec y — vertical offset (meters)
                     "z": float(z),        # tvec z — forward depth (meters)
                     "distance": distance, # Euclidean 3D distance (meters)
                     "pixel_x": pixel_x,  # pixel x center of marker (used by Nav)
                     "pixel_y": pixel_y,  # pixel y center of marker
-                    "lr_tilt": lr_tilt_deg # aruco marker titled
+                    "lr_tilt": lr_tilt_deg, # aruco marker titled
                     "bearing": bearing_deg # angle detecting the aruco marker
                 }
                 
@@ -293,10 +294,11 @@ class ArucoDetector(TargetDetector):
 
         return {
             "id":       selected_id,
+            "time":     target["time_stamp"],
             "x":        target["pixel_x"],  # pixel x center — required by Nav for rotation
             "y":        target["pixel_y"],  # pixel y center
-            "tilt":     target["lr_tilt"]   # aruco marker titled
-            "bearing":  target["bearing"],            # horizontal angle to marker (radians, positive = left)
+            "tilt":     target["lr_tilt"],  # aruco marker titled
+            "bearing":  target["bearing"],  # horizontal angle to marker (radians, positive = left)
             "tvec_x":   target["x"],        # lateral offset in meters (camera frame)
             "tvec_y":   target["y"],        # vertical offset in meters (camera frame)
             "tvec_z":   target["z"],        # forward depth in meters (camera frame)
@@ -332,8 +334,8 @@ class ArucoDetector(TargetDetector):
                             f"ID: {target['id']}, "
                             f"dist:{target['distance']:.3f}m, "
                             f"(x={target['x']:.1f}, y={target['y']:.1f})"
+                            f"bearing: {target['bearing']:.2f}, tilt: {target['tilt']:.2f} "
                         )
-                
                 ok, buffer = cv2.imencode(
                     '.jpg',
                     frame,
@@ -378,13 +380,14 @@ class ArucoDetector(TargetDetector):
 
                 if target is None:
                     if tick % 2 == 0:
-                        print("% No target found")
+                        print("% No target found aruco2")
                 else:
                     if tick % 2 == 0:
                         print(
                             f"ID: {target['id']}, "
                             f"dist:{target['distance']:.3f}m, "
                             f"(x={target['x']:.1f}, y={target['y']:.1f})"
+                            f"bearing: {target['bearing']}, tilt: {target['tilt']} "
                         )
                 cv2.imshow("Aruco Detect", frame)
                 
@@ -452,8 +455,11 @@ if __name__=='__main__':
         print(
             f"% Startup get_target: id={startup_target['id']}, "
             f"dist={startup_target['distance']:.3f}m"
+            f" bearing = {startup_target['bearing']:.3f}° "
+            f" tilt = {startup_target['tilt']:.3f} °"
+            
         )
-    
+        
     if args.get("stream", False):
         aruco.run_mjpeg_stream(args)
     elif args.get("local", False):
