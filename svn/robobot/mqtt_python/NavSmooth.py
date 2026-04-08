@@ -17,7 +17,7 @@ class NavSmooth:
         self.desired_distance = desired_distance_to_target
         self.ctx = ctx
 
-        self.MAX_SPEED = 0.4
+        self.MAX_SPEED = 0.7
         self.MAX_W_SPEED = 0.45
 
         self.KP = 0.8
