@@ -26,8 +26,8 @@ class Nav:
         self.forward_phase = False
 
         # robot limits
-        self.MAX_LINEAR_SPEED = 0.25
-        self.MAX_ANGULAR_SPEED = 0.4
+        self.MAX_LINEAR_SPEED = 0.08
+        self.MAX_ANGULAR_SPEED = 0.3
         
         
         #NOTE: Maybe change to logitech 1.36 (78 degrees)
@@ -38,17 +38,17 @@ class Nav:
         self.K_ROT = 5.0
 
         # steering gain while moving
-        self.K_STEER = 1.5
+        self.K_STEER = 1.0
 
         # forward controller using Y position
         #self.K_FORWARD = 0.0015
-        self.K_FORWARD = 0.5
+        self.K_FORWARD = 0.4
         #angle
         self.K_BEARING = 0.5
         # desired vertical position of the ball
-        self.DESIRED_DISTANCE = 0.41
+        self.DESIRED_DISTANCE = 0.2
         self.DOCK_DISTANCE = 0.35
-        self.BEARING_TOL = 5.0
+        self.BEARING_TOL = 2.0
         self.PLATFORM_VEL_EPS = 0.03
 
         # tolerances
@@ -117,7 +117,8 @@ class Nav:
                     # print(f"x: {self.target['tvec_x']:.3f}, time: {self.target['time']:.3f}")
                     # print(f"z: {self.target['tvec_z']:.3f}, dist: {self.target['distance']:.3f}")
                     
-                    print(f"velocity= {vx:.4f}, time= {dt:.4f}")
+                    #print(f"velocity= {vx:.4f}, time= {dt:.4f}")
+                    print(f"velocity= {vx:.4f}, bearing= {self.target['bearing']:.4f}}")
                     
                 time.sleep(0.034)
                     
@@ -143,7 +144,6 @@ class Nav:
             't': target['time'],
             'x': target['tvec_x'],
             'z': target['tvec_z'],
-            'bearing': target['bearing']
         }
         
         self.history.append(sample)
@@ -158,7 +158,7 @@ class Nav:
         if dt <= 1e-3:
             return None
         
-        vx = (new_sample['x'] - old_sample['x']) / dt
+        vx = -(new_sample['x'] - old_sample['x']) / dt
         
         return vx, dt
         
@@ -177,7 +177,7 @@ class Nav:
         
         
         self.ctx.actions.drive.rc(linear_cmd, angular_cmd)
-        print("% Driving..")
+        #print("% Driving..")
 
     def hasReachedTarget(self, target):
 

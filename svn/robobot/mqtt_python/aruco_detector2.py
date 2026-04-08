@@ -257,6 +257,7 @@ class ArucoDetector(TargetDetector):
                 lr_tilt_rad = math.atan2(n[0], -n[2]) # tan(x,-z) (point towards the aruco
                 lr_tilt_deg = -math.degrees(lr_tilt_rad)
                 
+                #bearing_rad = math.atan2(x,z)
                 bearing_rad = math.atan2(-x,z)
                 bearing_deg = math.degrees(bearing_rad)
 
