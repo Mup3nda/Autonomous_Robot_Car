@@ -255,9 +255,10 @@ class ArucoDetector(TargetDetector):
                 R, _ = cv2.Rodrigues(rvec)
                 n = R @ np.array([0, 0, 1])
                 lr_tilt_rad = math.atan2(n[0], -n[2]) # tan(x,-z) (point towards the aruco
-                lr_tilt_deg = math.degrees(lr_tilt_rad)
+                lr_tilt_deg = -math.degrees(lr_tilt_rad)
                 
-                
+                bearing_rad = atan2(-x,z)
+                bearing_deg = math.degrees(bearing_rad)
 
                 detected_markers[current_id] = {
                     "x": float(x),        # tvec x — lateral offset (meters)
@@ -267,6 +268,7 @@ class ArucoDetector(TargetDetector):
                     "pixel_x": pixel_x,  # pixel x center of marker (used by Nav)
                     "pixel_y": pixel_y,  # pixel y center of marker
                     "lr_tilt": lr_tilt_deg # aruco marker titled
+                    "bearing": bearing_deg # angle detecting the aruco marker
                 }
                 
         self.detected_markers = detected_markers
@@ -289,21 +291,16 @@ class ArucoDetector(TargetDetector):
         
         image_width = self.last_frame.shape[1] if self.last_frame is not None else 820
 
-        # Bearing: horizontal angle from camera forward axis to marker.
-        # tvec x is lateral (positive = right), tvec z is depth (forward).
-        # Negate x so positive bearing = target is to the left, matching SWorldPoint convention.
-        bearing = math.atan2(-target["x"], target["z"])
-
         return {
             "id":       selected_id,
             "x":        target["pixel_x"],  # pixel x center — required by Nav for rotation
             "y":        target["pixel_y"],  # pixel y center
             "tilt":     target["lr_tilt"]   # aruco marker titled
+            "bearing":  target["bearing"],            # horizontal angle to marker (radians, positive = left)
             "tvec_x":   target["x"],        # lateral offset in meters (camera frame)
             "tvec_y":   target["y"],        # vertical offset in meters (camera frame)
             "tvec_z":   target["z"],        # forward depth in meters (camera frame)
             "distance": target["distance"], # Euclidean 3D distance in meters
-            "bearing":  bearing,            # horizontal angle to marker (radians, positive = left)
             "image_width": image_width,     # required by Nav for pixel-to-angle conversion
             "valid":    True,
         }
