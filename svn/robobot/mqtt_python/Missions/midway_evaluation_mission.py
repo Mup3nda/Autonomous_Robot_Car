@@ -86,7 +86,7 @@ def build_objectives():
     objectives = [
         ArmUpObjective(),
         
-        SearchAndNavigateToPlatform(marker_id=5),
+        SearchAndNavigateToPlatform(marker_id=0),
         ArmDownObjective(wait_after_s=2.0),
         
         # SearchAndNavigateToBlueBall(turn_rate=0.8),

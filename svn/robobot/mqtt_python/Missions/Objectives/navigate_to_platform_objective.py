@@ -77,7 +77,8 @@ class NavigateToPlatformObjective(Objective):
             if target_info:
                 print(
                     f"% Navigating to marker {target_info.get('id')}: "
-                    f"dist={target_info.get('distance', 0):.2f}m"
+                    f"dist={target_info.get('distance', 0):.2f}m "
+                    f"bearing={target_info.get('bearing')}° "
                 )
 
     def stop(self, ctx: MissionContext):
