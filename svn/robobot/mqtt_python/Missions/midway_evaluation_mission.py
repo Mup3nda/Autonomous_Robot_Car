@@ -84,8 +84,57 @@ LINE_EXIT_FOLLOW_SPEED = 0.75
 # Add objectives in the list below in the exact order they should execute.
 def build_objectives():
     objectives = [
-        ArmUpObjective(),
+        # region Following line
+        DriveToLineObjective(
+            follow_left=True,
+            follow_speed=0.4,
+            search_speed=0.25,
+            centering_speed=0.2,
+            lost_line_timeout_s=0.3,
+            max_duration =6.5
+            ),
+        # endregion
+        # region Roundabout
+        DriveToWaypointObjective(
+            waypoint=(0.4,0.0),
+            is_local=True,
+            print_interval=20,
+            nav_mode=WAYPOINT_NAV_MODE,
+            ),
+        DriveTurnAngleObjective(
+            angle_deg=90,
+            linear_cmd=0.0,
+            timeout_s=6.0,
+        ),
+        DriveCircleObjective(
+            radius_m=CIRCLE_RADIUS_M,
+            revolutions=1.65, # one full circle + half circle
+            forward_cmd=CIRCLE_FORWARD_CMD,
+            turn_cmd=CIRCLE_TURN_CMD,
+            turn_rate_scale=CIRCLE_TURN_RATE_SCALE,
+            clockwise=CIRCLE_CLOCKWISE,
+            timeout_s=CIRCLE_TIMEOUT_S,
+        ),
+        DriveTurnAngleObjective(
+            angle_deg=90.0,
+            linear_cmd=0.0,
+            timeout_s=6.0,
+        ),
+        # endregion
         
+        DriveToLineObjective(follow_left=LINE_ENTRY_FOLLOW_LEFT,
+                            follow_speed=LINE_ENTRY_FOLLOW_SPEED,
+                            search_speed=LINE_ENTRY_SEARCH_SPEED,
+                            lost_line_timeout_s=LINE_ENTRY_TIMEOUT_S),
+        
+        SearchAndNavigateToBlueBall(),
+        ArmDownObjective(wait_after_s=2.0),
+        
+        ArmUpObjective(),
+        SearchAndNavigateToAruco(marker_id=53,turn_rate=0.3),
+        ArmDownObjective(wait_after_s=2.0),
+        
+        ArmUpObjective(),
         # SearchAndNavigateToPlatform(marker_id=5),
         # ArmDownObjective(wait_after_s=2.0),
         
