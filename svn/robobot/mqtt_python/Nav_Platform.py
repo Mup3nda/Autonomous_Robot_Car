@@ -27,8 +27,9 @@ class Nav:
         self.MAX_LINEAR_SPEED = 0.25
         self.MAX_ANGULAR_SPEED = 0.4
 
+        #NOTE: Maybe change to logitech 1.36 (78 degrees)
         # camera parameters
-        self.CAMERA_FOV = 1.047
+        self.CAMERA_FOV = 1.047 
 
         # visual servoing rotation gain
         self.K_ROT = 5.0
@@ -87,8 +88,9 @@ class Nav:
                     continue
 
                 now = time.time()
-
-                img_width = self.target.get("image_width", 820)
+                
+                
+                img_width = self.target.get("image_width", 820) 
                 img_center = img_width / 2.0
 
                 x_1 = self.target["x"] # x at time 1

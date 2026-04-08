@@ -26,6 +26,7 @@ from Objectives.arm_up_objective import ArmUpObjective
 from Objectives.arm_down_objective import ArmDownObjective
 from Objectives.drive_to_line_objective import DriveToLineObjective
 from Objectives.search_and_navigate_to_aruco_objective import SearchAndNavigateToAruco
+from Objectives.search_and_navigate_to_platform_objective import SearchAndNavigateToPlatform
 
 # Roundabout three-step tuning parameters.
 # Step 1: Entry line follow
@@ -84,12 +85,16 @@ LINE_EXIT_FOLLOW_SPEED = 0.75
 def build_objectives():
     objectives = [
         ArmUpObjective(),
-        # SearchAndNavigateToBlueBall(),
-        # ArmDownObjective(wait_after_s=2.0),
-        # ArmUpObjective(),
         
-        SearchAndNavigateToAruco(marker_id=0,turn_rate=0.3),
-        ArmDownObjective(wait_after_s=2.0),
+        # SearchAndNavigateToPlatform(marker_id=5),
+        # ArmDownObjective(wait_after_s=2.0),
+        
+        # SearchAndNavigateToBlueBall(turn_rate=0.8),
+        # ArmDownObjective(wait_after_s=2.0),
+        # # ArmUpObjective(),
+        
+        # SearchAndNavigateToAruco(marker_id=20,turn_rate=0.4),
+        # ArmDownObjective(wait_after_s=2.0),
         ArmUpObjective(),
         
     ]

@@ -294,8 +294,8 @@ class SBall(TargetDetector):
         # Calculate confidence based on detection stability
         confidence = min(self.ball_update_cnt, 20)
         
-        ball_real_radius_m = 0.04  # meters
-
+        #ball_real_radius_m = 0.04  # meters
+        ball_real_radius_m = 0.025  # meters
         # Focal length estimation (you should calibrate this)
         focal_length_px = 530.54  # rough estimate for typical webcam
 

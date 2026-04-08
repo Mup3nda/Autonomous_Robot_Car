@@ -264,7 +264,6 @@ class ArucoDetector(TargetDetector):
                     "pixel_y": pixel_y,  # pixel y center of marker
                 }
                 
-                # # NOTE: SHOULD USE THIS FOR THE FINAL !!!!!!!!!!!!!!!!
                 # detected_markers[current_id] = {
                 #     "x": float(x),        # tvec x — lateral offset (meters)
                 #     "y": float(y),        # tvec y — vertical offset (meters)
@@ -425,9 +424,9 @@ class ArucoDetector(TargetDetector):
 
 if __name__=='__main__':
 
-    from scam_usb import cam_usb
-
-    aruco = ArucoDetector(cam=cam_usb, gpio=gpio, service=service, manage_camera = True)
+    from scam_usb import cam_usb as cam
+    
+    aruco = ArucoDetector(cam=cam, gpio=gpio, service=service, manage_camera = True)
     
     args = aruco.parse_arguments()
 
