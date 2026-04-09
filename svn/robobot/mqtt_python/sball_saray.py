@@ -70,9 +70,9 @@ class SBall(TargetDetector):
     def set_detection_color(self, color_name):
         """
         Select which color to detect:
-        'red_orange', 'blue', 'white', or 'all'
+        'red', 'blue', 'white', 'orange', or 'all'
         """
-        allowed = ["red_orange", "blue", "white", "all"]
+        allowed = ["red", "blue", "white", "orange", "all"]
         if color_name in allowed:
             self.detection_color = color_name
             print(f"% Ball:: Detecting color = {color_name}")
@@ -138,9 +138,12 @@ class SBall(TargetDetector):
         upper_red1 = np.array([10, 255, 255])
         lower_red2 = np.array([170, 120, 80])
         upper_red2 = np.array([180, 255, 255])
-        masks["red_orange"] = cv.inRange(hsv, lower_red1, upper_red1) | \
+        masks["red"] = cv.inRange(hsv, lower_red1, upper_red1) | \
                               cv.inRange(hsv, lower_red2, upper_red2)
-        
+        # orange golf ball
+        lower_orange = np.array([10, 120, 80])
+        upper_orange = np.array([25, 255, 255])
+        masks["orange"] = cv.inRange(hsv, lower_orange, upper_orange)
         
 
         # BLUE
@@ -164,7 +167,7 @@ class SBall(TargetDetector):
         # ---------- Select which colors to process ----------
 
         if self.detection_color == "all":
-            color_list = ["red_orange", "blue", "white"]
+            color_list = ["red", "blue", "white", "orange"]
         else:
             color_list = [self.detection_color]
 

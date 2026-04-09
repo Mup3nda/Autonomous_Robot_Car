@@ -17,7 +17,7 @@ class DummyService:
 # -----------------------------a
 # Initialize
 # -----------------------------
-cap = cv2.VideoCapture(f'http://10.197.218.199:7123/stream.mjpg')
+cap = cv2.VideoCapture(f'http://127.0.0.1:7124/usb_stream.mjpg')
 
 pts = deque(maxlen=32)
 
@@ -25,8 +25,9 @@ pts = deque(maxlen=32)
 ball = SBall(cam=None, gpio=None, service=DummyService())
 
 # Choose color here
-#ball.set_detection_color("red_orange")
-ball.set_detection_color("blue")
+#ball.set_detection_color("red")
+ball.set_detection_color("orange")
+#ball.set_detection_color("blue")
 #ball.set_detection_color("white")
 # ball.set_detection_color("all")
 

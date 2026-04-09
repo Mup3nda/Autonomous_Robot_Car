@@ -7,6 +7,7 @@ from datetime import datetime
 import time as t
 from threading import Thread
 import cv2 as cv
+from matplotlib.pyplot import hsv
 import numpy as np
 
 
@@ -47,12 +48,35 @@ class SBall:
     running = False
     thread = None
     update_interval = 0.033
+    
+    DETECTION_PARAMS = {
+        "red": {
+            "min_area": 350,
+            "max_area": 9000,
+            "min_circularity": 0.80,
+        },
+        "blue": {
+            "min_area": 350,
+            "max_area": 9000,
+            "min_circularity": 0.80,
+        },
+        "white": {
+            "min_area": 350,
+            "max_area": 9000,
+            "min_circularity": 0.80,
+        },
+        "orange": {
+            "min_area": 250,
+            "max_area": 9000,
+            "min_circularity": 0.7,
+        },
+    }
 
     ##########################################################
     # COLOR SELECTION
     ##########################################################
 
-    detection_color = "red_orange"   # default
+    detection_color = "orange"   # default
 
     ##########################################################
 
@@ -68,9 +92,9 @@ class SBall:
     def set_detection_color(self, color_name):
         """
         Select which color to detect:
-        'red_orange', 'blue', 'white', or 'all'
+        'red', 'blue', 'white', 'orange', or 'all'
         """
-        allowed = ["red_orange", "blue", "white", "all"]
+        allowed = ["red", "blue", "white", "orange", "all"]
         if color_name in allowed:
             self.detection_color = color_name
             print(f"% Ball:: Detecting color = {color_name}")
@@ -130,13 +154,18 @@ class SBall:
 
         masks = {}
 
-        # RED / ORANGE
+        # RED
         lower_red1 = np.array([0, 120, 80])
         upper_red1 = np.array([10, 255, 255])
         lower_red2 = np.array([170, 120, 80])
         upper_red2 = np.array([180, 255, 255])
-        masks["red_orange"] = cv.inRange(hsv, lower_red1, upper_red1) | \
+        masks["red"] = cv.inRange(hsv, lower_red1, upper_red1) | \
                               cv.inRange(hsv, lower_red2, upper_red2)
+                              
+        # orange golf ball
+        lower_orange = np.array([5, 170, 150])
+        upper_orange = np.array([30, 255, 255])  # include yellow edge
+        masks["orange"] = cv.inRange(hsv, lower_orange, upper_orange)
 
         # BLUE
         lower_blue = np.array([90, 60, 60])
@@ -159,29 +188,32 @@ class SBall:
         # ---------- Select which colors to process ----------
 
         if self.detection_color == "all":
-            color_list = ["red_orange", "blue", "white"]
+            color_list = ["red", "blue", "white", "orange"]
         else:
             color_list = [self.detection_color]
 
         self.valid_balls = []
 
         for color_name in color_list:
-
             mask = masks[color_name]
             contours, _ = cv.findContours(mask, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
 
             for c in contours:
+                params = self.DETECTION_PARAMS[color_name]
 
                 area = cv.contourArea(c)
-                if area < 350 or area > 9000:
+                if area < params["min_area"] or area > params["max_area"]:
+                    print(f"Rejected contour for color {color_name} with area {area:.1f}")
                     continue
 
                 perimeter = cv.arcLength(c, True)
                 if perimeter == 0:
+                    print(f"Rejected contour for color {color_name} with zero perimeter")
                     continue
 
                 circularity = 4 * np.pi * area / (perimeter * perimeter)
-                if circularity < 0.8:
+                if circularity < params["min_circularity"]:
+                    print(f"Rejected contour for color {color_name} with low circularity {circularity:.2f}")
                     continue
 
                 (cx, cy), radius = cv.minEnclosingCircle(c)
