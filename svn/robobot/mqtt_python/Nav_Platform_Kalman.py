@@ -32,15 +32,11 @@ class Nav:
         self.CAMERA_FOV = 1.047 
 
         # Visual servoing gains
-        self.K_FORWARD = 2.0
+        self.K_FORWARD = 1.0
         self.K_BEARING = 0.75
-        self.DESIRED_DISTANCE = 0.25
+        self.DESIRED_DISTANCE = 0.15
         self.DOCK_DISTANCE = 0.35
         self.BEARING_TOL = 2.0
-
-        # Tolerances
-        self.ROTATION_TOLERANCE = 0.015
-        self.DISTANCE_TOLERANCE = 0.010
         
         # Platform tracking variables
         self.history = deque(maxlen=8)
@@ -54,6 +50,15 @@ class Nav:
         self.print_every_n_ticks = 20
         self.debug_tick = 0
 
+        # --- PSEUDO-ODOMETRY (ROBOT POSE) ---
+        # We estimate the robot's position in a "Global World"
+        self.robot_x = 0.0
+        self.robot_z = 0.0
+        self.robot_theta = 0.0
+        self.current_linear_v = 0.0
+        self.current_angular_v = 0.0
+        self.last_loop_time = time.time()
+
         # --- KALMAN FILTER STATE MACHINE ---
         self.kf_state_machine = 'WAIT_FIRST'
         self.first_pos = None
@@ -61,7 +66,7 @@ class Nav:
         self.last_kf_time = 0
 
         # --- KALMAN FILTER MATRICES ---
-        self.kf_X = None  # State vector: [x, z, vx, vz]^T
+        self.kf_X = None  # State vector: [x, z, vx, vz]^T in GLOBAL coords
         self.kf_P = None  # Covariance Matrix (uncertainty)
         
         self.kf_H = np.array([
@@ -92,7 +97,6 @@ class Nav:
             [0, 0, 1, 0],
             [0, 0, 0, 1]
         ], dtype=float)
-
         self.kf_X = np.dot(F, self.kf_X)
         self.kf_P = np.dot(F, np.dot(self.kf_P, F.T)) + self.kf_Q
 
@@ -116,9 +120,9 @@ class Nav:
         if not self.detector:
             print("Detector not initialized")
             return
-
         self.is_running = True
         self.hasReachedTarget = False
+        self.last_loop_time = time.time()
         self.nav_thread = threading.Thread(target=self.go_to_target, daemon=True)
         self.nav_thread.start()
 
@@ -127,8 +131,17 @@ class Nav:
         while self.is_running:
             try:
                 system_now = time.time()
+                dt_loop = system_now - self.last_loop_time
+                self.last_loop_time = system_now
+                
                 self.debug_tick += 1
                 should_log = (self.debug_tick % self.print_every_n_ticks) == 0
+
+                # --- STEP 1: UPDATE ROBOT POSE (DEAD RECKONING) ---
+                # Estimate where the robot is in the global world based on its last speed
+                self.robot_theta += self.current_angular_v * dt_loop
+                self.robot_x += self.current_linear_v * math.sin(self.robot_theta) * dt_loop
+                self.robot_z += self.current_linear_v * math.cos(self.robot_theta) * dt_loop
 
                 self.target = self.detector.get_target()
 
@@ -142,18 +155,23 @@ class Nav:
                             self._predict_kalman(dt)
                             self.last_kf_time = system_now
                             
-                        kf_current_x = self.kf_X[0, 0]
-                        kf_current_z = self.kf_X[1, 0]
+                        kf_current_global_x = self.kf_X[0, 0]
+                        kf_current_global_z = self.kf_X[1, 0]
                         
-                        future_x, future_z = self._predict_future_kalman(self.PREDICTION_HORIZON)
+                        future_global_x, future_global_z = self._predict_future_kalman(self.PREDICTION_HORIZON)
                         
-                        blended_x = (1.0 - self.BLEND_ALPHA) * kf_current_x + (self.BLEND_ALPHA * future_x)
-                        blended_z = (1.0 - self.BLEND_ALPHA) * kf_current_z + (self.BLEND_ALPHA * future_z)
+                        blended_global_x = (1.0 - self.BLEND_ALPHA) * kf_current_global_x + (self.BLEND_ALPHA * future_global_x)
+                        blended_global_z = (1.0 - self.BLEND_ALPHA) * kf_current_global_z + (self.BLEND_ALPHA * future_global_z)
                         
-                        drive_target_z = blended_z
+                        # --- STEP 2: CONVERT GLOBAL TARGET TO LOCAL ROBOT FRAME ---
+                        dx = blended_global_x - self.robot_x
+                        dz = blended_global_z - self.robot_z
                         
-                        # FIX: Calculate bearing in RADIANS using math.atan2 directly
-                        drive_bearing = math.atan2(blended_x, blended_z)
+                        local_x = dx * math.cos(self.robot_theta) - dz * math.sin(self.robot_theta)
+                        local_z = dx * math.sin(self.robot_theta) + dz * math.cos(self.robot_theta)
+
+                        drive_target_z = local_z
+                        drive_bearing = math.atan2(local_x, local_z)
 
                         if should_log:
                             print(f"[BLIND COASTING] Target Z: {drive_target_z:.2f}, Bearing: {drive_bearing:.2f} rad")
@@ -164,6 +182,8 @@ class Nav:
 
                     else:
                         self.ctx.actions.drive.rc(0, 0)
+                        self.current_linear_v = 0.0
+                        self.current_angular_v = 0.0
                         if self.kf_state_machine != 'WAIT_FIRST':
                             self.kf_state_machine = 'WAIT_FIRST'
                             if should_log:
@@ -175,24 +195,40 @@ class Nav:
                 self.last_seen_time = system_now 
                 
                 target_time = self.target['time']
-                meas_x = self.target['tvec_x']
-                meas_z = self.target['tvec_z']
+                meas_local_x = self.target['tvec_x']
+                meas_local_z = self.target['tvec_z']
+                
+                # --- STEP 3: CONVERT CAMERA (LOCAL) TO GLOBAL WORLD ---
+                meas_global_x = self.robot_x + meas_local_x * math.cos(self.robot_theta) + meas_local_z * math.sin(self.robot_theta)
+                meas_global_z = self.robot_z - meas_local_x * math.sin(self.robot_theta) + meas_local_z * math.cos(self.robot_theta)
                 
                 if self.kf_state_machine == 'WAIT_FIRST':
                     self.ctx.actions.drive.rc(0, 0)
-                    self.first_pos = (meas_x, meas_z)
+                    self.current_linear_v = 0.0
+                    self.current_angular_v = 0.0
+                    
+                    # Reset the world anchor to (0,0) right here so numbers don't grow infinitely
+                    self.robot_x = 0.0
+                    self.robot_z = 0.0
+                    self.robot_theta = 0.0
+                    meas_global_x = meas_local_x
+                    meas_global_z = meas_local_z
+                    
+                    self.first_pos = (meas_global_x, meas_global_z)
                     self.first_time = target_time
                     self.kf_state_machine = 'WAIT_HALF_SEC'
                     print("[KF] Target found! Stopping for 0.5s to read real velocity...")
 
                 elif self.kf_state_machine == 'WAIT_HALF_SEC':
                     self.ctx.actions.drive.rc(0, 0)
+                    self.current_linear_v = 0.0
+                    self.current_angular_v = 0.0
                     dt = target_time - self.first_time
                     if dt >= 0.5:
-                        vx = (meas_x - self.first_pos[0]) / dt
-                        vz = (meas_z - self.first_pos[1]) / dt
+                        vx = (meas_global_x - self.first_pos[0]) / dt
+                        vz = (meas_global_z - self.first_pos[1]) / dt
 
-                        self._init_kalman(meas_x, meas_z, vx, vz)
+                        self._init_kalman(meas_global_x, meas_global_z, vx, vz)
                         self.last_kf_time = system_now 
                         self.kf_state_machine = 'TRACKING'
                         print(f"[KF] Initialized! vx={vx:.3f}, vz={vz:.3f}. Resuming drive.")
@@ -201,18 +237,23 @@ class Nav:
                     dt = system_now - self.last_kf_time
                     if dt > 0:
                         self._predict_kalman(dt)
-                        self._update_kalman(meas_x, meas_z)
+                        self._update_kalman(meas_global_x, meas_global_z)
                         self.last_kf_time = system_now
 
-                    future_x, future_z = self._predict_future_kalman(self.PREDICTION_HORIZON)
+                    future_global_x, future_global_z = self._predict_future_kalman(self.PREDICTION_HORIZON)
 
-                    blended_x = (1.0 - self.BLEND_ALPHA) * meas_x + (self.BLEND_ALPHA * future_x)
-                    blended_z = (1.0 - self.BLEND_ALPHA) * meas_z + (self.BLEND_ALPHA * future_z)
+                    blended_global_x = (1.0 - self.BLEND_ALPHA) * meas_global_x + (self.BLEND_ALPHA * future_global_x)
+                    blended_global_z = (1.0 - self.BLEND_ALPHA) * meas_global_z + (self.BLEND_ALPHA * future_global_z)
                     
-                    drive_target_z = blended_z
+                    # --- STEP 4: CONVERT BACK TO LOCAL TO DRIVE ---
+                    dx = blended_global_x - self.robot_x
+                    dz = blended_global_z - self.robot_z
                     
-                    # FIX: Calculate bearing in RADIANS using math.atan2 directly
-                    drive_bearing = math.atan2(blended_x, blended_z)
+                    local_x = dx * math.cos(self.robot_theta) - dz * math.sin(self.robot_theta)
+                    local_z = dx * math.sin(self.robot_theta) + dz * math.cos(self.robot_theta)
+                    
+                    drive_target_z = local_z
+                    drive_bearing = math.atan2(local_x, local_z)
 
                     if should_log:
                         print(f"Tracking -> Target Z: {drive_target_z:.2f}, Bearing: {drive_bearing:.2f} rad")
@@ -227,6 +268,8 @@ class Nav:
     def stop(self):
         self.is_running = False
         self.target = None
+        self.current_linear_v = 0.0
+        self.current_angular_v = 0.0
         self.ctx.actions.drive.stop()
 
         if self.nav_thread and self.nav_thread.is_alive():
@@ -244,6 +287,10 @@ class Nav:
         
         if abs(bearing_error) > self.BEARING_TOL:
             linear_cmd *= 0.4
+        
+        # Save current commands to calculate odometry in the next loop
+        self.current_linear_v = linear_cmd
+        self.current_angular_v = angular_cmd
         
         self.ctx.actions.drive.rc(linear_cmd, angular_cmd)
 
