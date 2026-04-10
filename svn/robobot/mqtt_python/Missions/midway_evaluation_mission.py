@@ -27,6 +27,7 @@ from Objectives.arm_down_objective import ArmDownObjective
 from Objectives.drive_to_line_objective import DriveToLineObjective
 from Objectives.search_and_navigate_to_aruco_objective import SearchAndNavigateToAruco
 from Objectives.search_and_navigate_to_platform_objective import SearchAndNavigateToPlatform
+from sodom import odom
 
 # Roundabout three-step tuning parameters.
 # Step 1: Entry line follow
@@ -148,7 +149,13 @@ def build_objectives():
         
     ]
     return objectives
-
+def store_robot_position(ctx):
+    """Store global odometry pose samples for mission route plotting."""
+    with open("/tmp/robot_position_log.txt", "a") as f:
+        x_world, y_world, h_world = odom.get_world_pose()
+        sample_ts = odom.pose_source.poseTime.timestamp()
+        # CSV: pose_timestamp_s, x_world_m, y_world_m, heading_rad
+        f.write(f"{sample_ts:.3f},{x_world:.3f},{y_world:.3f},{h_world:.4f}\n")
 
 if __name__ == "__main__":
     if service.process_running("midway-evaluation-mission"):
@@ -165,7 +172,7 @@ if __name__ == "__main__":
             ctx.actions.arm.bind_memory(ctx.memory)
             ctx.actions.arm.move_up()
             objectives = build_objectives()
-            runner = MissionRunner(objectives, ctx)
+            runner = MissionRunner(objectives, ctx, tick_hook=store_robot_position)
             runner.run()
         service.terminate()
     print("% Main Terminated")
