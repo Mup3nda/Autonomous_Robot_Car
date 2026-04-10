@@ -118,7 +118,7 @@ class Nav:
                     # print(f"z: {self.target['tvec_z']:.3f}, dist: {self.target['distance']:.3f}")
                     
                     #print(f"velocity= {vx:.4f}, time= {dt:.4f}")
-                    print(f"velocity= {vx:.4f}, bearing= {self.target['bearing']:.4f}}")
+                    print(f"velocity= {vx:.4f}, bearing= {self.target['bearing']:.4f}")
                     
                 time.sleep(0.034)
                     
