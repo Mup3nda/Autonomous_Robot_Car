@@ -33,8 +33,8 @@ class Nav:
 
         # Visual servoing gains
         self.K_FORWARD = 1.0
-        self.K_BEARING = 0.75
-        self.DESIRED_DISTANCE = 0.15
+        self.K_BEARING = 1.0
+        self.DESIRED_DISTANCE = 0.3
         self.DOCK_DISTANCE = 0.35
         self.BEARING_TOL = 2.0
         
@@ -74,15 +74,15 @@ class Nav:
             [0, 1, 0, 0]
         ], dtype=float)
         
-        self.kf_R = np.eye(2) * 0.1
-        self.kf_Q = np.eye(4) * 0.01
+        self.kf_R = np.eye(2) * 0.30
+        self.kf_Q = np.eye(4) * 0.05
 
         # --- BLENDING & TIMEOUT PARAMETERS ---
-        self.BLEND_ALPHA = 0.8
+        self.BLEND_ALPHA =  1.0
         self.PREDICTION_HORIZON = 2.0 
         
         # How long to drive blind before giving up
-        self.LOST_TIMEOUT = 0.5 
+        self.LOST_TIMEOUT = 2.0 
         self.last_seen_time = 0
 
     # --- INTERNAL KALMAN FILTER FUNCTIONS ---
@@ -253,7 +253,7 @@ class Nav:
                     local_z = dx * math.sin(self.robot_theta) + dz * math.cos(self.robot_theta)
                     
                     drive_target_z = local_z
-                    drive_bearing = math.atan2(local_x, local_z)
+                    drive_bearing = math.atan2(-local_x, local_z)
 
                     if should_log:
                         print(f"Tracking -> Target Z: {drive_target_z:.2f}, Bearing: {drive_bearing:.2f} rad")
