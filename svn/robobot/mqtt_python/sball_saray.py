@@ -48,12 +48,35 @@ class SBall(TargetDetector):
     running = False
     thread = None
     update_interval = 0.033
+    
+    DETECTION_PARAMS = {
+        "red": {
+            "min_area": 350,
+            "max_area": 9000,
+            "min_circularity": 0.80,
+        },
+        "blue": {
+            "min_area": 350,
+            "max_area": 9000,
+            "min_circularity": 0.80,
+        },
+        "white": {
+            "min_area": 350,
+            "max_area": 9000,
+            "min_circularity": 0.80,
+        },
+        "orange": {
+            "min_area": 250,
+            "max_area": 9000,
+            "min_circularity": 0.7,
+        },
+    }
 
     ##########################################################
     # COLOR SELECTION
     ##########################################################
 
-    detection_color = "red_orange"   # default
+    detection_color = "orange"   # default
 
     ##########################################################
 
@@ -140,9 +163,9 @@ class SBall(TargetDetector):
         upper_red2 = np.array([180, 255, 255])
         masks["red"] = cv.inRange(hsv, lower_red1, upper_red1) | \
                               cv.inRange(hsv, lower_red2, upper_red2)
-        # orange golf ball
-        lower_orange = np.array([10, 120, 80])
-        upper_orange = np.array([25, 255, 255])
+                              
+        lower_orange = np.array([5, 170, 150])
+        upper_orange = np.array([30, 255, 255])  # include yellow edge
         masks["orange"] = cv.inRange(hsv, lower_orange, upper_orange)
         
 
@@ -179,18 +202,23 @@ class SBall(TargetDetector):
             contours, _ = cv.findContours(mask, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
 
             for c in contours:
+                params = self.DETECTION_PARAMS[color_name]
 
                 area = cv.contourArea(c)
-                if area < 350 or area > 9000:
+                if area < params["min_area"] or area > params["max_area"]:
+                    print(f"Rejected contour for color {color_name} with area {area:.1f}")
                     continue
 
                 perimeter = cv.arcLength(c, True)
                 if perimeter == 0:
+                    print(f"Rejected contour for color {color_name} with zero perimeter")
                     continue
 
                 circularity = 4 * np.pi * area / (perimeter * perimeter)
-                if circularity < 0.8:
+                if circularity < params["min_circularity"]:
+                    print(f"Rejected contour for color {color_name} with low circularity {circularity:.2f}")
                     continue
+
 
                 (cx, cy), radius = cv.minEnclosingCircle(c)
 

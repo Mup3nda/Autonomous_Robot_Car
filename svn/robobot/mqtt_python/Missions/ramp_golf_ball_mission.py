@@ -30,7 +30,7 @@ from Objectives.arm_up_objective import ArmUpObjective
 from Objectives.arm_down_objective import ArmDownObjective
 from Objectives.drive_to_line_objective import DriveToLineObjective
 from Objectives.search_and_navigate_to_aruco_objective import SearchAndNavigateToAruco
-from Objectives.drive_to_line_objective_imu import DriveToLineObjectiveIMU
+#from Objectives.drive_to_line_objective_imu import DriveToLineObjectiveIMU
 from Objectives.search_and_navigate_to_golf_ball import SearchAndNavigateToGolfBall
 # Roundabout three-step tuning parameters.
 # Step 1: Entry line follow

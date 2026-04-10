@@ -86,12 +86,18 @@ LINE_EXIT_FOLLOW_SPEED = 0.75
 # Add objectives in the list below in the exact order they should execute.
 def build_objectives():
     objectives = [
-        DriveUntilEndRamp(follow_left=True,
-            follow_speed=0.4,
-            search_speed=0.25,
-            centering_speed=0.2,
-            lost_line_timeout_s=1.5),
-        SearchAndNavigateToGolfBall()
+        #DriveUntilEndRamp(follow_left=True,
+        #    follow_speed=0.4,
+        #    search_speed=0.25,
+        #    centering_speed=0.2,
+        #    lost_line_timeout_s=1.5),
+        SearchAndNavigateToGolfBall(),
+        DriveToWaypointObjective(waypoint=(0.0,-0.15), reset_origin=True, print_interval=10, nav_mode=WAYPOINT_NAV_MODE),
+        DriveTurnAngleObjective(90.0, linear_cmd=0.0, turn_cmd=0.8, timeout_s=5.0),
+        DriveToLineObjective(follow_left=LINE_ENTRY_FOLLOW_LEFT, follow_speed=LINE_ENTRY_FOLLOW_SPEED, search_speed=LINE_ENTRY_SEARCH_SPEED, timeout_s=LINE_ENTRY_TIMEOUT_S),
+        
+        
+        
     ]
     return objectives
 
