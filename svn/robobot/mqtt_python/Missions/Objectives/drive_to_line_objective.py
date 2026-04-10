@@ -18,8 +18,7 @@ from mission_context import MissionContext
 SEARCH_SPEED = 0.2
 CENTERING_SPEED = 0.2
 FOLLOW_SPEED = 0.80
-SEARCH_MAX_DISTANCE_M = 1.0
-SEARCH_TIMEOUT_S = 15.0
+SEARCH_TIMEOUT_S = 3.0
 LINE_FOUND_CONFIDENCE = 4
 CENTERED_CONFIDENCE = 8
 CENTERED_MIN_TIME_S = 2.0
@@ -53,6 +52,7 @@ class DriveToLineObjective(Objective):
         lost_line_timeout_s=LOST_LINE_TIMEOUT_S,
         instant_stop=True,
         max_duration=0.0,
+        search_timeout_s=SEARCH_TIMEOUT_S,
     ):
         super().__init__()
         self.follow_left = bool(follow_left)
@@ -62,6 +62,8 @@ class DriveToLineObjective(Objective):
         self.lost_line_timeout_s = float(lost_line_timeout_s)
         self.instant_stop = bool(instant_stop)
         self.max_duration = float(max_duration)
+        self.search_timeout_s = float(search_timeout_s)
+
     def start(self, ctx):
         """Initialize local progress trackers without resetting global odometry."""
         self.state = DriveToLineState.START
@@ -98,10 +100,11 @@ class DriveToLineObjective(Objective):
             search_marker = ctx.memory["_local_progress"][self.SEARCH_PROGRESS_KEY]
             search_dist = ctx.distance_since_start(self.SEARCH_PROGRESS_KEY)
             search_elapsed = t.time() - search_marker["time_s"]
-            if search_dist > SEARCH_MAX_DISTANCE_M or search_elapsed > SEARCH_TIMEOUT_S:
+            if search_elapsed > self.search_timeout_s:
                 # Stop if traveled >1m or >15s timeout without finding line
                 ctx.actions.drive.stop(instant=self.instant_stop)
                 self.state = DriveToLineState.STOPPED
+                
             if ctx.actions.edge.is_line_valid(confidence=LINE_FOUND_CONFIDENCE):
                 # Line detected! Switch to centering mode at low speed
                 ctx.actions.edge.start_following(velocity=self.centering_speed, follow_left=self.follow_left)

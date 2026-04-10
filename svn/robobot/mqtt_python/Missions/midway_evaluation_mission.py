@@ -85,12 +85,12 @@ LINE_EXIT_FOLLOW_SPEED = 0.75
 def build_objectives():
     objectives = [
         DriveToLineObjective(
-            follow_left=True,
-            follow_speed=0.4,
-            search_speed=0.25,
-            centering_speed=0.2,
-            lost_line_timeout_s=0.3,
-            max_duration =6.5
+            follow_left=False,
+            follow_speed=0.75,
+            search_speed=0.35,
+            centering_speed=0.3,
+            lost_line_timeout_s=1,
+            search_timeout_s=4,
             ),
         DriveToWaypointObjective(
             waypoint=(0.4,0.0),
