@@ -17,6 +17,7 @@ from uservice import service
 from mission_runner import MissionRunner
 from robot_actions import RobotActions
 from mission_context import MissionContext
+from objective import Objective
 from Objectives.drive_circle_objective import DriveCircleObjective
 from Objectives.drive_to_waypoint_objective import DriveToWaypointObjective
 from Objectives.drive_turn_angle_objective import DriveTurnAngleObjective
@@ -24,6 +25,9 @@ from Objectives.align_to_circle_tangent_objective import AlignToCircleTangentObj
 from Objectives.search_and_navigate_to_blue_ball_objective import SearchAndNavigateToBlueBall
 from Objectives.arm_up_objective import ArmUpObjective
 from Objectives.arm_down_objective import ArmDownObjective
+from Objectives.gripper_open_objective import GripperOpenObjective
+from Objectives.gripper_middle_objective import GripperMiddleObjective
+from Objectives.gripper_close_objective import GripperCloseObjective
 from Objectives.drive_to_line_objective import DriveToLineObjective
 from Objectives.search_and_navigate_to_aruco_objective import SearchAndNavigateToAruco
 from Objectives.search_and_navigate_to_platform_objective import SearchAndNavigateToPlatform
@@ -81,9 +85,40 @@ LINE_EXIT_FOLLOW_LEFT = False
 LINE_EXIT_FOLLOW_SPEED = 0.75
 
 
+class DelayObjective(Objective):
+    """Wait for a fixed amount of time, then finish."""
+
+    def __init__(self, duration_s):
+        super().__init__()
+        self.duration_s = float(duration_s)
+
+    def start(self, ctx):
+        self._done = self.duration_s <= 0.0
+
+    def tick(self, ctx):
+        if ctx.state_time_passed() >= self.duration_s:
+            self._done = True
+
+    def stop(self, ctx):
+        pass
+
+
 # Add objectives in the list below in the exact order they should execute.
 def build_objectives():
     objectives = [
+        # GripperOpenObjective(),
+        # DelayObjective(2.0),
+        # ArmUpObjective(),
+        # DelayObjective(2.0),
+        # ArmDownObjective(),
+        # DelayObjective(2.0),
+        # GripperCloseObjective(),
+        # DelayObjective(2.0),
+        # # GripperOpenObjective(),
+        # # DelayObjective(2.0),
+        # ArmUpObjective(),
+
+
         # region Following line
         DriveToLineObjective(
             follow_left=True,

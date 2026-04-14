@@ -1,154 +1,66 @@
-#!/usr/bin/env python3
-"""
-gripper.py
-----------
-Controls a servo gripper connected directly to a Raspberry Pi GPIO pin using
-hardware PWM via the RPi.GPIO library.
+"""Servo gripper actions: high-level interface for gripper servo control.
 
-Wiring (standard hobby servo — 3 wires):
-  VCC (red)    → RPi 5V  (pin 2 or 4)
-  GND (brown)  → RPi GND (pin 6, 9, 14, …)
-  Signal (orange/yellow) → RPi GPIO pin (default: GPIO 18, pin 12)
-                           GPIO 18 supports hardware PWM on all RPi models.
-
-Servo PWM basics:
-  Frequency : 50 Hz  (20 ms period)
-  Duty cycle: 2.5 %  → ~0.5 ms pulse  → typically full CW  (~0°)
-              7.5 %  → ~1.5 ms pulse  → centre             (~90°)
-             12.5 %  → ~2.5 ms pulse  → full CCW           (~180°)
-
-Tune GRIPPER_OPEN_DC / GRIPPER_CLOSE_DC for your physical servo.
+Gripper configuration values are read from robot.ini under [servogrip].
+To tune the gripper, only change values in robot.ini:
+    [servogrip]
+    open_position  = -900
+    mid_position   = -500
+    close_position = -400
+    velocity       = 200
+    servo_idx      = 2
 """
 
-import RPi.GPIO as GPIO
-import time
-import sys
+import configparser
 
-# ── Configuration ─────────────────────────────────────────────────────────────
 
-SERVO_PIN       = 18       # BCM GPIO pin number (GPIO 18 = physical pin 12)
-PWM_FREQUENCY   = 50       # Hz — standard for hobby servos
+class ServoGripActions:
+    """High-level interface for gripper servo control.
 
-# Duty-cycle values (percentage) — tune to match your physical gripper travel.
-# Typical range: 2.5 (fully CW) … 12.5 (fully CCW) for a 180° servo.
-GRIPPER_OPEN_DC  = 2.5     # Fully open
-GRIPPER_CLOSE_DC = 12.5    # Fully closed / gripping
-GRIPPER_MID_DC   = 7.5     # Safe transit / middle position
+    Wraps the servo send command to provide a clean, objective-level interface
+    for controlling the gripper servo. Other modules can use this class
+    to trigger gripper movements without needing to know servo positions or indices.
 
-# How long (seconds) to hold the PWM signal after a move command before
-# going idle (prevents servo jitter while holding position).
-MOVE_HOLD_TIME  = 0.5      # seconds
-
-# ── Gripper class ─────────────────────────────────────────────────────────────
-
-class Gripper:
-    """Thin wrapper around RPi.GPIO PWM for a single-servo gripper."""
-
-    def __init__(self, pin: int = SERVO_PIN, freq: int = PWM_FREQUENCY):
-        self.pin  = pin
-        self.freq = freq
-        self._pwm = None
-        self._setup()
-
-    def _setup(self):
-        """Initialise GPIO and start PWM at 0 % duty (idle / no pulse)."""
-        GPIO.setmode(GPIO.BCM)
-        GPIO.setwarnings(False)
-        GPIO.setup(self.pin, GPIO.OUT)
-        self._pwm = GPIO.PWM(self.pin, self.freq)
-        self._pwm.start(0)  # start with no pulse — servo stays still
-        print(f"[GRIPPER] Initialised on GPIO {self.pin} @ {self.freq} Hz")
-
-    # ── public API ────────────────────────────────────────────────────────────
-
-    def set_duty(self, duty_cycle: float):
-        """
-        Send a raw duty-cycle value (%) to the servo and hold briefly.
-        Use this when you want fine-grained control beyond the three presets.
-        """
-        duty_cycle = max(0.0, min(100.0, duty_cycle))  # clamp to valid range
-        self._pwm.ChangeDutyCycle(duty_cycle)
-        time.sleep(MOVE_HOLD_TIME)
-        self._pwm.ChangeDutyCycle(0)  # silence signal — reduces jitter
-
-    def open(self):
-        """Move gripper to the fully OPEN position."""
-        print(f"[GRIPPER] Opening  (duty={GRIPPER_OPEN_DC} %)")
-        self.set_duty(GRIPPER_OPEN_DC)
-
-    def close(self):
-        """Move gripper to the fully CLOSED / gripping position."""
-        print(f"[GRIPPER] Closing  (duty={GRIPPER_CLOSE_DC} %)")
-        self.set_duty(GRIPPER_CLOSE_DC)
-
-    def middle(self):
-        """Move gripper to the MID / safe transit position."""
-        print(f"[GRIPPER] Mid pos  (duty={GRIPPER_MID_DC} %)")
-        self.set_duty(GRIPPER_MID_DC)
-
-    def command(self, action: str):
-        """
-        High-level command interface — mirrors the C++ commandGripper(char).
-        action: 'o' = open | 'c' = close | 'm' = middle
-        """
-        action = action.lower()
-        if   action == 'o': self.open()
-        elif action == 'c': self.close()
-        elif action == 'm': self.middle()
-        else:
-            print(f"[GRIPPER] Unknown action '{action}'. Use o / c / m.")
-
-    def cleanup(self):
-        """Release GPIO resources. Always call this on exit."""
-        self._pwm.stop()
-        GPIO.cleanup()
-        print("[GRIPPER] GPIO cleaned up.")
-
-# ── Interactive test loop ─────────────────────────────────────────────────────
-
-def test_gripper_loop(gripper: Gripper):
+    All configuration is read from robot.ini under [servogrip].
     """
-    Manual keyboard test — equivalent to the C++ testGripperLoop().
-    Replace this loop with your ball-detection trigger when ready:
 
-        ball_detected = (ball_distance < THRESHOLD)
-        gripper.command('c' if ball_detected else 'o')
-    """
-    print("\n=============================")
-    print(" Servo Gripper Python Test")
-    print(f" GPIO pin : {gripper.pin}")
-    print("=============================")
-    print(" [o] - Open gripper")
-    print(" [c] - Close gripper (grip)")
-    print(" [m] - Mid / transit position")
-    print(" [q] - Quit")
-    print("=============================\n")
+    def __init__(self, service, config_path=None):
+        self.service = service
 
-    # Default: open on start
-    gripper.open()
+        if config_path is None:
+            import os
+            config_path = os.path.join(
+                os.path.dirname(__file__),
+                "../../../teensy_interface/robot.ini",
+            )
 
-    while True:
-        try:
-            key = input("Enter command: ").strip().lower()
-        except (EOFError, KeyboardInterrupt):
-            break
+        config = configparser.ConfigParser()
+        config.read(config_path)
 
-        if key == 'q':
-            print("[TEST] Quitting — returning gripper to OPEN")
-            gripper.open()
-            break
-        elif key in ('o', 'c', 'm'):
-            gripper.command(key)
-        elif key == '':
-            continue
-        else:
-            print("[TEST] Unknown command. Use o, c, m, or q.")
+        if not config.has_section("servogrip"):
+            print(f"[ServoGrip] Warning: [servogrip] section missing from {config_path}, using defaults")
 
-# ── Entry point ───────────────────────────────────────────────────────────────
+        self.servo_idx = config.getint("servogrip", "servo_idx", fallback=2)
+        self.grip_open_pos = config.getint("servogrip", "open_position", fallback=-900)
+        self.grip_mid_pos = config.getint("servogrip", "mid_position", fallback=-500)
+        self.grip_close_pos = config.getint("servogrip", "close_position", fallback=-400)
+        self.grip_velocity = config.getint("servogrip", "velocity", fallback=200)
 
-if __name__ == "__main__":
-    gripper = Gripper(pin=SERVO_PIN, freq=PWM_FREQUENCY)
-    try:
-        test_gripper_loop(gripper)
-    finally:
-        gripper.cleanup()
+        print(f"[ServoGrip] Setup complete")
+        print(f"[ServoGrip] open_pos={self.grip_open_pos}")
+        print(f"[ServoGrip] mid_pos={self.grip_mid_pos}")
+        print(f"[ServoGrip] close_pos={self.grip_close_pos}")
+        print(f"[ServoGrip] velocity={self.grip_velocity}")
+        print(f"[ServoGrip] servo_idx={self.servo_idx}")
+
+    def move_to(self, position, speed=None):
+        speed_value = speed if speed is not None else self.grip_velocity
+        self.service.send("robobot/cmd/T0", f"servo {self.servo_idx} {int(position)} {int(speed_value)}")
+
+    def open(self, speed=None):
+        self.move_to(self.grip_open_pos, speed=speed)
+
+    def middle(self, speed=None):
+        self.move_to(self.grip_mid_pos, speed=speed)
+
+    def close(self, speed=None):
+        self.move_to(self.grip_close_pos, speed=speed)

@@ -282,6 +282,9 @@ class UService:
           print("% I am not robot master, quitting!")
         # print(f"% got master {msg} my ID is {str(self.startTime)}")
         pass
+      elif subtopic.endswith("/svo"):
+        # Servo status stream is expected; ignore to avoid log spam.
+        pass
       else:
         used = False
     if not used:

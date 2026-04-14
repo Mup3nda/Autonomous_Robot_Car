@@ -6,8 +6,8 @@ import os
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from Nav_Aruco import Nav as Nav_Aruco #import nav2  for the new version
-from Nav_Balls import Nav as Nav_Balls
+# from Nav_Aruco import Nav as Nav_Aruco #import nav2  for the new version
+# from Nav_Balls import Nav as Nav_Balls
 from Nav_Platform import Nav as Nav_Platform
 from NavSmooth import NavSmooth
 from Nav_Final import Nav as Nav_Final
