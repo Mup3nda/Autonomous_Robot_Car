@@ -109,7 +109,7 @@ def build_objectives():
         ),
         DriveCircleObjective(
             radius_m=CIRCLE_RADIUS_M,
-            revolutions=1.65, # one full circle + half circle
+            revolutions=1.5, # one full circle + half circle
             forward_cmd=CIRCLE_FORWARD_CMD,
             turn_cmd=CIRCLE_TURN_CMD,
             turn_rate_scale=CIRCLE_TURN_RATE_SCALE,
@@ -128,11 +128,11 @@ def build_objectives():
                             search_speed=LINE_ENTRY_SEARCH_SPEED,
                             lost_line_timeout_s=LINE_ENTRY_TIMEOUT_S),
         
-        SearchAndNavigateToBlueBall(),
+        #SearchAndNavigateToBlueBall(),
         ArmDownObjective(wait_after_s=2.0),
         
         ArmUpObjective(),
-        SearchAndNavigateToAruco(marker_id=53,turn_rate=0.3),
+        #SearchAndNavigateToAruco(marker_id=53,turn_rate=0.3),
         ArmDownObjective(wait_after_s=2.0),
         
         ArmUpObjective(),
