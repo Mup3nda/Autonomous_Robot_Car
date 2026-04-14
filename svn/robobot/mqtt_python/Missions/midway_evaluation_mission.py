@@ -29,6 +29,7 @@ from Objectives.gripper_open_objective import GripperOpenObjective
 from Objectives.gripper_middle_objective import GripperMiddleObjective
 from Objectives.gripper_close_objective import GripperCloseObjective
 from Objectives.drive_to_line_objective import DriveToLineObjective
+from Objectives.drive_to_line_zone_switch_objective import DriveToLineZoneSwitchObjective
 from Objectives.search_and_navigate_to_aruco_objective import SearchAndNavigateToAruco
 from Objectives.search_and_navigate_to_platform_objective import SearchAndNavigateToPlatform
 from sodom import odom
@@ -84,6 +85,27 @@ ENTRY_TURN_2_DEG = CIRCLE_ENTRY_TANGENT_HEADING_DEG - ENTRY_TURN_1_DEG
 # Step 4: Exit line follow
 LINE_EXIT_FOLLOW_LEFT = False
 LINE_EXIT_FOLLOW_SPEED = 0.75
+
+# Zone-based side/speed switches for the post-roundabout line follow.
+# Tune x/y/radius in world frame using MissionLogs plot output.
+POST_ROUNDABOUT_SWITCH_ZONES = [
+    {
+        "name": "prepare_left_turn",
+        "x": 2,
+        "y": 3.0,
+        "radius_m": 0.22,
+        "follow_left": True,
+        "follow_speed": 0.3,
+    },
+    {
+        "name": "back_to_right",
+        "x": 1.02,
+        "y": 2.83,
+        "radius_m": 0.18,
+        "follow_left": False,
+        "follow_speed": 0.65,
+    },
+]
 
 
 class DelayObjective(Objective):
@@ -158,10 +180,14 @@ def build_objectives():
         ),
         # endregion
         
-        DriveToLineObjective(follow_left=LINE_ENTRY_FOLLOW_LEFT,
-                            follow_speed=0.7,
-                            search_speed=LINE_ENTRY_SEARCH_SPEED,
-                            lost_line_timeout_s=LINE_ENTRY_TIMEOUT_S),
+        DriveToLineZoneSwitchObjective(
+            follow_left=LINE_ENTRY_FOLLOW_LEFT,
+            follow_speed=0.7,
+            search_speed=LINE_ENTRY_SEARCH_SPEED,
+            lost_line_timeout_s=LINE_ENTRY_TIMEOUT_S,
+            switch_zones=POST_ROUNDABOUT_SWITCH_ZONES,
+            ordered_switches=True,
+        ),
         
         #SearchAndNavigateToBlueBall(),
         ArmDownObjective(wait_after_s=2.0),
