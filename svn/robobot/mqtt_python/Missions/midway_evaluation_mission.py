@@ -144,7 +144,7 @@ def build_objectives():
         ),
         DriveCircleObjective(
             radius_m=CIRCLE_RADIUS_M,
-            revolutions=1.5, # one full circle + half circle
+            revolutions=1.61, # one full circle + half circle
             forward_cmd=CIRCLE_FORWARD_CMD,
             turn_cmd=CIRCLE_TURN_CMD,
             turn_rate_scale=CIRCLE_TURN_RATE_SCALE,
@@ -159,7 +159,7 @@ def build_objectives():
         # endregion
         
         DriveToLineObjective(follow_left=LINE_ENTRY_FOLLOW_LEFT,
-                            follow_speed=LINE_ENTRY_FOLLOW_SPEED,
+                            follow_speed=0.7,
                             search_speed=LINE_ENTRY_SEARCH_SPEED,
                             lost_line_timeout_s=LINE_ENTRY_TIMEOUT_S),
         
