@@ -186,7 +186,10 @@ def build_objectives():
     return objectives
 def store_robot_position(ctx):
     """Store global odometry pose samples for mission route plotting."""
-    with open("/tmp/robot_position_log.txt", "a") as f:
+    log_dir = os.path.join(THIS_DIR, "MissionLogs")
+    os.makedirs(log_dir, exist_ok=True)
+    log_file = os.path.join(log_dir, "robot_position_log.txt")
+    with open(log_file, "a") as f:
         x_world, y_world, h_world = odom.get_world_pose()
         sample_ts = odom.pose_source.poseTime.timestamp()
         obj_name = str(ctx.memory.get("_mission_current_objective") or "unknown").replace(",", ";")

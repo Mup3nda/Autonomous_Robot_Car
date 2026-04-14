@@ -162,9 +162,13 @@ def plot_route(log_path: str, out_path: str, title: str, dpi: int = 160) -> str:
 
 
 def main():
+    this_dir = os.path.dirname(os.path.abspath(__file__))
+    mission_logs_dir = os.path.join(this_dir, "MissionLogs")
+    default_input = os.path.join(mission_logs_dir, "robot_position_log.txt")
+    default_output = os.path.join(mission_logs_dir, "robot_position_route.png")
     parser = argparse.ArgumentParser(description="Plot route from robot position log.")
-    parser.add_argument("--input", default="/tmp/robot_position_log.txt", help="Input log file path")
-    parser.add_argument("--output", default="/tmp/robot_position_route.png", help="Output image path (.png/.jpg)")
+    parser.add_argument("--input", default=default_input, help="Input log file path")
+    parser.add_argument("--output", default=default_output, help="Output image path (.png/.jpg)")
     parser.add_argument("--title", default="Robot Route", help="Plot title")
     parser.add_argument("--dpi", type=int, default=160, help="Image DPI")
     args = parser.parse_args()
