@@ -193,8 +193,10 @@ def store_robot_position(ctx):
         x_world, y_world, h_world = odom.get_world_pose()
         sample_ts = odom.pose_source.poseTime.timestamp()
         obj_name = str(ctx.memory.get("_mission_current_objective") or "unknown").replace(",", ";")
-        # CSV: pose_timestamp_s, x_world_m, y_world_m, heading_rad, objective_name
-        f.write(f"{sample_ts:.3f},{x_world:.3f},{y_world:.3f},{h_world:.4f},{obj_name}\n")
+        obj_idx = ctx.memory.get("_mission_current_objective_index")
+        obj_idx_str = "" if obj_idx is None else str(int(obj_idx))
+        # CSV: pose_timestamp_s, x_world_m, y_world_m, heading_rad, objective_name, objective_index
+        f.write(f"{sample_ts:.3f},{x_world:.3f},{y_world:.3f},{h_world:.4f},{obj_name},{obj_idx_str}\n")
 
 if __name__ == "__main__":
     if service.process_running("midway-evaluation-mission"):
