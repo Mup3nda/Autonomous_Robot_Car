@@ -154,8 +154,9 @@ def store_robot_position(ctx):
     with open("/tmp/robot_position_log.txt", "a") as f:
         x_world, y_world, h_world = odom.get_world_pose()
         sample_ts = odom.pose_source.poseTime.timestamp()
-        # CSV: pose_timestamp_s, x_world_m, y_world_m, heading_rad
-        f.write(f"{sample_ts:.3f},{x_world:.3f},{y_world:.3f},{h_world:.4f}\n")
+        obj_name = str(ctx.memory.get("_mission_current_objective") or "unknown").replace(",", ";")
+        # CSV: pose_timestamp_s, x_world_m, y_world_m, heading_rad, objective_name
+        f.write(f"{sample_ts:.3f},{x_world:.3f},{y_world:.3f},{h_world:.4f},{obj_name}\n")
 
 if __name__ == "__main__":
     if service.process_running("midway-evaluation-mission"):

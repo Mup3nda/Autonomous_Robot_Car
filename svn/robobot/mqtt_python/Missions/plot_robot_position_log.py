@@ -4,12 +4,13 @@
 Supports both formats:
 - x,y
 - timestamp,x,y,heading
+- timestamp,x,y,heading,objective_name
 """
 
 import argparse
 import math
 import os
-from typing import List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 
 def _prepare_matplotlib():
@@ -22,11 +23,14 @@ def _prepare_matplotlib():
     return plt
 
 
-def _load_samples(path: str) -> Tuple[List[Optional[float]], List[float], List[float], List[Optional[float]]]:
+def _load_samples(
+    path: str,
+) -> Tuple[List[Optional[float]], List[float], List[float], List[Optional[float]], List[Optional[str]]]:
     times: List[Optional[float]] = []
     xs: List[float] = []
     ys: List[float] = []
     headings: List[Optional[float]] = []
+    objectives: List[Optional[str]] = []
 
     with open(path, "r", encoding="utf-8") as f:
         for raw in f:
@@ -35,7 +39,7 @@ def _load_samples(path: str) -> Tuple[List[Optional[float]], List[float], List[f
                 continue
             parts = [p.strip() for p in line.split(",")]
 
-            # New format: timestamp,x,y,heading
+            # New format: timestamp,x,y,heading[,objective_name]
             if len(parts) >= 4:
                 try:
                     t = float(parts[0])
@@ -44,10 +48,12 @@ def _load_samples(path: str) -> Tuple[List[Optional[float]], List[float], List[f
                     h = float(parts[3])
                 except ValueError:
                     continue
+                objective = ",".join(parts[4:]).strip() if len(parts) >= 5 else None
                 times.append(t)
                 xs.append(x)
                 ys.append(y)
                 headings.append(h)
+                objectives.append(objective or None)
                 continue
 
             # Legacy format: x,y
@@ -61,15 +67,16 @@ def _load_samples(path: str) -> Tuple[List[Optional[float]], List[float], List[f
                 xs.append(x)
                 ys.append(y)
                 headings.append(None)
+                objectives.append(None)
 
-    return times, xs, ys, headings
+    return times, xs, ys, headings, objectives
 
 
 def plot_route(log_path: str, out_path: str, title: str, dpi: int = 160) -> str:
     if not os.path.exists(log_path):
         raise FileNotFoundError(f"Log file not found: {log_path}")
 
-    _, xs, ys, headings = _load_samples(log_path)
+    _, xs, ys, headings, objectives = _load_samples(log_path)
     if not xs:
         raise RuntimeError(f"No valid samples found in: {log_path}")
 
@@ -77,6 +84,38 @@ def plot_route(log_path: str, out_path: str, title: str, dpi: int = 160) -> str:
     fig, ax = plt.subplots(figsize=(8, 8))
 
     ax.plot(xs, ys, color="tab:blue", linewidth=1.8, label="route")
+
+    objective_labels = [label for label in objectives if label]
+    if objective_labels:
+        seen: Dict[str, None] = {}
+        unique_labels: List[str] = []
+        for label in objective_labels:
+            if label not in seen:
+                seen[label] = None
+                unique_labels.append(label)
+
+        cmap = plt.get_cmap("tab20")
+        objective_colors = {
+            label: cmap(i % 20)
+            for i, label in enumerate(unique_labels)
+        }
+
+        for label in unique_labels:
+            idx = [i for i, obj in enumerate(objectives) if obj == label]
+            if not idx:
+                continue
+            x_obj = [xs[i] for i in idx]
+            y_obj = [ys[i] for i in idx]
+            ax.scatter(
+                x_obj,
+                y_obj,
+                s=16,
+                color=objective_colors[label],
+                alpha=0.85,
+                label=f"obj: {label}",
+                zorder=2,
+            )
+
     ax.scatter([xs[0]], [ys[0]], color="tab:green", s=80, label="start", zorder=3)
     ax.scatter([xs[-1]], [ys[-1]], color="tab:red", s=80, label="end", zorder=3)
 
