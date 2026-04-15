@@ -31,7 +31,7 @@ class DriveToTimerAndBackObjective(Objective):
     BACKWARD_PROGRESS_KEY = "drive_to_timer_backward"
 
     TARGET_DISTANCE_M = 2.0
-    OFFSET_STOP_DIST = 0.03
+    OFFSET_STOP_DIST = 0.10
     FORWARD_THROTTLE = 0.40 #0.20
     BACKWARD_THROTTLE = -0.40
     STEERING = 0.0

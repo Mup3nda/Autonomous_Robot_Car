@@ -108,13 +108,6 @@ POST_ROUNDABOUT_SWITCH_ZONES = [
     },
 ]
 
-TO_THE_BUCKET = [
-    {
-        "name": "first_intersection_left",
-    }
-]
-
-
 class DelayObjective(Objective):
     """Wait for a fixed amount of time, then finish."""
 
@@ -136,11 +129,26 @@ class DelayObjective(Objective):
 # Add objectives in the list below in the exact order they should execute.
 def build_objectives():
     objectives = [
-        ArmUpObjective(),
-        DelayObjective(2.0),
-        ArmMiddleObjective(),
-        # DriveToTimerAndBackObjective()
-        # region Following line
+        # ArmUpObjective(),
+        # DriveToTimerAndBackObjective(),
+        # # region Following line
+        # DelayObjective(2.0),
+        # DriveToLineObjective(
+        #     follow_left=True,
+        #     follow_speed=0.4,
+        #     search_speed=0.25,
+        #     centering_speed=0.2,
+        #     lost_line_timeout_s=0.3,
+        #     max_duration =3.2
+        #     ),
+        # DelayObjective(2.0),
+        # ArmMiddleObjective(),
+        # DelayObjective(2.0),
+        # DriveTurnAngleObjective(
+        #     angle_deg=-100,
+        #     linear_cmd=0.0,
+        #     timeout_s=6.0,
+        # ),
         
 
         
