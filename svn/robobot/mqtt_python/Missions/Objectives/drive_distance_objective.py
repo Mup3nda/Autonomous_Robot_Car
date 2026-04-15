@@ -47,7 +47,6 @@ class DriveDistanceObjective(Objective):
             elapsed = t.time() - marker["time_s"]
             if driven > self.target_distance_m  or elapsed > 15:
                 ctx.actions.drive.stop()  # Stop driving
-                ctx.actions.drive.servo(1, 0, 0)  # Center servo
                 self.state = DriveDistanceState.STOPPED
         elif self.state == DriveDistanceState.STOPPED:
             # State 2: Stopped - wait for velocity to settle to near-zero
