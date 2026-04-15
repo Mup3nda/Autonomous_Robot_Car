@@ -32,6 +32,7 @@ from Objectives.gripper_close_objective import GripperCloseObjective
 from Objectives.drive_to_line_objective import DriveToLineObjective
 from Objectives.search_and_navigate_to_aruco_objective import SearchAndNavigateToAruco
 from Objectives.search_and_navigate_to_platform_objective import SearchAndNavigateToPlatform
+from Objectives.drive_distance_objective import DriveDistanceObjective
 
 # Roundabout three-step tuning parameters.
 # Step 1: Entry line follow
@@ -107,15 +108,44 @@ class DelayObjective(Objective):
 # Add objectives in the list below in the exact order they should execute.
 def build_objectives():
     objectives = [
-        GripperOpenObjective(),
+        # ## GRIPPER TEST
+        # ArmUpObjective(),
+        # GripperOpenObjective(),
+        # DelayObjective(2.0),
+        # ArmDownObjective(),
+        # DelayObjective(2.0),
+        # GripperCloseObjective(),
+        # DelayObjective(1.0),
+        # GripperCloseObjective(),
+        # DelayObjective(2.0),
+        # ArmUpObjective(),
+
+        # ## TEST GRABBING BLUE BALL
+        # ArmUpObjective(),
+        # GripperOpenObjective(),
+        # SearchAndNavigateToBlueBall(turn_rate=0.8),
+        # ArmDownObjective(),
+        # DelayObjective(2.0),
+        # GripperCloseObjective(),
+        # DelayObjective(1.0),
+        # GripperCloseObjective(),
+        # DelayObjective(2.0),
+        # ArmUpObjective(),       
+        
+        ## TEST GRABBING ARUCO
         ArmUpObjective(),
-        DelayObjective(2.0),
+        GripperOpenObjective(),
+        SearchAndNavigateToAruco(marker_id=53,turn_rate=0.4),
         ArmDownObjective(),
         DelayObjective(2.0),
-        GripperMiddleObjective(),
+        DriveDistanceObjective(target_distance_m=0.05),
+        GripperCloseObjective(),
+        DelayObjective(1.0),
+        GripperCloseObjective(),
         DelayObjective(2.0),
         ArmUpObjective(),
-
+        
+        
         # SearchAndNavigateToPlatform(marker_id=5),
         # ArmDownObjective(wait_after_s=2.0),
         
@@ -127,7 +157,7 @@ def build_objectives():
         # ArmDownObjective(wait_after_s=2.0),
         # ArmUpObjective(),
         
-    ]
+        ]
     return objectives
 
 

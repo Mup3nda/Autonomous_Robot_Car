@@ -16,7 +16,7 @@ class SearchAndNavigateToAruco(CompositeObjective):
         turn_rate=0.5,
         min_confidence=1,
         search_print_interval=20,
-        desired_distance=0.4,
+        desired_distance=0.35, #0.4
         navigate_print_interval=20,
     ):
         objectives = [
