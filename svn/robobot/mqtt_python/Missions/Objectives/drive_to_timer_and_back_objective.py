@@ -30,12 +30,13 @@ class DriveToTimerAndBackObjective(Objective):
     FORWARD_PROGRESS_KEY = "drive_to_timer_forward"
     BACKWARD_PROGRESS_KEY = "drive_to_timer_backward"
 
-    TARGET_DISTANCE_M = 1.0
-    FORWARD_THROTTLE = 0.20 #0.20
-    BACKWARD_THROTTLE = -0.20
+    TARGET_DISTANCE_M = 2.0
+    OFFSET_STOP_DIST = 0.03
+    FORWARD_THROTTLE = 0.40 #0.20
+    BACKWARD_THROTTLE = -0.40
     STEERING = 0.0
-    TIMEOUT_S = 15.0
-    WAIT_BEFORE_BACKWARD_S = 3.0
+    TIMEOUT_S = 20.0
+    WAIT_BEFORE_BACKWARD_S = 1.0
     STOP_VELOCITY_THRESHOLD = 0.001
 
     def start(self, ctx):
@@ -46,7 +47,8 @@ class DriveToTimerAndBackObjective(Objective):
     def tick(self, ctx):
         if self.state == DriveToTimerAndBackState.FORWARD_START:
             ctx.start_local_progress(self.FORWARD_PROGRESS_KEY)
-            ctx.actions.drive.rc(self.FORWARD_THROTTLE, self.STEERING)
+            #ctx.actions.drive.rc(self.FORWARD_THROTTLE, self.STEERING)
+            ctx.actions.drive.ramp_to(self.FORWARD_THROTTLE, self.STEERING)
             self.state = DriveToTimerAndBackState.FORWARD_DRIVING
 
         elif self.state == DriveToTimerAndBackState.FORWARD_DRIVING:
@@ -55,8 +57,7 @@ class DriveToTimerAndBackObjective(Objective):
             elapsed = t.time() - marker["time_s"]
 
             if driven >= self.TARGET_DISTANCE_M or elapsed > self.TIMEOUT_S:
-                ctx.actions.drive.stop()
-                #ctx.actions.drive.servo(1, 0, 0)
+                ctx.actions.drive.stop(instant=False)
                 self.state = DriveToTimerAndBackState.FORWARD_STOPPED
 
         elif self.state == DriveToTimerAndBackState.FORWARD_STOPPED:
@@ -74,7 +75,8 @@ class DriveToTimerAndBackObjective(Objective):
                 
         elif self.state == DriveToTimerAndBackState.BACKWARD_START:
             ctx.start_local_progress(self.BACKWARD_PROGRESS_KEY)
-            ctx.actions.drive.rc(self.BACKWARD_THROTTLE, self.STEERING)
+            #ctx.actions.drive.rc(self.BACKWARD_THROTTLE, self.STEERING)
+            ctx.actions.drive.ramp_to(self.BACKWARD_THROTTLE, self.STEERING)
             self.state = DriveToTimerAndBackState.BACKWARD_DRIVING
 
         elif self.state == DriveToTimerAndBackState.BACKWARD_DRIVING:
@@ -82,7 +84,7 @@ class DriveToTimerAndBackObjective(Objective):
             driven = abs(ctx.distance_since_start(self.BACKWARD_PROGRESS_KEY))
             elapsed = t.time() - marker["time_s"]
 
-            if driven >= self.TARGET_DISTANCE_M or elapsed > self.TIMEOUT_S:
+            if driven >= self.TARGET_DISTANCE_M + self.OFFSET_STOP_DIST or elapsed > self.TIMEOUT_S:
                 ctx.actions.drive.stop()
                 self.state = DriveToTimerAndBackState.BACKWARD_STOPPED
 
