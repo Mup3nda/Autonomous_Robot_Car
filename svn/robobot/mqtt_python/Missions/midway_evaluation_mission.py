@@ -13,7 +13,6 @@ if ROOT_DIR not in sys.path:
 
 
 from uservice import service
-
 from mission_runner import MissionRunner
 from robot_actions import RobotActions
 from mission_context import MissionContext
@@ -25,6 +24,7 @@ from Objectives.align_to_circle_tangent_objective import AlignToCircleTangentObj
 from Objectives.search_and_navigate_to_blue_ball_objective import SearchAndNavigateToBlueBall
 from Objectives.arm_up_objective import ArmUpObjective
 from Objectives.arm_down_objective import ArmDownObjective
+from Objectives.arm_middle_objective import ArmMiddleObjective
 from Objectives.gripper_open_objective import GripperOpenObjective
 from Objectives.gripper_middle_objective import GripperMiddleObjective
 from Objectives.gripper_close_objective import GripperCloseObjective
@@ -108,6 +108,12 @@ POST_ROUNDABOUT_SWITCH_ZONES = [
     },
 ]
 
+TO_THE_BUCKET = [
+    {
+        "name": "first_intersection_left",
+    }
+]
+
 
 class DelayObjective(Objective):
     """Wait for a fixed amount of time, then finish."""
@@ -131,7 +137,14 @@ class DelayObjective(Objective):
 def build_objectives():
     objectives = [
         ArmUpObjective(),
-        DriveToTimerAndBackObjective()
+        DelayObjective(2.0),
+        ArmMiddleObjective(),
+        # DriveToTimerAndBackObjective()
+        # region Following line
+        
+
+        
+        
         
         # GripperOpenObjective(),
         # DelayObjective(2.0),
@@ -156,7 +169,7 @@ def build_objectives():
         #     max_duration =6.5
         #     ),
         # # endregion
-        # # region Roundabout
+        # region Roundabout
         # DriveToWaypointObjective(
         #     waypoint=(0.4,0.0),
         #     is_local=True,
@@ -176,7 +189,7 @@ def build_objectives():
         #     turn_rate_scale=CIRCLE_TURN_RATE_SCALE,
         #     clockwise=CIRCLE_CLOCKWISE,
         #     timeout_s=CIRCLE_TIMEOUT_S,
-        # ),
+        #),
         # DriveTurnAngleObjective(
         #     angle_deg=90.0,
         #     linear_cmd=0.0,
