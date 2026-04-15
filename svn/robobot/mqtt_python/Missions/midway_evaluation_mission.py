@@ -24,6 +24,7 @@ from Objectives.drive_turn_angle_objective import DriveTurnAngleObjective
 from Objectives.align_to_circle_tangent_objective import AlignToCircleTangentObjective
 from Objectives.search_and_navigate_to_blue_ball_objective import SearchAndNavigateToBlueBall
 from Objectives.arm_up_objective import ArmUpObjective
+from Objectives.arm_middle_objective import ArmMiddleObjective
 from Objectives.arm_down_objective import ArmDownObjective
 from Objectives.gripper_open_objective import GripperOpenObjective
 from Objectives.gripper_middle_objective import GripperMiddleObjective
@@ -124,7 +125,7 @@ def build_objectives():
         
         # SearchAndNavigateToAruco(marker_id=20,turn_rate=0.4),
         # ArmDownObjective(wait_after_s=2.0),
-        ArmUpObjective(),
+        # ArmUpObjective(),
         
     ]
     return objectives
