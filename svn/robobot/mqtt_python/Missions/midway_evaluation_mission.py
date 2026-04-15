@@ -32,6 +32,7 @@ from Objectives.drive_to_line_objective import DriveToLineObjective
 from Objectives.drive_to_line_zone_switch_objective import DriveToLineZoneSwitchObjective
 from Objectives.search_and_navigate_to_aruco_objective import SearchAndNavigateToAruco
 from Objectives.search_and_navigate_to_platform_objective import SearchAndNavigateToPlatform
+from Objectives.drive_to_timer_and_back_objective import DriveToTimerAndBackObjective
 from sodom import odom
 
 # Roundabout three-step tuning parameters.
@@ -129,6 +130,9 @@ class DelayObjective(Objective):
 # Add objectives in the list below in the exact order they should execute.
 def build_objectives():
     objectives = [
+        ArmUpObjective(),
+        DriveToTimerAndBackObjective()
+        
         # GripperOpenObjective(),
         # DelayObjective(2.0),
         # ArmUpObjective(),
@@ -142,61 +146,61 @@ def build_objectives():
         # ArmUpObjective(),
 
 
-        # region Following line
-        DriveToLineObjective(
-            follow_left=True,
-            follow_speed=0.4,
-            search_speed=0.25,
-            centering_speed=0.2,
-            lost_line_timeout_s=0.3,
-            max_duration =6.5
-            ),
-        # endregion
-        # region Roundabout
-        DriveToWaypointObjective(
-            waypoint=(0.4,0.0),
-            is_local=True,
-            print_interval=20,
-            nav_mode=WAYPOINT_NAV_MODE,
-            ),
-        DriveTurnAngleObjective(
-            angle_deg=90,
-            linear_cmd=0.0,
-            timeout_s=6.0,
-        ),
-        DriveCircleObjective(
-            radius_m=CIRCLE_RADIUS_M,
-            revolutions=1.61, # one full circle + half circle
-            forward_cmd=CIRCLE_FORWARD_CMD,
-            turn_cmd=CIRCLE_TURN_CMD,
-            turn_rate_scale=CIRCLE_TURN_RATE_SCALE,
-            clockwise=CIRCLE_CLOCKWISE,
-            timeout_s=CIRCLE_TIMEOUT_S,
-        ),
-        DriveTurnAngleObjective(
-            angle_deg=90.0,
-            linear_cmd=0.0,
-            timeout_s=6.0,
-        ),
-        # endregion
+        # # region Following line
+        # DriveToLineObjective(
+        #     follow_left=True,
+        #     follow_speed=0.4,
+        #     search_speed=0.25,
+        #     centering_speed=0.2,
+        #     lost_line_timeout_s=0.3,
+        #     max_duration =6.5
+        #     ),
+        # # endregion
+        # # region Roundabout
+        # DriveToWaypointObjective(
+        #     waypoint=(0.4,0.0),
+        #     is_local=True,
+        #     print_interval=20,
+        #     nav_mode=WAYPOINT_NAV_MODE,
+        #     ),
+        # DriveTurnAngleObjective(
+        #     angle_deg=90,
+        #     linear_cmd=0.0,
+        #     timeout_s=6.0,
+        # ),
+        # DriveCircleObjective(
+        #     radius_m=CIRCLE_RADIUS_M,
+        #     revolutions=1.61, # one full circle + half circle
+        #     forward_cmd=CIRCLE_FORWARD_CMD,
+        #     turn_cmd=CIRCLE_TURN_CMD,
+        #     turn_rate_scale=CIRCLE_TURN_RATE_SCALE,
+        #     clockwise=CIRCLE_CLOCKWISE,
+        #     timeout_s=CIRCLE_TIMEOUT_S,
+        # ),
+        # DriveTurnAngleObjective(
+        #     angle_deg=90.0,
+        #     linear_cmd=0.0,
+        #     timeout_s=6.0,
+        # ),
+        # # endregion
         
-        DriveToLineZoneSwitchObjective(
-            follow_left=LINE_ENTRY_FOLLOW_LEFT,
-            follow_speed=0.7,
-            search_speed=LINE_ENTRY_SEARCH_SPEED,
-            lost_line_timeout_s=LINE_ENTRY_TIMEOUT_S,
-            switch_zones=POST_ROUNDABOUT_SWITCH_ZONES,
-            ordered_switches=True,
-        ),
+        # DriveToLineZoneSwitchObjective(
+        #     follow_left=LINE_ENTRY_FOLLOW_LEFT,
+        #     follow_speed=0.7,
+        #     search_speed=LINE_ENTRY_SEARCH_SPEED,
+        #     lost_line_timeout_s=LINE_ENTRY_TIMEOUT_S,
+        #     switch_zones=POST_ROUNDABOUT_SWITCH_ZONES,
+        #     ordered_switches=True,
+        # ),
         
         #SearchAndNavigateToBlueBall(),
-        ArmDownObjective(wait_after_s=2.0),
+        #ArmDownObjective(wait_after_s=2.0),
         
-        ArmUpObjective(),
+        #ArmUpObjective(),
         #SearchAndNavigateToAruco(marker_id=53,turn_rate=0.3),
-        ArmDownObjective(wait_after_s=2.0),
+        #ArmDownObjective(wait_after_s=2.0),
         
-        ArmUpObjective(),
+        #ArmUpObjective(),
         # SearchAndNavigateToPlatform(marker_id=5),
         # ArmDownObjective(wait_after_s=2.0),
         
@@ -206,10 +210,10 @@ def build_objectives():
         
         # SearchAndNavigateToAruco(marker_id=20,turn_rate=0.4),
         # ArmDownObjective(wait_after_s=2.0),
-        ArmUpObjective(),
-        
+        #ArmUpObjective(),
     ]
     return objectives
+
 def store_robot_position(ctx):
     """Store global odometry pose samples for mission route plotting."""
     log_dir = os.path.join(THIS_DIR, "MissionLogs")
