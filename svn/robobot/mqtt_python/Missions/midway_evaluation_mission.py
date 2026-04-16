@@ -94,7 +94,7 @@ LINE_EXIT_FOLLOW_SPEED = 0.75
 POST_ROUNDABOUT_SWITCH_ZONES = [
     {
         "name": "slow_down_zone",
-        "trigger_dist_m": 13.0,
+        "trigger_dist_m": 13.5,
         "follow_left": False,
         "follow_speed": 0.30,
         "lost_line_timeout_s": 0.0
@@ -122,63 +122,62 @@ class DelayObjective(Objective):
 # Add objectives in the list below in the exact order they should execute.
 def build_objectives():
     objectives=[
-
     ## region Following line
+     #   DriveToLineObjective(
+     #       follow_left=True,
+     #       follow_speed=0.4,
+     #       search_speed=0.25,
+     #       centering_speed=0.2,
+     #       lost_line_timeout_s=0.3,
+     #       max_line_distance_m=1.90,
+     #       max_duration=0.0,
+     #       ),
+    ## endregion
+    ##region Roundabout
+     #   DriveToWaypointObjective(
+     #       waypoint=(0.40,0.0),
+     #       is_local=True,
+     #       print_interval=20,
+     #       nav_mode=WAYPOINT_NAV_MODE,
+     #       ),
+     #   DriveTurnAngleObjective(
+     #       angle_deg=90,
+     #       linear_cmd=0.0,
+     #       timeout_s=6.0,
+     #   ),
+     #   DriveCircleObjective(
+     #       radius_m=CIRCLE_RADIUS_M,
+     #       revolutions=1.61, # one full circle + half circle
+     #       forward_cmd=CIRCLE_FORWARD_CMD,
+     #       turn_cmd=CIRCLE_TURN_CMD,
+     #       turn_rate_scale=CIRCLE_TURN_RATE_SCALE,
+     #       clockwise=CIRCLE_CLOCKWISE,
+     #       timeout_s=CIRCLE_TIMEOUT_S,
+     #   ),
+     #   DriveTurnAngleObjective(
+     #       angle_deg=90.0,
+     #       linear_cmd=0.0,
+     #       timeout_s=6.0,
+     #   ),
+    # endregion
+    # region follow line and reduce speed before hitting 90 degree left turn, which should stop the robot at that junction 
+        DriveToLineZoneSwitchObjective(
+            follow_left=LINE_ENTRY_FOLLOW_LEFT,
+            follow_speed=0.7,
+            search_speed=LINE_ENTRY_SEARCH_SPEED,
+            lost_line_timeout_s=LINE_ENTRY_TIMEOUT_S,
+            switch_zones=POST_ROUNDABOUT_SWITCH_ZONES,
+            ordered_switches=True,
+        ),
     #    DriveToLineObjective(
-    #        follow_left=True,
-    #        follow_speed=0.4,
+    #        follow_left=False,
+    #        follow_speed=0.7,
     #        search_speed=0.25,
     #        centering_speed=0.2,
-    #        lost_line_timeout_s=0.3,
+    #        lost_line_timeout_s=0.01,
     #        max_line_distance_m=1.91,
     #        max_duration=0.0,
     #        ),
-    ## endregion
-    ##region Roundabout
-    #    DriveToWaypointObjective(
-    #        waypoint=(0.4,0.0),
-    #        is_local=True,
-    #        print_interval=20,
-    #        nav_mode=WAYPOINT_NAV_MODE,
-    #        ),
-    #    DriveTurnAngleObjective(
-    #        angle_deg=90,
-    #        linear_cmd=0.0,
-    #        timeout_s=6.0,
-    #    ),
-    #    DriveCircleObjective(
-    #        radius_m=CIRCLE_RADIUS_M,
-    #        revolutions=1.61, # one full circle + half circle
-    #        forward_cmd=CIRCLE_FORWARD_CMD,
-    #        turn_cmd=CIRCLE_TURN_CMD,
-    #        turn_rate_scale=CIRCLE_TURN_RATE_SCALE,
-    #        clockwise=CIRCLE_CLOCKWISE,
-    #        timeout_s=CIRCLE_TIMEOUT_S,
-    #    ),
-    #    DriveTurnAngleObjective(
-    #        angle_deg=90.0,
-    #        linear_cmd=0.0,
-    #        timeout_s=6.0,
-    #    ),
-    ## endregion
-    ## region follow line and reduce speed before hitting 90 degree left turn, which should stop the robot at that junction 
-    #    DriveToLineZoneSwitchObjective(
-    #        follow_left=LINE_ENTRY_FOLLOW_LEFT,
-    #        follow_speed=0.7,
-    #        search_speed=LINE_ENTRY_SEARCH_SPEED,
-    #        lost_line_timeout_s=LINE_ENTRY_TIMEOUT_S,
-    #        switch_zones=POST_ROUNDABOUT_SWITCH_ZONES,
-    #        ordered_switches=True,
-    #    ),
-        DriveToLineObjective(
-            follow_left=False,
-            follow_speed=0.3,
-            search_speed=0.25,
-            centering_speed=0.2,
-            lost_line_timeout_s=0.0,
-            max_line_distance_m=1.91,
-            max_duration=0.0,
-            ),
         DriveBackwardUntilLineStopObjective(
             reverse_speed=-0.25,
             line_found_confidence=2,
@@ -231,6 +230,7 @@ def build_objectives():
             nav_mode=WAYPOINT_NAV_MODE,
             ),
         #SearchAndNavigateToBlueBall(),
+
     # end region
         DelayObjective(2.0),
     # region go to blue ball drop off location
@@ -258,25 +258,90 @@ def build_objectives():
             relative_heading_deg=-100.0,
             nav_mode=WAYPOINT_NAV_MODE,
             ),
-
+        DelayObjective(2.0),
     # end region
     # region go to red ball drop off location
         DriveToWaypointObjective(
-            waypoint=(1,0.6),
+            waypoint=(1.35,0.8),
             is_local=False,
             print_interval=20,
-            relative_heading_deg=20.0,
+            relative_heading_deg=90.0,
             nav_mode=WAYPOINT_NAV_MODE,
             ),
         ArmDownObjective(),
         DelayObjective(2.0),
         ArmUpObjective(),
         DriveTurnAngleObjective(
-            angle_deg=170.0,
+            angle_deg=-90.0,
             linear_cmd=0.0,
             timeout_s=6.0,
         ),
     # end region
+    # region go to platform pick up location
+        DelayObjective(2.0),
+        DriveToWaypointObjective(
+            waypoint=(1.94,0.7),
+            is_local=False,
+            print_interval=20,
+            relative_heading_deg=0.0,
+            nav_mode=WAYPOINT_NAV_MODE,
+            ),
+        #SearchAndNavigateToPlatform(marker_id=5),
+        #drive forward 0.5m to simulate going to the platform for now since the platform detection is not working reliably
+        DriveToWaypointObjective(
+            waypoint=(0.2,0.0),
+            is_local=True,
+            print_interval=20,
+            relative_heading_deg=0.0,
+            nav_mode=WAYPOINT_NAV_MODE,
+            ),
+    # end region
+    # region go to platform drop off location D
+        DriveToWaypointObjective(
+            waypoint=(1.92,1.1),
+            is_local=False,
+            print_interval=20,
+            relative_heading_deg=165.0,
+            nav_mode=WAYPOINT_NAV_MODE,
+            ),
+            ArmDownObjective(),
+            DelayObjective(2.0),
+            ArmUpObjective(),
+            DriveTurnAngleObjective(
+                angle_deg=180.0,
+                linear_cmd=0.0,
+                timeout_s=6.0,            
+                ),
+    # end region
+    # region go to platform pick up location again
+        DriveToWaypointObjective(
+            waypoint=(1.94,0.7),
+            is_local=False,
+            print_interval=20,
+            relative_heading_deg=0.0,
+            nav_mode=WAYPOINT_NAV_MODE,
+            ),
+    # end region
+    # region go to platform drop off location A
+        DriveToWaypointObjective(
+            waypoint=(1.94,1.6),
+            is_local=False,
+            print_interval=20,
+            relative_heading_deg=110.0,
+            nav_mode=WAYPOINT_NAV_MODE,
+            ),
+        DriveToWaypointObjective(
+            waypoint=(1.5,1.85),
+            is_local=False,
+            print_interval=20,
+            relative_heading_deg=180.0,
+            nav_mode=WAYPOINT_NAV_MODE,
+            ),
+            ArmDownObjective(),
+            DelayObjective(2.0),
+            ArmUpObjective(),
+    #end region
+    # region go to line and follow to end
         #SearchAndNavigateToBlueBall(),
         #ArmDownObjective(wait_after_s=2.0),
 
@@ -325,6 +390,12 @@ if __name__ == "__main__":
         print("% Starting midway evaluation mission")
         service.setup("localhost")
         if service.connected:
+            log_dir = os.path.join(THIS_DIR, "MissionLogs")
+            os.makedirs(log_dir, exist_ok=True)
+            log_file = os.path.join(log_dir, "robot_position_log.txt")
+            open(log_file, "w").close()
+            print("% Cleared MissionLogs/robot_position_log.txt for new run")
+
             ctx = MissionContext(service)
             ctx.actions.arm.bind_memory(ctx.memory)
             ctx.actions.arm.move_up()
