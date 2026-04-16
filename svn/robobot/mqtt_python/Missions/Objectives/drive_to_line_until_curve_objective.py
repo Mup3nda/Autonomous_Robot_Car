@@ -29,6 +29,7 @@ class DriveToLineUntilCurveObjective(Objective):
         centered_confidence=8,
         lost_line_timeout_s=1.0,
         max_duration_s=30.0,
+        curve_detection_delay_s=1.0,
     ):
         super().__init__()
         self.follow_left = bool(follow_left)
@@ -42,12 +43,14 @@ class DriveToLineUntilCurveObjective(Objective):
         self.centered_confidence = int(centered_confidence)
         self.lost_line_timeout_s = float(lost_line_timeout_s)
         self.max_duration_s = float(max_duration_s)
+        self.curve_detection_delay_s = float(curve_detection_delay_s)
 
     def start(self, ctx):
         self.state = DriveToLineUntilCurveState.START
         self.start_time = time.time()
         self.follow_start_time = None
         self.curve_start_time = None
+        self.curve_detection_start_time = None
         self._done = False
         ctx.actions.drive.leds(0, 100, 0)
         print("% DriveToLineUntilCurveObjective: searching for line")
@@ -76,6 +79,7 @@ class DriveToLineUntilCurveObjective(Objective):
             centered = ctx.actions.edge.is_line_valid(confidence=self.centered_confidence)
             if centered or (now - self.follow_start_time) >= 3.0:
                 ctx.actions.edge.start_following(velocity=self.follow_speed, follow_left=self.follow_left)
+                self.curve_detection_start_time = now + self.curve_detection_delay_s
                 self.state = DriveToLineUntilCurveState.LINE_FOLLOWING
 
         elif self.state == DriveToLineUntilCurveState.LINE_FOLLOWING:
@@ -94,7 +98,16 @@ class DriveToLineUntilCurveObjective(Objective):
                 return
 
             line_turn = abs(self._get_line_turn_rate(ctx))
-            if self.follow_start_time is not None and (now - self.follow_start_time) >= self.min_follow_time_s:
+            if self.curve_detection_start_time is not None and now >= self.curve_detection_start_time:
+                # Check if edge profile switched to 'slow' (immediate curve detection)
+                if hasattr(ctx.actions.edge, 'edge') and hasattr(ctx.actions.edge.edge, 'currentProfile'):
+                    if ctx.actions.edge.edge.currentProfile == 'slow':
+                        print(f"% DriveToLineUntilCurveObjective: edge profile switched to 'slow', stopping immediately")
+                        ctx.actions.edge.stop_following()
+                        ctx.actions.drive.stop()
+                        self._done = True
+                        return
+                
                 if line_turn >= self.curve_threshold:
                     if self.curve_start_time is None:
                         self.curve_start_time = now

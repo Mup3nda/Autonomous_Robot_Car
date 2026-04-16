@@ -163,7 +163,7 @@ class DriveUntilEndRamp(Objective):
                     print(f"% [RAMP] Going UP! Mean pitch_diff (10 samples): {pitch_diff_mean:.3f} rad"* 10)
 
             # TOP THRESHOLD: If we were on the ramp, and pitch_diff mean drops below 0.05 rad (~3 degrees), we reached the top
-            if self.on_ramp and pitch_diff_mean < 0.05:
+            if self.on_ramp and pitch_diff_mean < 0.03:
                 print(f"% [RAMP] Reached the top! Mean pitch_diff (10 samples): {pitch_diff_mean:.3f} rad"* 10)
                 ctx.actions.edge.stop_following()
                 ctx.actions.drive.stop(instant=self.instant_stop)

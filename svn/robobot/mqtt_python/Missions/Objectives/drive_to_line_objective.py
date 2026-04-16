@@ -54,6 +54,7 @@ class DriveToLineObjective(Objective):
         max_line_distance_m=0.0,
         instant_stop=True,
         max_duration=0.0,
+        stop_after_centering=False,
     ):
         super().__init__()
         self.follow_left = bool(follow_left)
@@ -64,6 +65,7 @@ class DriveToLineObjective(Objective):
         self.max_line_distance_m = float(max_line_distance_m)
         self.instant_stop = bool(instant_stop)
         self.max_duration = float(max_duration)
+        self.stop_after_centering = bool(stop_after_centering)
     def start(self, ctx):
         """Initialize local progress trackers without resetting global odometry."""
         self.state = DriveToLineState.START
@@ -121,8 +123,13 @@ class DriveToLineObjective(Objective):
             centered_long_enough = now - self.centering_start_time > CENTERED_MIN_TIME_S
             timed_out = now >= self.centering_deadline
             if (centered and centered_long_enough) or timed_out:
-                ctx.actions.edge.start_following(velocity=self.follow_speed, follow_left=self.follow_left)
-                self.state = DriveToLineState.LINE_FOLLOWING
+                if self.stop_after_centering:
+                    ctx.actions.edge.stop_following()
+                    ctx.actions.drive.stop(instant=self.instant_stop)
+                    self.state = DriveToLineState.DONE
+                else:
+                    ctx.actions.edge.start_following(velocity=self.follow_speed, follow_left=self.follow_left)
+                    self.state = DriveToLineState.LINE_FOLLOWING
         elif self.state == DriveToLineState.STOPPED:
             # State 2: Stopped after timeout - wait for robot to settle
             if abs(ctx.pose.velocity()) < STOPPED_VELOCITY_EPS:
