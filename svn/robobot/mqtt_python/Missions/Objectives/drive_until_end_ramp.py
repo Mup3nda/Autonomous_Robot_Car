@@ -104,7 +104,7 @@ class DriveUntilEndRamp(Objective):
         
         # 4. Maintain a 10-sample buffer and calculate mean
         self.pitch_diff_buffer.append(pitch_diff)
-        if len(self.pitch_diff_buffer) > 10:
+        if len(self.pitch_diff_buffer) > 30:
             self.pitch_diff_buffer.pop(0)  # Keep only the last 10 samples
         
         # Calculate mean of pitch_diff from the buffer

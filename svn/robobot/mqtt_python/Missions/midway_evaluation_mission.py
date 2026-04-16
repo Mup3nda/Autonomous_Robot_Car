@@ -130,20 +130,21 @@ class DelayObjective(Objective):
 # Add objectives in the list below in the exact order they should execute.
 def build_objectives():
     objectives = [
-        #DriveUntilEndRamp(follow_left=True,
-        #    follow_speed=0.4,
-        #    search_speed=0.25,
-        #    centering_speed=0.2,
-        #    lost_line_timeout_s=1.5),
+        DriveUntilEndRamp(follow_left=True,
+            follow_speed=0.4,
+            search_speed=0.25,
+            centering_speed=0.2,
+            lost_line_timeout_s=1.5),
+        DelayObjective(2.0),
         DriveTurnAngleObjective(50.0, linear_cmd=0.0, turn_cmd=0.8, timeout_s=5.0),
-        #SearchAndNavigateToGolfBall(),
+        #SearchAndNavigateToGolfBall(desired_distance=0.38),
         SearchAndNavigateToBlueBall(),
         GripperOpenObjective(),
         DelayObjective(1.0),
         ArmDownObjective(wait_after_s=2.0),
         DelayObjective(1.0),
         DriveToWaypointObjective(
-              waypoint=(0.1,0),
+              waypoint=(0.05,0),
               is_local=True,
               print_interval=20,
               relative_heading_deg=0.0,
