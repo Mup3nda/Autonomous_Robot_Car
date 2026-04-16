@@ -38,13 +38,14 @@ class NavigateToArucoObjective(Objective):
         "sequential" (rotate-then-drive) or "smooth" (simultaneous drive+turn)
     """
     
-    def __init__(self, marker_id=53, desired_distance=0.41, print_interval=20, nav_mode="aruco"): #NavMode "aruco" for aruco controller. Sequential is Nav.py Smooth is NavSmooth.py
+    def __init__(self, marker_id=53, desired_distance=0.41, print_interval=20, nav_mode="aruco", COMPENSATE_PARAMETER= 20): #NavMode "aruco" for aruco controller. Sequential is Nav.py Smooth is NavSmooth.py
         super().__init__()
         self.desired_distance = desired_distance
         self.print_interval = print_interval
         self.nav_mode = str(nav_mode).lower()
         self.tick_count = 0
         self.marker_id = marker_id
+        self.COMPENSATE_PARAMETER = COMPENSATE_PARAMETER
 
     def start(self, ctx: MissionContext):
         """Initialize navigation to ArUco marker using NavigationAction."""
@@ -58,7 +59,7 @@ class NavigateToArucoObjective(Objective):
         ctx.actions.navigation.setup_detector(detector)
         ctx.actions.navigation.setup(desired_distance=self.desired_distance, 
                                      ctx=ctx, 
-                                     nav_mode=self.nav_mode)
+                                     nav_mode=self.nav_mode, COMPENSATE_PARAMETER = self.COMPENSATE_PARAMETER)
         ctx.actions.navigation.start()
         
         print(f"% Objective: Navigate To ArUco Marker {self.marker_id} (target_distance={self.desired_distance}m, nav_mode={self.nav_mode})")

@@ -18,6 +18,7 @@ class SearchAndNavigateToAruco(CompositeObjective):
         search_print_interval=20,
         desired_distance=0.4,
         navigate_print_interval=20,
+        COMPENSATE_PARAMETER = 20,
     ):
         objectives = [
             LookForArucoObjective(
@@ -30,6 +31,7 @@ class SearchAndNavigateToAruco(CompositeObjective):
                 marker_id = marker_id,
                 desired_distance=desired_distance,
                 print_interval=navigate_print_interval,
+                COMPENSATE_PARAMETER = COMPENSATE_PARAMETER,
                 nav_mode="aruco"
             ),
         ]
