@@ -105,6 +105,8 @@ POST_ROUNDABOUT_SWITCH_ZONES = [
 class DelayObjective(Objective):
     """Wait for a fixed amount of time, then finish."""
 
+    name = "delay"
+
     def __init__(self, duration_s):
         super().__init__()
         self.duration_s = float(duration_s)
@@ -169,6 +171,7 @@ def build_objectives():
             lost_line_timeout_s=LINE_ENTRY_TIMEOUT_S,
             switch_zones=POST_ROUNDABOUT_SWITCH_ZONES,
             ordered_switches=True,
+            instant_stop=False
         ),
     #    DriveToLineObjective(
     #        follow_left=False,
@@ -180,12 +183,13 @@ def build_objectives():
     #        max_duration=0.0,
     #        ),
         DriveBackwardUntilLineStopObjective(
-            reverse_speed=-0.25,
+            reverse_speed=-0.2,
             line_found_confidence=2,
             timeout_s=8.0,
             max_distance_m=1.5,
         ), 
         ResetOriginObjective(), # new 0,0,0 origin after following line end
+        DelayObjective(1.0),
     # endregion
     #region Get extra time return to line
         ArmUpObjective(),
@@ -223,6 +227,13 @@ def build_objectives():
     #end region
 
     # region go to ball pick up location
+        DriveToWaypointObjective(
+            waypoint=(0.2,0.0),
+            is_local=True,
+            print_interval=20,
+            relative_heading_deg=-0.0,
+            nav_mode=WAYPOINT_NAV_MODE,
+            ),
         DriveToWaypointObjective(
             waypoint=(0.6,1.2),
             is_local=False,
@@ -299,7 +310,7 @@ def build_objectives():
     # end region
     # region go to platform drop off location D
         DriveToWaypointObjective(
-            waypoint=(1.92,1.1),
+            waypoint=(1.89,1.1),
             is_local=False,
             print_interval=20,
             relative_heading_deg=165.0,
@@ -332,10 +343,10 @@ def build_objectives():
             nav_mode=WAYPOINT_NAV_MODE,
             ),
         DriveToWaypointObjective(
-            waypoint=(1.5,1.85),
+            waypoint=(1.5,1.82),
             is_local=False,
             print_interval=20,
-            relative_heading_deg=180.0,
+            relative_heading_deg=-90.0,
             nav_mode=WAYPOINT_NAV_MODE,
             ),
             ArmDownObjective(),
@@ -345,7 +356,7 @@ def build_objectives():
     # region return to finish line
         DelayObjective(2.0),
         DriveToWaypointUntilLineCountObjective(
-            waypoint=(1.5,5.0),
+            waypoint=(1.3,5.0),
             is_local=False,
             print_interval=20,
             nav_mode=WAYPOINT_NAV_MODE,

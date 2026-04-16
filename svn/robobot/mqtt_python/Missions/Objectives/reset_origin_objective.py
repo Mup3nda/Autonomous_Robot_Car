@@ -10,8 +10,16 @@ class ResetOriginObjective(Objective):
     name = "reset_origin"
 
     def start(self, ctx):
+        raw_before = float(odom.pose_source.pose[2])
+        _, _, world_before = odom.get_world_pose()
         odom.reset_origin()
-        print("% Objective: Reset odometry origin -> (0.0, 0.0, 0.0)")
+        raw_after = float(odom.pose_source.pose[2])
+        _, _, world_after = odom.get_world_pose()
+        print(
+            "% Objective: Reset odometry origin -> (0.0, 0.0, 0.0); "
+            f"raw_h {raw_before:+.4f}->{raw_after:+.4f}, "
+            f"world_h {world_before:+.4f}->{world_after:+.4f}"
+        )
         self._done = True
 
     def tick(self, ctx):

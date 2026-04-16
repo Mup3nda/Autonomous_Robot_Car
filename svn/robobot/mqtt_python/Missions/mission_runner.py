@@ -6,7 +6,7 @@ class MissionRunner:
         self,
         objectives,
         ctx,
-        refresh_time=0.01,
+        refresh_time=0.001,
         tick_hook=None,
         hold_arm_position=True,
         arm_hold_interval_s=0.25,
