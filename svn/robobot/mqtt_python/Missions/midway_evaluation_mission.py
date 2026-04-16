@@ -91,21 +91,12 @@ LINE_EXIT_FOLLOW_SPEED = 0.75
 # Tune x/y/radius in world frame using MissionLogs plot output.
 POST_ROUNDABOUT_SWITCH_ZONES = [
     {
-        "name": "prepare_left_turn",
-        "x": 2,
-        "y": 3.0,
-        "radius_m": 0.22,
-        "follow_left": True,
-        "follow_speed": 0.3,
-    },
-    {
-        "name": "back_to_right",
-        "x": 1.02,
-        "y": 2.83,
-        "radius_m": 0.18,
+        "name": "slow_down_zone",
+        "trigger_dist_m": 14.8,
         "follow_left": False,
-        "follow_speed": 0.65,
-    },
+        "follow_speed": 0.30,
+        "lost_line_timeout_s": 0.0
+    }
 ]
 
 class DelayObjective(Objective):
@@ -128,112 +119,100 @@ class DelayObjective(Objective):
 
 # Add objectives in the list below in the exact order they should execute.
 def build_objectives():
-    objectives = 
+    objectives =
     [
 
-        # ArmUpObjective(),
-        # DriveToTimerAndBackObjective(),
-        # # region Following line
-        # DelayObjective(2.0),
-        # DriveToLineObjective(
-        #     follow_left=True,
-        #     follow_speed=0.4,
-        #     search_speed=0.25,
-        #     centering_speed=0.2,
-        #     lost_line_timeout_s=0.3,
-        #     max_duration =3.2
-        #     ),
-        # DelayObjective(2.0),
-        # ArmMiddleObjective(),
-        # DelayObjective(2.0),
-        # DriveTurnAngleObjective(
-        #     angle_deg=-100,
-        #     linear_cmd=0.0,
-        #     timeout_s=6.0,
-        # ),
-        
-
-        
-        
-        
-        # GripperOpenObjective(),
-        # DelayObjective(2.0),
-        # ArmUpObjective(),
-        # DelayObjective(2.0),
-        # ArmDownObjective(),
-        # DelayObjective(2.0),
-        # GripperCloseObjective(),
-        # DelayObjective(2.0),
-        # # GripperOpenObjective(),
-        # # DelayObjective(2.0),
-        # ArmUpObjective(),
-
-         # region Following line
-         DriveToLineObjective(
-             follow_left=True,
-             follow_speed=0.4,
-             search_speed=0.25,
-             centering_speed=0.2,
-             lost_line_timeout_s=0.3,
-             max_duration =6.5
-             ),
-         # endregion
-         region Roundabout
-         DriveToWaypointObjective(
-             waypoint=(0.4,0.0),
-             is_local=True,
-             print_interval=20,
-             nav_mode=WAYPOINT_NAV_MODE,
-             ),
-         DriveTurnAngleObjective(
-             angle_deg=90,
-             linear_cmd=0.0,
-             timeout_s=6.0,
-         ),
-         DriveCircleObjective(
-             radius_m=CIRCLE_RADIUS_M,
-             revolutions=1.61, # one full circle + half circle
-             forward_cmd=CIRCLE_FORWARD_CMD,
-             turn_cmd=CIRCLE_TURN_CMD,
-             turn_rate_scale=CIRCLE_TURN_RATE_SCALE,
-             clockwise=CIRCLE_CLOCKWISE,
-             timeout_s=CIRCLE_TIMEOUT_S,
+    # region Following line
+        DriveToLineObjective(
+            follow_left=True,
+            follow_speed=0.4,
+            search_speed=0.25,
+            centering_speed=0.2,
+            lost_line_timeout_s=0.3,
+            max_duration =6.5
+            ),
+    # endregion
+    #region Roundabout
+        DriveToWaypointObjective(
+            waypoint=(0.4,0.0),
+            is_local=True,
+            print_interval=20,
+            nav_mode=WAYPOINT_NAV_MODE,
+            ),
+        DriveTurnAngleObjective(
+            angle_deg=90,
+            linear_cmd=0.0,
+            timeout_s=6.0,
         ),
-         DriveTurnAngleObjective(
-             angle_deg=90.0,
-             linear_cmd=0.0,
-             timeout_s=6.0,
-         ),
-         # endregion
-        
-        # DriveToLineZoneSwitchObjective(
-        #     follow_left=LINE_ENTRY_FOLLOW_LEFT,
-        #     follow_speed=0.7,
-        #     search_speed=LINE_ENTRY_SEARCH_SPEED,
-        #     lost_line_timeout_s=LINE_ENTRY_TIMEOUT_S,
-        #     switch_zones=POST_ROUNDABOUT_SWITCH_ZONES,
-        #     ordered_switches=True,
-        # ),
-        
+        DriveCircleObjective(
+            radius_m=CIRCLE_RADIUS_M,
+            revolutions=1.61, # one full circle + half circle
+            forward_cmd=CIRCLE_FORWARD_CMD,
+            turn_cmd=CIRCLE_TURN_CMD,
+            turn_rate_scale=CIRCLE_TURN_RATE_SCALE,
+            clockwise=CIRCLE_CLOCKWISE,
+            timeout_s=CIRCLE_TIMEOUT_S,
+        ),
+        DriveTurnAngleObjective(
+            angle_deg=90.0,
+            linear_cmd=0.0,
+            timeout_s=6.0,
+        ),
+    # endregion
+    # region follow line and reduce speed before hitting 90 degree left turn, which should stop the robot at that junction 
+        DriveToLineZoneSwitchObjective(
+            follow_left=LINE_ENTRY_FOLLOW_LEFT,
+            follow_speed=0.7,
+            search_speed=LINE_ENTRY_SEARCH_SPEED,
+            lost_line_timeout_s=LINE_ENTRY_TIMEOUT_S,
+            switch_zones=POST_ROUNDABOUT_SWITCH_ZONES,
+            ordered_switches=True,
+        ),
+    # endregion
+    #region Get extra time return to line and knock down balls cup
+        ArmUpObjective(),
+        DriveToTimerAndBackObjective(),
+        # region Following line
+        DelayObjective(2.0),
+        DriveToLineObjective(
+            follow_left=True,
+            follow_speed=0.4,
+            search_speed=0.25,
+            centering_speed=0.2,
+            lost_line_timeout_s=0.3,
+            max_duration =3.2
+            ),
+        DelayObjective(2.0),
+        ArmMiddleObjective(),
+        DelayObjective(2.0),
+        DriveTurnAngleObjective(
+            angle_deg=-100,
+            linear_cmd=0.0,
+            timeout_s=6.0,
+        ),
+    #end region
+
         #SearchAndNavigateToBlueBall(),
         #ArmDownObjective(wait_after_s=2.0),
-        
+
         #ArmUpObjective(),
         #SearchAndNavigateToAruco(marker_id=53,turn_rate=0.3),
         #ArmDownObjective(wait_after_s=2.0),
-        
+
         #ArmUpObjective(),
         # SearchAndNavigateToPlatform(marker_id=5),
         # ArmDownObjective(wait_after_s=2.0),
-        
+
         # SearchAndNavigateToBlueBall(turn_rate=0.8),
         # ArmDownObjective(wait_after_s=2.0),
         # # ArmUpObjective(),
-        
+
         # SearchAndNavigateToAruco(marker_id=20,turn_rate=0.4),
         # ArmDownObjective(wait_after_s=2.0),
         #ArmUpObjective(),
     ]
+    
+
     return objectives
 
 def store_robot_position(ctx):

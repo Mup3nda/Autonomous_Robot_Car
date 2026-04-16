@@ -2,13 +2,17 @@
 
 Each switch zone can update follow side and speed while line-following:
 - x, y, radius_m: circular trigger area in world frame
+- trigger_dist_m: switch after along-line distance reaches this value
+- trigger_time_s: switch after along-line time reaches this value
 - follow_left: optional bool, if provided updates follow side
 - follow_speed: optional float, if provided updates follow speed
+- lost_line_timeout_s: optional float, if provided updates line-loss timeout
 - name: optional label for logging
 
 This objective inherits DriveToLineObjective and reuses its state machine.
 """
 
+import time as t
 from typing import Dict, List, Optional
 
 from sodom import odom
@@ -46,11 +50,14 @@ class DriveToLineZoneSwitchObjective(DriveToLineObjective):
     def _apply_switch(self, ctx, zone: Dict, zone_index: int):
         prev_side = self.follow_left
         prev_speed = self.follow_speed
+        prev_timeout = self.lost_line_timeout_s
 
         if "follow_left" in zone:
             self.follow_left = bool(zone["follow_left"])
         if "follow_speed" in zone:
             self.follow_speed = float(zone["follow_speed"])
+        if "lost_line_timeout_s" in zone:
+            self.lost_line_timeout_s = max(0.0, float(zone["lost_line_timeout_s"]))
 
         # Re-issue line-follow command with updated parameters.
         ctx.actions.edge.start_following(
@@ -61,9 +68,34 @@ class DriveToLineZoneSwitchObjective(DriveToLineObjective):
         zone_name = str(zone.get("name", f"zone_{zone_index}"))
         print(
             f"% Zone switch [{zone_name}] side {prev_side}->{self.follow_left}, "
-            f"speed {prev_speed:.3f}->{self.follow_speed:.3f}"
+            f"speed {prev_speed:.3f}->{self.follow_speed:.3f}, "
+            f"lost_line_timeout {prev_timeout:.3f}->{self.lost_line_timeout_s:.3f}"
         )
         self._triggered[zone_index] = True
+
+    def _is_triggered(
+        self,
+        ctx,
+        zone: Dict,
+        x_world: float,
+        y_world: float,
+        along_dist_m: Optional[float],
+        along_time_s: Optional[float],
+    ) -> bool:
+        if "trigger_dist_m" in zone:
+            if along_dist_m is None:
+                return False
+            return along_dist_m >= float(zone["trigger_dist_m"])
+
+        if "trigger_time_s" in zone:
+            if along_time_s is None:
+                return False
+            return along_time_s >= float(zone["trigger_time_s"])
+
+        if all(k in zone for k in ("x", "y", "radius_m")):
+            return self._inside_zone(x_world, y_world, zone)
+
+        return False
 
     def tick(self, ctx):
         super().tick(ctx)
@@ -74,13 +106,24 @@ class DriveToLineZoneSwitchObjective(DriveToLineObjective):
             return
 
         x_world, y_world, _ = odom.get_world_pose()
+        along_dist_m: Optional[float] = None
+        along_time_s: Optional[float] = None
+
+        if self.along_line_started:
+            try:
+                along_dist_m = float(ctx.distance_since_start(self.ALONG_LINE_PROGRESS_KEY))
+                marker = ctx.memory["_local_progress"][self.ALONG_LINE_PROGRESS_KEY]
+                along_time_s = t.time() - float(marker["time_s"])
+            except Exception:
+                along_dist_m = None
+                along_time_s = None
 
         if self.ordered_switches:
             for i, done in enumerate(self._triggered):
                 if done:
                     continue
                 zone = self.switch_zones[i]
-                if self._inside_zone(x_world, y_world, zone):
+                if self._is_triggered(ctx, zone, x_world, y_world, along_dist_m, along_time_s):
                     self._apply_switch(ctx, zone, i)
                 break
             return
@@ -89,6 +132,6 @@ class DriveToLineZoneSwitchObjective(DriveToLineObjective):
             if done:
                 continue
             zone = self.switch_zones[i]
-            if self._inside_zone(x_world, y_world, zone):
+            if self._is_triggered(ctx, zone, x_world, y_world, along_dist_m, along_time_s):
                 self._apply_switch(ctx, zone, i)
                 break
