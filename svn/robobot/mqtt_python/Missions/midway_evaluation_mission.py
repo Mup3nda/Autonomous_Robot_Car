@@ -125,44 +125,44 @@ class DelayObjective(Objective):
 # Add objectives in the list below in the exact order they should execute.
 def build_objectives():
     objectives=[
-    # region Following line approach roundabout
-        DriveToLineObjective(
-            follow_left=True,
-            follow_speed=0.4,
-            search_speed=0.25,
-            centering_speed=0.2,
-            lost_line_timeout_s=0.3,
-            max_line_distance_m=1.90,
-            max_duration=0.0,
-            ),
-    # endregion
-    #region Roundabout
-        DriveToWaypointObjective(
-            waypoint=(0.40,0.0),
-            is_local=True,
-            print_interval=20,
-            nav_mode=WAYPOINT_NAV_MODE,
-            ),
-        DriveTurnAngleObjective(
-            angle_deg=90,
-            linear_cmd=0.0,
-            timeout_s=6.0,
-        ),
-        DriveCircleObjective(
-            radius_m=CIRCLE_RADIUS_M,
-            revolutions=1.61, # one full circle + half circle
-            forward_cmd=CIRCLE_FORWARD_CMD,
-            turn_cmd=CIRCLE_TURN_CMD,
-            turn_rate_scale=CIRCLE_TURN_RATE_SCALE,
-            clockwise=CIRCLE_CLOCKWISE,
-            timeout_s=CIRCLE_TIMEOUT_S,
-        ),
-        DriveTurnAngleObjective(
-            angle_deg=90.0,
-            linear_cmd=0.0,
-            timeout_s=6.0,
-        ),
-    # endregion
+    ## region Following line approach roundabout
+    #    DriveToLineObjective(
+    #        follow_left=True,
+    #        follow_speed=0.4,
+    #        search_speed=0.25,
+    #        centering_speed=0.2,
+    #        lost_line_timeout_s=0.3,
+    #        max_line_distance_m=1.90,
+    #        max_duration=0.0,
+    #        ),
+    ## endregion
+    ##region Roundabout
+    #    DriveToWaypointObjective(
+    #        waypoint=(0.40,0.0),
+    #        is_local=True,
+    #        print_interval=20,
+    #        nav_mode=WAYPOINT_NAV_MODE,
+    #        ),
+    #    DriveTurnAngleObjective(
+    #        angle_deg=90,
+    #        linear_cmd=0.0,
+    #        timeout_s=6.0,
+    #    ),
+    #    DriveCircleObjective(
+    #        radius_m=CIRCLE_RADIUS_M,
+    #        revolutions=1.61, # one full circle + half circle
+    #        forward_cmd=CIRCLE_FORWARD_CMD,
+    #        turn_cmd=CIRCLE_TURN_CMD,
+    #        turn_rate_scale=CIRCLE_TURN_RATE_SCALE,
+    #        clockwise=CIRCLE_CLOCKWISE,
+    #        timeout_s=CIRCLE_TIMEOUT_S,
+    #    ),
+    #    DriveTurnAngleObjective(
+    #        angle_deg=90.0,
+    #        linear_cmd=0.0,
+    #        timeout_s=6.0,
+    #    ),
+    ## endregion
     # region post-roundabout line follow and exit 
         DriveToLineZoneSwitchObjective(
             follow_left=LINE_ENTRY_FOLLOW_LEFT,

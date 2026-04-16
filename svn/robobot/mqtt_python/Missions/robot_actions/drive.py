@@ -42,7 +42,7 @@ class DriveActions:
         # Ramp down for smoothness
         start_v = self.current_v
         start_w = self.current_w
-        steps = 10 #5
+        steps = 20 #5
         if not instant:
             for i in range(steps):
                 factor = (steps - i - 1) / steps
