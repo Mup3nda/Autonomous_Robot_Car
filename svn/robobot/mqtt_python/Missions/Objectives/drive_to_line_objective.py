@@ -18,7 +18,7 @@ from mission_context import MissionContext
 SEARCH_SPEED = 0.2
 CENTERING_SPEED = 0.2
 FOLLOW_SPEED = 0.80
-SEARCH_MAX_DISTANCE_M = 1.0
+SEARCH_MAX_DISTANCE_M = 15.0
 SEARCH_TIMEOUT_S = 15.0
 LINE_FOUND_CONFIDENCE = 4
 CENTERED_CONFIDENCE = 8
@@ -51,6 +51,7 @@ class DriveToLineObjective(Objective):
         search_speed=SEARCH_SPEED,
         centering_speed=CENTERING_SPEED,
         lost_line_timeout_s=LOST_LINE_TIMEOUT_S,
+        max_line_distance_m=0.0,
         instant_stop=True,
         max_duration=0.0,
     ):
@@ -60,6 +61,7 @@ class DriveToLineObjective(Objective):
         self.search_speed = float(search_speed)
         self.centering_speed = float(centering_speed)
         self.lost_line_timeout_s = float(lost_line_timeout_s)
+        self.max_line_distance_m = float(max_line_distance_m)
         self.instant_stop = bool(instant_stop)
         self.max_duration = float(max_duration)
     def start(self, ctx):
@@ -127,6 +129,20 @@ class DriveToLineObjective(Objective):
                 self.state = DriveToLineState.DONE  # Mark as done
         elif self.state == DriveToLineState.LINE_FOLLOWING:
             # State 10: Following line - check if line is still valid
+
+            along_line_dist = 0.0
+            if self.along_line_started:
+                along_line_dist = ctx.distance_since_start(self.ALONG_LINE_PROGRESS_KEY)
+
+            if self.max_line_distance_m > 0.0 and along_line_dist >= self.max_line_distance_m:
+                print(
+                    f"DriveToLineObjective: Stopping after {along_line_dist:.3f}m on the line "
+                    f"(limit {self.max_line_distance_m:.3f}m reached)."
+                )
+                ctx.actions.edge.stop_following()
+                ctx.actions.drive.stop(instant=self.instant_stop)
+                self.state = DriveToLineState.STOPPED
+                return
             
             if self.max_duration > 0 and (t.time() - self.start_time) > self.max_duration:
                 print(f"DriveToLineObjective: Stopping due to max duration of {self.max_duration:.1f}s reached.")

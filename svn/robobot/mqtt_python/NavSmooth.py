@@ -30,7 +30,7 @@ class NavSmooth:
 
         self.TOLERANCIA_R = 5
         self.TOLERANCIA_R_RAD = 0.02
-        self.TOLERANCIA_D = 0.03
+        self.TOLERANCIA_D = 0.02
 
         # Tuning constants for smooth-mode behavior
         self.ROT_INTEGRAL_ACTIVE_BAND = 0.6
