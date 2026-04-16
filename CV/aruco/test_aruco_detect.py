@@ -3,7 +3,7 @@ import numpy as np
 import yaml
 from picamera2 import Picamera2
 
-with open('calibration.yaml') as f:
+with open('/home/muptech/Autonomous_Robot_Car/CV/aruco/calibrations/didier_raspi_cam.yaml') as f:
     calib = yaml.safe_load(f)
     
 camera_matrix = calib['camera_matrix']
@@ -57,7 +57,13 @@ while True:
                 x, y, z = tvec.flatten()
                 distance = np.linalg.norm(tvec)
                 
-                print(f"X={x:.3f} m, Y={y:.3f} m, Z(depth)={z:.3f} m, Distance={distance:.3f} m")
+                R, _ = cv2.Rodrigues(rvec)
+                n = R @ np.array([0, 0, 1])
+                lr_tilt_rad = math.atan2(n[0], n[2]) # tan(x,z)
+                lr_tilt_deg = math.degrees(lr_tilt_rad)
+                
+                
+                print(f"X={x:.3f} m, Y={y:.3f} m, Distance={distance:.3f} m, Tilt = {lr_tilt_deg} degrees")
                 
                 text_x = int(image_points[0])
                 text_y = int(image_points[1]) - 10

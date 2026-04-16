@@ -8,6 +8,7 @@ from .edge import EdgeActions
 from .navigation import NavigationAction
 from .vision import VisionActions
 from .servo import ServoArmActions
+from .gripper import ServoGripActions
 
 class RobotActions:
     """Aggregates all robot control actions: drive, edge, navigation, and vision.
@@ -24,3 +25,4 @@ class RobotActions:
         self.navigation = NavigationAction()  # Navigation with any TargetDetector
         self.vision = VisionActions(cam, edge, gpio, service)  # Image capture and analysis
         self.arm = ServoArmActions(service)             # Arm servo control
+        self.gripper = ServoGripActions(service)         # Gripper servo control

@@ -6,7 +6,7 @@ class MissionRunner:
         self,
         objectives,
         ctx,
-        refresh_time=0.01,
+        refresh_time=0.001,
         tick_hook=None,
         hold_arm_position=True,
         arm_hold_interval_s=0.25,
@@ -38,10 +38,12 @@ class MissionRunner:
     def run(self):
         from ulog import flog
 
-        for obj in self.objectives:
+        for idx, obj in enumerate(self.objectives):
             if self.ctx.service.stop:
                 break
             self.ctx.reset_state_time()
+            self.ctx.memory["_mission_current_objective"] = obj.name
+            self.ctx.memory["_mission_current_objective_index"] = idx
             flog.writeRemark(f"% Objective start {obj.name}")
             obj.start(self.ctx)
             while not self.ctx.service.stop and not obj.is_done(self.ctx):
@@ -52,3 +54,6 @@ class MissionRunner:
                 t.sleep(self.refresh_time)
             obj.stop(self.ctx)
             flog.writeRemark(f"% Objective end {obj.name}")
+
+        self.ctx.memory["_mission_current_objective"] = None
+        self.ctx.memory["_mission_current_objective_index"] = None

@@ -26,6 +26,8 @@
 #include "simu.h"
 #include "umqttin.h"
 #include "test_servo_arm.h"
+#include "cservogrip.h"
+#include "test_servo_grip.h"
 
 void loop()
 {
@@ -68,11 +70,20 @@ int main (int argc, char **argv)
 {
     // Check for test mode flag before anything else
     bool testServoMode = false;
+    bool testGripMode = false;
     for (int i = 1; i < argc; i++)
     {
         if (strcmp(argv[i], "--test-servo") == 0)
         {
             testServoMode = true;
+            for (int j = i; j < argc - 1; j++)
+                argv[j] = argv[j + 1];
+            argc--;
+            break;
+        }
+        if (strcmp(argv[i], "--test-grip") == 0 or strcmp(argv[i], "--test-gripper") == 0 or strcmp(argv[i], "--test-servo-grip") == 0)
+        {
+            testGripMode = true;
             for (int j = i; j < argc - 1; j++)
                 argv[j] = argv[j + 1];
             argc--;
@@ -86,8 +97,22 @@ int main (int argc, char **argv)
         service.setup(argc, argv);
         if (not service.theEnd)
         {
+            teensy[0].send("leave\n", true);
             servoArm.setup();
             testServoLoop();
+        }
+        service.terminate();
+        exit(0);
+    }
+
+    if (testGripMode)
+    {
+        std::cout << "[MAIN] Running in gripper test mode\n";
+        service.setup(argc, argv);
+        if (not service.theEnd)
+        {
+            teensy[0].send("leave\n", true);
+            testGripLoop();
         }
         service.terminate();
         exit(0);

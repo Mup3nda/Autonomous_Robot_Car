@@ -25,13 +25,24 @@ class DriveActions:
         self.current_v = v
         self.current_w = w
         self.service.send("robobot/cmd/ti", f"rc {v} {w}")
+    
+    def ramp_to(self, target_v, target_w, steps=10):
+        start_v = self.current_v
+        start_w = self.current_w
+        
+        for i in range(1, steps + 1):
+            factor = i / steps
+            v = start_v + factor * (target_v - start_v)
+            w = start_w + factor * (target_w - start_w)
+            self.rc(v, w)
+            time.sleep(0.05)
 
     def stop(self,instant = True):
         """Stop all robot movement (throttle and rotation to 0)."""
         # Ramp down for smoothness
         start_v = self.current_v
         start_w = self.current_w
-        steps = 5
+        steps = 20 #5
         if not instant:
             for i in range(steps):
                 factor = (steps - i - 1) / steps

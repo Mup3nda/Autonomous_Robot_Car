@@ -13,7 +13,7 @@ class NavigateToPlatformState(IntEnum):
     DONE = 99
 
 
-class NavigateToPlatform(Objective):
+class NavigateToPlatformObjective(Objective):
     """Move the robot towards a detected ArUco marker.
     
     This objective demonstrates how to use the Nav class with a TargetDetector:

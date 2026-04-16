@@ -1,14 +1,13 @@
-"""Composite objective: search for blue ball, then navigate to it."""
+"""Composite objective: search for aruco, then navigate to it."""
 
 from objective import CompositeObjective
 from Objectives.look_for_aruco_objective import LookForArucoObjective
-from Objectives.navigate_to_aruco_objective import NavigateToArucoObjective
+from Objectives.navigate_to_platform_objective import NavigateToPlatformObjective
 
-
-class SearchAndNavigateToAruco(CompositeObjective):
+class SearchAndNavigateToPlatform(CompositeObjective):
     """Navigating to platform"""
 
-    name = "Search_And_Navigate_To_Aruco"
+    name = "Search_And_Navigate_To_Platform"
 
     def __init__(
         self,
@@ -26,11 +25,11 @@ class SearchAndNavigateToAruco(CompositeObjective):
                 min_confidence=min_confidence,
                 print_interval=search_print_interval,
             ),
-            NavigateToArucoObjective(
+            NavigateToPlatformObjective(
                 marker_id = marker_id,
                 desired_distance=desired_distance,
                 print_interval=navigate_print_interval,
-                nav_mode="aruco"
-            ),
+                nav_mode="platform"
+            )
         ]
         super().__init__(objectives)

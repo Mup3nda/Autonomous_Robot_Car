@@ -33,7 +33,9 @@ add_executable(teensy_interface
       src/cmotor.cpp
       src/cservo.cpp
       src/cservoarm.cpp
+      src/cservogrip.cpp
       src/test_servo_arm.cpp
+      src/test_servo_grip.cpp
       ${GPIO_VERSION}
       src/main.cpp
       src/mjoy.cpp
