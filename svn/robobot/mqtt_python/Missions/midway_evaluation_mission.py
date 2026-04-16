@@ -30,6 +30,7 @@ from Objectives.gripper_open_objective import GripperOpenObjective
 from Objectives.gripper_middle_objective import GripperMiddleObjective
 from Objectives.gripper_close_objective import GripperCloseObjective
 from Objectives.drive_to_line_objective import DriveToLineObjective
+from Objectives.drive_to_line_until_curve_objective import DriveToLineUntilCurveObjective
 from Objectives.drive_to_line_zone_switch_objective import DriveToLineZoneSwitchObjective
 from Objectives.search_and_navigate_to_aruco_objective import SearchAndNavigateToAruco
 from Objectives.search_and_navigate_to_platform_objective import SearchAndNavigateToPlatform
@@ -134,172 +135,26 @@ def build_objectives():
         #    search_speed=0.25,
         #    centering_speed=0.2,
         #    lost_line_timeout_s=1.5),
+        DriveTurnAngleObjective(50.0, linear_cmd=0.0, turn_cmd=0.8, timeout_s=5.0),
         SearchAndNavigateToGolfBall(),
+        GripperOpenObjective(),
         ArmDownObjective(wait_after_s=3.0),
-        DriveToWaypointObjective(waypoint=(1.0,0.0), reset_origin=True, print_interval=10, nav_mode=WAYPOINT_NAV_MODE),
+        GripperCloseObjective(),
+        DelayObjective(2.0),
+        ArmUpObjective(),
         DriveTurnAngleObjective(-50.0, linear_cmd=0.0, turn_cmd=0.8, timeout_s=5.0),
-        #DriveToLineObjective(follow_left=LINE_ENTRY_FOLLOW_LEFT),
-        ArmUpObjective(),
-        DriveTurnAngleObjective(
-            angle_deg=100,
-            linear_cmd=0.0,
-            timeout_s=6.0,
+        #DriveToWaypointObjective(waypoint=(1.0,0.0), reset_origin=True, print_interval=10, nav_mode=WAYPOINT_NAV_MODE),
+        #DriveTurnAngleObjective(-50.0, linear_cmd=0.0, turn_cmd=0.8, timeout_s=5.0),
+        DriveToLineUntilCurveObjective(
+            follow_left=LINE_ENTRY_FOLLOW_LEFT,
+            search_speed=LINE_ENTRY_SEARCH_SPEED,
+            follow_speed=LINE_ENTRY_FOLLOW_SPEED,
+            curve_threshold=1.0,
+            min_follow_time_s=1.0,
+            lost_line_timeout_s=0.5,
+            max_duration_s=40.0,
         ),
-    #end region
-
-    # region go to ball pick up location
-        DriveToWaypointObjective(
-            waypoint=(0.2,0.0),
-            is_local=True,
-            print_interval=20,
-            relative_heading_deg=-0.0,
-            nav_mode=WAYPOINT_NAV_MODE,
-            ),
-        DriveToWaypointObjective(
-            waypoint=(0.6,1.2),
-            is_local=False,
-            print_interval=20,
-            relative_heading_deg=-100.0,
-            nav_mode=WAYPOINT_NAV_MODE,
-            ),
-        #SearchAndNavigateToBlueBall(),
-
-    # end region
-        DelayObjective(2.0),
-    # region go to blue ball drop off location
-        DriveToWaypointObjective(
-            waypoint=(0.9,1.3),
-            is_local=False,
-            print_interval=20,
-            relative_heading_deg=0.0,
-            nav_mode=WAYPOINT_NAV_MODE,
-            ),
-        ArmDownObjective(),
-        DelayObjective(2.0),
-        ArmUpObjective(),
-        DriveTurnAngleObjective(
-            angle_deg=170.0,
-            linear_cmd=0.0,
-            timeout_s=6.0,
-        ),
-    # end region
-    # region go to ball pick up location
-        DriveToWaypointObjective(
-            waypoint=(0.5,1.0),
-            is_local=False,
-            print_interval=20,
-            relative_heading_deg=-100.0,
-            nav_mode=WAYPOINT_NAV_MODE,
-            ),
-        DelayObjective(2.0),
-    # end region
-    # region go to red ball drop off location
-        DriveToWaypointObjective(
-            waypoint=(1.35,0.8),
-            is_local=False,
-            print_interval=20,
-            relative_heading_deg=90.0,
-            nav_mode=WAYPOINT_NAV_MODE,
-            ),
-        ArmDownObjective(),
-        DelayObjective(2.0),
-        ArmUpObjective(),
-        DriveTurnAngleObjective(
-            angle_deg=-90.0,
-            linear_cmd=0.0,
-            timeout_s=6.0,
-        ),
-    # end region
-    # region go to platform pick up location
-        DelayObjective(2.0),
-        DriveToWaypointObjective(
-            waypoint=(1.94,0.7),
-            is_local=False,
-            print_interval=20,
-            relative_heading_deg=0.0,
-            nav_mode=WAYPOINT_NAV_MODE,
-            ),
-        #SearchAndNavigateToPlatform(marker_id=5),
-        #drive forward 0.5m to simulate going to the platform for now since the platform detection is not working reliably
-        DriveToWaypointObjective(
-            waypoint=(0.2,0.0),
-            is_local=True,
-            print_interval=20,
-            relative_heading_deg=0.0,
-            nav_mode=WAYPOINT_NAV_MODE,
-            ),
-    # end region
-    # region go to platform drop off location D
-        DriveToWaypointObjective(
-            waypoint=(1.89,1.1),
-            is_local=False,
-            print_interval=20,
-            relative_heading_deg=165.0,
-            nav_mode=WAYPOINT_NAV_MODE,
-            ),
-            ArmDownObjective(),
-            DelayObjective(2.0),
-            ArmUpObjective(),
-            DriveTurnAngleObjective(
-                angle_deg=180.0,
-                linear_cmd=0.0,
-                timeout_s=6.0,            
-                ),
-    # end region
-    # region go to platform pick up location again
-        DriveToWaypointObjective(
-            waypoint=(1.94,0.7),
-            is_local=False,
-            print_interval=20,
-            relative_heading_deg=0.0,
-            nav_mode=WAYPOINT_NAV_MODE,
-            ),
-    # end region
-    # region go to platform drop off location A
-        DriveToWaypointObjective(
-            waypoint=(1.94,1.6),
-            is_local=False,
-            print_interval=20,
-            relative_heading_deg=110.0,
-            nav_mode=WAYPOINT_NAV_MODE,
-            ),
-        DriveToWaypointObjective(
-            waypoint=(1.5,1.82),
-            is_local=False,
-            print_interval=20,
-            relative_heading_deg=-90.0,
-            nav_mode=WAYPOINT_NAV_MODE,
-            ),
-            ArmDownObjective(),
-            DelayObjective(2.0),
-            ArmUpObjective(),
-    #end region
-    # region return to finish line
-        DelayObjective(2.0),
-        DriveToWaypointUntilLineCountObjective(
-            waypoint=(1.3,5.0),
-            is_local=False,
-            print_interval=20,
-            nav_mode=WAYPOINT_NAV_MODE,
-            line_detect_confidence=4,
-            line_clear_confidence=1,
-            stop_line_count=2,
-            ),
-    # end region
-    # region go to line and follow to end
-        DriveTurnAngleObjective(
-            angle_deg=90.0,
-            linear_cmd=0.0,
-            timeout_s=6.0,
-        ),
-        DriveToLineObjective(
-            follow_left=False,
-            follow_speed=0.7,
-            search_speed=0.25,
-            centering_speed=0.2,
-            lost_line_timeout_s=0.0,
-            max_duration = 0.0,
-            ),
+ 
         #SearchAndNavigateToBlueBall(),
         #ArmDownObjective(wait_after_s=2.0),
 
