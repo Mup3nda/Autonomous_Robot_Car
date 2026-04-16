@@ -35,6 +35,7 @@ from Objectives.search_and_navigate_to_platform_objective import SearchAndNaviga
 from Objectives.drive_to_timer_and_back_objective import DriveToTimerAndBackObjective
 from Objectives.reset_origin_objective import ResetOriginObjective
 from Objectives.drive_backward_until_line_stop_objective import DriveBackwardUntilLineStopObjective
+from Objectives.drive_to_waypoint_until_line_count_objective import DriveToWaypointUntilLineCountObjective
 from sodom import odom
 
 # Roundabout three-step tuning parameters.
@@ -341,6 +342,18 @@ def build_objectives():
             DelayObjective(2.0),
             ArmUpObjective(),
     #end region
+    # region return to finish line
+        DelayObjective(2.0),
+        DriveToWaypointUntilLineCountObjective(
+            waypoint=(1.5,5.0),
+            is_local=False,
+            print_interval=20,
+            nav_mode=WAYPOINT_NAV_MODE,
+            line_detect_confidence=4,
+            line_clear_confidence=1,
+            stop_line_count=2,
+            )
+    # end region
     # region go to line and follow to end
         #SearchAndNavigateToBlueBall(),
         #ArmDownObjective(wait_after_s=2.0),
