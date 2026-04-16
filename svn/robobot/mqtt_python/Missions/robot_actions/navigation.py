@@ -29,6 +29,7 @@ class NavigationAction:
         self.nav = None
         self.desired_distance = 0.0
         self.started = False
+        self.COMPENSATE_PARAMETER = 30
     
     def setup_detector(self, detector):
         """Set the target detector (SBall, SWorldPoints, etc.).
@@ -56,18 +57,22 @@ class NavigationAction:
             raise ValueError("Detector not set. Call setup_detector() first.")
         self.detector.reset_origin()
     
-    def setup(self, desired_distance=0.41, ctx=None, nav_mode="sequential"):
+    def setup(self, desired_distance=0.41, ctx=None, nav_mode="sequential", COMPENSATE_PARAMETER=None):
         """Initialize the navigation controller.
         
         Args:
             desired_distance: Target distance to maintain from target (meters)
             ctx: Mission context with actions, pose, service, etc.
             nav_mode: "sequential" (rotate-then-drive) or "smooth" (simultaneous drive+turn)
+            COMPENSATE_PARAMETER: Optional camera/arm offset compensation in pixels
         """
         if not self.detector:
             raise ValueError("Detector not set. Call setup_detector() first.")
         
         self.desired_distance = float(desired_distance)
+        if COMPENSATE_PARAMETER is not None:
+            self.COMPENSATE_PARAMETER = COMPENSATE_PARAMETER
+
         if str(nav_mode).lower() == "smooth":
             self.nav = NavSmooth()
         elif str(nav_mode).lower() == "aruco":
@@ -78,7 +83,16 @@ class NavigationAction:
         else:
             #self.nav = Nav_Balls()
             self.nav = Nav_Final()
-        self.nav.setup(self.detector, self.desired_distance, ctx)
+
+        if isinstance(self.nav, Nav_Final):
+            self.nav.setup(
+                self.detector,
+                self.desired_distance,
+                self.COMPENSATE_PARAMETER,
+                ctx,
+            )
+        else:
+            self.nav.setup(self.detector, self.desired_distance, ctx)
     
     def start(self):
         """Start navigation towards the target."""

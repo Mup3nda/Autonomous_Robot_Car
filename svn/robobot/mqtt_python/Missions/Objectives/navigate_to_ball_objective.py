@@ -41,6 +41,7 @@ class NavigateToBallObjective(Objective):
         self.nav_mode = str(nav_mode).lower()
         self.color = str(color).lower()
         self.tick_count = 0
+        self.COMPENSATE_PARAMETER = 30
 
     def start(self, ctx: MissionContext):
         """Initialize navigation to blue ball using NavigationAction."""
@@ -54,7 +55,7 @@ class NavigateToBallObjective(Objective):
         
         # Setup navigation action with this detector
         ctx.actions.navigation.setup_detector(detector)
-        ctx.actions.navigation.setup(desired_distance=self.desired_distance, ctx=ctx, nav_mode=self.nav_mode)
+        ctx.actions.navigation.setup(desired_distance=self.desired_distance, ctx=ctx, nav_mode=self.nav_mode, COMPENSATE_PARAMETER = self.COMPENSATE_PARAMETER)
         ctx.actions.navigation.start()
         
         print(f"% Objective: Navigate To Ball (target_distance={self.desired_distance}m, nav_mode={self.nav_mode})")
