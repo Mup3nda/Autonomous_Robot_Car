@@ -363,9 +363,22 @@ def build_objectives():
             line_detect_confidence=4,
             line_clear_confidence=1,
             stop_line_count=2,
-            )
+            ),
     # end region
     # region go to line and follow to end
+        DriveTurnAngleObjective(
+            angle_deg=90.0,
+            linear_cmd=0.0,
+            timeout_s=6.0,
+        ),
+        DriveToLineObjective(
+            follow_left=False,
+            follow_speed=0.7,
+            search_speed=0.25,
+            centering_speed=0.2,
+            lost_line_timeout_s=0.0,
+            max_duration = 0.0,
+            ),
         #SearchAndNavigateToBlueBall(),
         #ArmDownObjective(wait_after_s=2.0),
 
