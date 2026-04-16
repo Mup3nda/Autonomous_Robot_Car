@@ -66,7 +66,7 @@ class SBall:
             "min_circularity": 0.80,
         },
         "orange": {
-            "min_area": 250,
+            "min_area": 200,
             "max_area": 9000,
             "min_circularity": 0.7,
         },
@@ -163,9 +163,25 @@ class SBall:
                               cv.inRange(hsv, lower_red2, upper_red2)
                               
         # orange golf ball
-        lower_orange = np.array([5, 170, 150])
-        upper_orange = np.array([30, 255, 255])  # include yellow edge
-        masks["orange"] = cv.inRange(hsv, lower_orange, upper_orange)
+        # ORANGE / YELLOWISH SHINY GOLF BALL
+
+        # Main orange body
+        lower_orange1 = np.array([5, 100, 80])
+        upper_orange1 = np.array([22, 255, 255])
+
+        # Yellow-orange shiny parts
+        lower_orange2 = np.array([22, 60, 140])
+        upper_orange2 = np.array([40, 255, 255])
+
+        # Very bright highlight on the ball (low saturation because of glare)
+        lower_orange3 = np.array([8, 30, 190])
+        upper_orange3 = np.array([45, 170, 255])
+
+        masks["orange"] = (
+            cv.inRange(hsv, lower_orange1, upper_orange1) |
+            cv.inRange(hsv, lower_orange2, upper_orange2) |
+            cv.inRange(hsv, lower_orange3, upper_orange3)
+        )
 
         # BLUE
         lower_blue = np.array([90, 60, 60])
