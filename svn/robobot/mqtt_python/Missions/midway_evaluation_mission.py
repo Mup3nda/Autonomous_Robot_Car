@@ -397,6 +397,7 @@ def build_objectives():
         #       ),
         # GripperCloseObjective(),
         # DelayObjective(1.0)
+        # ArmUpObjective(),
     ]
     
 
