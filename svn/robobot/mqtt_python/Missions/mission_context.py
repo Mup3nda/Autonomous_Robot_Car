@@ -21,6 +21,8 @@ class MissionContext:
         self.service = service
         self.state_time = datetime.now()
         self.memory = {} # a place to store arbitrary data across objectives
+        self.actions.arm.bind_memory(self.memory)
+        self.actions.ir.bind_memory(self.memory)
 
     def reset_state_time(self):
         self.state_time = datetime.now()
