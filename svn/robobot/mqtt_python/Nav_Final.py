@@ -9,7 +9,7 @@ class Nav:
 
     def __init__(self):
         self.detector = None
-        self.desired_distance = None
+        self.desired_distance = 0.32
         self.target = None
         self.is_running = False
         self.nav_thread = None
@@ -53,7 +53,9 @@ class Nav:
         self.LAST_ERROR = 0.0
         
         # desired vertical position of the ball
-        self.DESIRED_DISTANCE = 0.32
+
+        self.DESIRED_DISTANCE = self.desired_distance
+        #self.DESIRED_DISTANCE = 0.28
         #self.DESIRED_DISTANCE = 0.41
 
         # tolerances

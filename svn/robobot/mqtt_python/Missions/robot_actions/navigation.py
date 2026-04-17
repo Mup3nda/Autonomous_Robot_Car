@@ -7,6 +7,7 @@ import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
 from Nav_Platform import Nav as Nav_Platform
+from Nav_Platform_Kalman import Nav as Nav_Platform_Kalman
 from NavSmooth import NavSmooth
 from Nav_Final import Nav as Nav_Final
 
@@ -79,7 +80,7 @@ class NavigationAction:
             #self.nav = Nav_Aruco()
             self.nav = Nav_Final()
         elif str(nav_mode).lower() == "platform":
-            self.nav = Nav_Platform()
+            self.nav = Nav_Platform_Kalman()
         else:
             #self.nav = Nav_Balls()
             self.nav = Nav_Final()

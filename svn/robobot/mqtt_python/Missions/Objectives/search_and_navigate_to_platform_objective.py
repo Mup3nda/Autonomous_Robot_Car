@@ -12,7 +12,7 @@ class SearchAndNavigateToPlatform(CompositeObjective):
     def __init__(
         self,
         marker_id=0,
-        turn_rate=0.5,
+        turn_rate=0,
         min_confidence=1,
         search_print_interval=20,
         desired_distance=0.4,
