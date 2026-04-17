@@ -121,18 +121,18 @@ def build_objectives():
         # ArmUpObjective(),
 
         # ## TEST GRABBING BLUE BALL HAVE NOT TESTED
-        ArmUpObjective(),
-        GripperOpenObjective(),
-        SearchAndNavigateToBlueBall(turn_rate=0.8, desired_distance=0.35),
-        ArmDownObjective(),
-        DelayObjective(2.0),
-        DriveDistanceObjective(target_distance_m=0.2),
-        DelayObjective(1.0),
-        GripperCloseObjective(),
-        DelayObjective(1.0),
-        GripperCloseObjective(),
-        DelayObjective(1.0),
-        ArmUpObjective(),      
+        # ArmUpObjective(),
+        # GripperOpenObjective(),
+        # SearchAndNavigateToBlueBall(turn_rate=0.8, desired_distance=0.35),
+        # ArmDownObjective(),
+        # DelayObjective(2.0),
+        # DriveDistanceObjective(target_distance_m=0.2),
+        # DelayObjective(1.0),
+        # GripperCloseObjective(),
+        # DelayObjective(1.0),
+        # GripperCloseObjective(),
+        # DelayObjective(1.0),
+        # ArmUpObjective(),      
         
         # ## TEST GRABBING ARUCO
         # ArmUpObjective(),
@@ -147,15 +147,12 @@ def build_objectives():
         # GripperCloseObjective(),
         # DelayObjective(1.0),
         # ArmUpObjective(),
+
+        # ArmUpObjective(),
+        # GripperOpenObjective(),
+        # SearchAndNavigateToPlatform(marker_id=5)
         
-        
-        # SearchAndNavigateToPlatform(marker_id=5),
-        # ArmDownObjective(wait_after_s=2.0),
-        
-        # SearchAndNavigateToBlueBall(turn_rate=0.8),
-        # ArmDownObjective(wait_after_s=2.0),
-        # # ArmUpObjective(),
-        
+
         # SearchAndNavigateToAruco(marker_id=20,turn_rate=0.4),
         # ArmDownObjective(wait_after_s=2.0),
         # ArmUpObjective(),

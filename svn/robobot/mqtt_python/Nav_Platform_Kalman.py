@@ -20,38 +20,35 @@ class Nav:
         self.desired_distance = desired_distance_to_target
         self.ctx = ctx
 
-        # Navigation state
         self.rotation_phase = True
         self.forward_phase = False
 
-        # Robot limits
         self.MAX_LINEAR_SPEED = 0.6
         self.MAX_ANGULAR_SPEED = 0.4
         
-        # Camera parameters
         self.CAMERA_FOV = 1.047 
 
-        # Visual servoing gains
         self.K_FORWARD = 1.0
-        self.K_BEARING = 1.0
-        self.DESIRED_DISTANCE = 0.3
-        self.DOCK_DISTANCE = 0.35
-        self.BEARING_TOL = 2.0
+        self.K_BEARING = 0.75
         
-        # Platform tracking variables
+        # 1. Ajuste de distancias para evitar choques
+        self.DESIRED_DISTANCE = 0.40 # Distancia del punto fantasma (Carrot point)
+        self.SAFE_STOP_DISTANCE = 0.30 # Freno de emergencia absoluto (30cm de la plataforma)
+        
+        # FIX: Tolerancia en Radianes (0.2 rad ~= 11.5 grados)
+        self.BEARING_TOL = 0.2 
+        
         self.history = deque(maxlen=8)
         self.prev_velocity = 0
         self.turnaround_detected = False
         self.state = 'FOLLOW'
 
-        # Timing and debug
         self.last_time = time.time()
         self.platform_direction = 0
         self.print_every_n_ticks = 20
         self.debug_tick = 0
 
         # --- PSEUDO-ODOMETRY (ROBOT POSE) ---
-        # We estimate the robot's position in a "Global World"
         self.robot_x = 0.0
         self.robot_z = 0.0
         self.robot_theta = 0.0
@@ -65,27 +62,32 @@ class Nav:
         self.first_time = 0
         self.last_kf_time = 0
 
-        # --- KALMAN FILTER MATRICES ---
-        self.kf_X = None  # State vector: [x, z, vx, vz]^T in GLOBAL coords
-        self.kf_P = None  # Covariance Matrix (uncertainty)
+        self.kf_X = None  
+        self.kf_P = None  
         
         self.kf_H = np.array([
             [1, 0, 0, 0],
             [0, 1, 0, 0]
         ], dtype=float)
         
-        self.kf_R = np.eye(2) * 0.30
-        self.kf_Q = np.eye(4) * 0.05
-
-        # --- BLENDING & TIMEOUT PARAMETERS ---
-        self.BLEND_ALPHA =  1.0
-        self.PREDICTION_HORIZON = 2.0 
+        self.kf_R = np.eye(2) * 0.1
         
-        # How long to drive blind before giving up
-        self.LOST_TIMEOUT = 2.0 
-        self.last_seen_time = 0
+        # --- FIX: DEPTH NOISE CANCELLATION ---
+        self.kf_Q = np.array([
+            [0.05, 0, 0, 0],       
+            [0, 0.00001, 0, 0],    
+            [0, 0, 0.05, 0],       
+            [0, 0, 0, 0.00001]     
+        ], dtype=float)
 
-    # --- INTERNAL KALMAN FILTER FUNCTIONS ---
+        self.BLEND_ALPHA = 0.8
+        self.PREDICTION_HORIZON = 2.0 
+        self.LOST_TIMEOUT = 0.5 
+        self.last_seen_time = 0
+        
+        # --- ANGLE APPROACH CONFIG ---
+        self.APPROACH_ANGLE_RAD = math.radians(45)
+
     def _init_kalman(self, init_x, init_z, init_vx, init_vz):
         self.kf_X = np.array([[init_x], [init_z], [init_vx], [init_vz]], dtype=float)
         self.kf_P = np.eye(4) * 1.0
@@ -114,7 +116,6 @@ class Nav:
         future_x = self.kf_X[0, 0] + self.kf_X[2, 0] * dt_future
         future_z = self.kf_X[1, 0] + self.kf_X[3, 0] * dt_future
         return future_x, future_z
-    # ----------------------------------------
 
     def start(self):
         if not self.detector:
@@ -127,7 +128,7 @@ class Nav:
         self.nav_thread.start()
 
     def go_to_target(self):
-        print("% Starting tracking")
+        print("% Starting tracking with 45-deg approach & collision avoidance")
         while self.is_running:
             try:
                 system_now = time.time()
@@ -137,15 +138,14 @@ class Nav:
                 self.debug_tick += 1
                 should_log = (self.debug_tick % self.print_every_n_ticks) == 0
 
-                # --- STEP 1: UPDATE ROBOT POSE (DEAD RECKONING) ---
-                # Estimate where the robot is in the global world based on its last speed
+                # 1. Update Robot Pose
                 self.robot_theta += self.current_angular_v * dt_loop
                 self.robot_x += self.current_linear_v * math.sin(self.robot_theta) * dt_loop
                 self.robot_z += self.current_linear_v * math.cos(self.robot_theta) * dt_loop
 
                 self.target = self.detector.get_target()
 
-                # --- TARGET LOST LOGIC (COAST MODE) ---
+                # --- TARGET LOST LOGIC ---
                 if self.target is None:
                     time_since_lost = system_now - self.last_seen_time
                     
@@ -155,39 +155,39 @@ class Nav:
                             self._predict_kalman(dt)
                             self.last_kf_time = system_now
                             
-                        kf_current_global_x = self.kf_X[0, 0]
-                        kf_current_global_z = self.kf_X[1, 0]
+                        plat_g_x = self.kf_X[0, 0]
+                        plat_g_z = self.kf_X[1, 0]
                         
-                        future_global_x, future_global_z = self._predict_future_kalman(self.PREDICTION_HORIZON)
+                        # Calculamos la distancia REAL a la plataforma (estimada a ciegas)
+                        dx_plat = plat_g_x - self.robot_x
+                        dz_plat = plat_g_z - self.robot_z
+                        plat_local_x = dx_plat * math.cos(self.robot_theta) - dz_plat * math.sin(self.robot_theta)
+                        plat_local_z = dx_plat * math.sin(self.robot_theta) + dz_plat * math.cos(self.robot_theta)
+                        real_dist_to_platform = math.hypot(plat_local_x, plat_local_z)
                         
-                        blended_global_x = (1.0 - self.BLEND_ALPHA) * kf_current_global_x + (self.BLEND_ALPHA * future_global_x)
-                        blended_global_z = (1.0 - self.BLEND_ALPHA) * kf_current_global_z + (self.BLEND_ALPHA * future_global_z)
+                        approach_angle = self.last_known_approach_angle
                         
-                        # --- STEP 2: CONVERT GLOBAL TARGET TO LOCAL ROBOT FRAME ---
-                        dx = blended_global_x - self.robot_x
-                        dz = blended_global_z - self.robot_z
+                        dest_g_x = plat_g_x + self.DESIRED_DISTANCE * math.sin(approach_angle)
+                        dest_g_z = plat_g_z - self.DESIRED_DISTANCE * math.cos(approach_angle)
                         
+                        dx = dest_g_x - self.robot_x
+                        dz = dest_g_z - self.robot_z
                         local_x = dx * math.cos(self.robot_theta) - dz * math.sin(self.robot_theta)
                         local_z = dx * math.sin(self.robot_theta) + dz * math.cos(self.robot_theta)
 
-                        drive_target_z = local_z
+                        drive_distance = math.hypot(local_x, local_z)
                         drive_bearing = math.atan2(local_x, local_z)
-
-                        if should_log:
-                            print(f"[BLIND COASTING] Target Z: {drive_target_z:.2f}, Bearing: {drive_bearing:.2f} rad")
-                            
-                        self.follow_platform(drive_target_z, drive_bearing)
+                        
+                        # Le pasamos también la distancia real para el freno de emergencia
+                        self.follow_platform(drive_distance, drive_bearing, real_dist_to_platform)
                         time.sleep(0.034)
                         continue
-
                     else:
                         self.ctx.actions.drive.rc(0, 0)
                         self.current_linear_v = 0.0
                         self.current_angular_v = 0.0
                         if self.kf_state_machine != 'WAIT_FIRST':
                             self.kf_state_machine = 'WAIT_FIRST'
-                            if should_log:
-                                print("Timeout reached. Robot stopped. Waiting for ArUco...")
                         time.sleep(0.05)
                         continue
 
@@ -196,9 +196,12 @@ class Nav:
                 
                 target_time = self.target['time']
                 meas_local_x = self.target['tvec_x']
-                meas_local_z = self.target['tvec_z']
+                meas_local_z = self.target['tvec_z'] 
+                target_yaw = self.target.get('tilt', 0.0) 
                 
-                # --- STEP 3: CONVERT CAMERA (LOCAL) TO GLOBAL WORLD ---
+                # Distancia física real a la plataforma basada en cámara
+                real_dist_to_platform = math.hypot(meas_local_x, meas_local_z)
+                
                 meas_global_x = self.robot_x + meas_local_x * math.cos(self.robot_theta) + meas_local_z * math.sin(self.robot_theta)
                 meas_global_z = self.robot_z - meas_local_x * math.sin(self.robot_theta) + meas_local_z * math.cos(self.robot_theta)
                 
@@ -207,7 +210,6 @@ class Nav:
                     self.current_linear_v = 0.0
                     self.current_angular_v = 0.0
                     
-                    # Reset the world anchor to (0,0) right here so numbers don't grow infinitely
                     self.robot_x = 0.0
                     self.robot_z = 0.0
                     self.robot_theta = 0.0
@@ -217,7 +219,6 @@ class Nav:
                     self.first_pos = (meas_global_x, meas_global_z)
                     self.first_time = target_time
                     self.kf_state_machine = 'WAIT_HALF_SEC'
-                    print("[KF] Target found! Stopping for 0.5s to read real velocity...")
 
                 elif self.kf_state_machine == 'WAIT_HALF_SEC':
                     self.ctx.actions.drive.rc(0, 0)
@@ -226,12 +227,11 @@ class Nav:
                     dt = target_time - self.first_time
                     if dt >= 0.5:
                         vx = (meas_global_x - self.first_pos[0]) / dt
-                        vz = (meas_global_z - self.first_pos[1]) / dt
+                        vz = 0.0 
 
                         self._init_kalman(meas_global_x, meas_global_z, vx, vz)
                         self.last_kf_time = system_now 
                         self.kf_state_machine = 'TRACKING'
-                        print(f"[KF] Initialized! vx={vx:.3f}, vz={vz:.3f}. Resuming drive.")
 
                 elif self.kf_state_machine == 'TRACKING':
                     dt = system_now - self.last_kf_time
@@ -245,20 +245,26 @@ class Nav:
                     blended_global_x = (1.0 - self.BLEND_ALPHA) * meas_global_x + (self.BLEND_ALPHA * future_global_x)
                     blended_global_z = (1.0 - self.BLEND_ALPHA) * meas_global_z + (self.BLEND_ALPHA * future_global_z)
                     
-                    # --- STEP 4: CONVERT BACK TO LOCAL TO DRIVE ---
-                    dx = blended_global_x - self.robot_x
-                    dz = blended_global_z - self.robot_z
+                    plat_facing_angle = self.robot_theta + target_yaw
+                    approach_angle = plat_facing_angle + self.APPROACH_ANGLE_RAD
+                    self.last_known_approach_angle = approach_angle 
+                    
+                    dest_global_x = blended_global_x + self.DESIRED_DISTANCE * math.sin(approach_angle)
+                    dest_global_z = blended_global_z - self.DESIRED_DISTANCE * math.cos(approach_angle)
+                    
+                    dx = dest_global_x - self.robot_x
+                    dz = dest_global_z - self.robot_z
                     
                     local_x = dx * math.cos(self.robot_theta) - dz * math.sin(self.robot_theta)
                     local_z = dx * math.sin(self.robot_theta) + dz * math.cos(self.robot_theta)
                     
-                    drive_target_z = local_z
-                    drive_bearing = math.atan2(-local_x, local_z)
+                    drive_distance = math.hypot(local_x, local_z)
+                    drive_bearing = math.atan2(local_x, local_z)
 
                     if should_log:
-                        print(f"Tracking -> Target Z: {drive_target_z:.2f}, Bearing: {drive_bearing:.2f} rad")
+                        print(f"Tracking 45° -> Dist Punto: {drive_distance:.2f}m | Dist Real: {real_dist_to_platform:.2f}m")
                 
-                    self.follow_platform(drive_target_z, drive_bearing) 
+                    self.follow_platform(drive_distance, drive_bearing, real_dist_to_platform) 
                 
                 time.sleep(0.034)
 
@@ -275,20 +281,40 @@ class Nav:
         if self.nav_thread and self.nav_thread.is_alive():
             self.nav_thread.join(timeout=1.0)
 
-    def follow_platform(self, target_z, target_bearing):
+    # --- MODIFIED: Added real_distance_to_platform parameter ---
+    def follow_platform(self, distance_to_point, target_bearing, real_distance_to_platform):
+        
         bearing_error = target_bearing
-        distance_error = target_z - self.DESIRED_DISTANCE
         
-        angular_cmd = self.K_BEARING * bearing_error
-        linear_cmd = self.K_FORWARD * distance_error
-        
+        # 1. CAPA DE SEGURIDAD ABSOLUTA (Anti-Choque físico)
+        if real_distance_to_platform < self.SAFE_STOP_DISTANCE:
+            # Clavamos frenos de avance. Le permitimos seguir rotando para no perderla de vista.
+            linear_cmd = 0.0
+            angular_cmd = self.K_BEARING * bearing_error
+            # print("! FRENO DE EMERGENCIA ACTIVO !")
+            
+        else:
+            # 2. CAPA DE ZONA MUERTA (Evitar que el robot baile alrededor del punto)
+            if distance_to_point < 0.05:
+                linear_cmd = 0.0
+                angular_cmd = 0.0 
+            else:
+                # 3. CONDUCCIÓN NORMAL
+                linear_cmd = self.K_FORWARD * distance_to_point
+                angular_cmd = self.K_BEARING * bearing_error
+                
+                # Ralentizar si hay que hacer un giro brusco
+                if abs(bearing_error) > self.BEARING_TOL:
+                    linear_cmd *= 0.4
+
+        # Aplicar límites máximos del robot
         angular_cmd = max(-self.MAX_ANGULAR_SPEED, min(self.MAX_ANGULAR_SPEED, angular_cmd))
-        linear_cmd = max(0, min(self.MAX_LINEAR_SPEED, linear_cmd))
         
-        if abs(bearing_error) > self.BEARING_TOL:
-            linear_cmd *= 0.4
+        # Solo aplicamos límites si no hemos forzado el freno a 0.0
+        if linear_cmd > 0.0:
+            linear_cmd = max(0.0, min(self.MAX_LINEAR_SPEED, linear_cmd))
         
-        # Save current commands to calculate odometry in the next loop
+        # Guardar para la Odometría
         self.current_linear_v = linear_cmd
         self.current_angular_v = angular_cmd
         
