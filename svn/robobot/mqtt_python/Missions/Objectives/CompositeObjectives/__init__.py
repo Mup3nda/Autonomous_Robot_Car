@@ -1,0 +1,18 @@
+from Objectives.CompositeObjectives.final_competition_regions import (
+    FollowLineApproachRoundaboutComposite,
+    RoundaboutComposite,
+    PostRoundaboutLineFollowAndExitComposite,
+    GetExtraTimeReturnToLineComposite,
+    FollowLineBeforeKnockCupComposite,
+    KnockDownCupComposite,
+    GoToBallPickupLocationAComposite,
+    GoToBlueBallDropoffComposite,
+    GoToBallPickupLocationBComposite,
+    GoToRedBallDropoffComposite,
+    GoToPlatformPickupComposite,
+    GoToPlatformDropoffDComposite,
+    GoToPlatformPickupAgainComposite,
+    GoToPlatformDropoffAComposite,
+    ReturnToFinishLineComposite,
+    GoToLineAndFollowToEndComposite,
+)
