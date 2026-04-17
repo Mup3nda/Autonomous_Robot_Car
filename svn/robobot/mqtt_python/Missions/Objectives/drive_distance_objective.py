@@ -26,6 +26,10 @@ class DriveDistanceObjective(Objective):
         self.throttle = float(throttle)
         self.timeout_s = float(timeout_s)
         self.instant_stop = bool(instant_stop)
+
+    def _distance_reached(self, driven_m):
+        """Distance completion should work for both forward and reverse driving."""
+        return abs(float(driven_m)) >= abs(self.target_distance_m)
     
 
     def start(self, ctx):
@@ -46,7 +50,7 @@ class DriveDistanceObjective(Objective):
             marker = ctx.memory["_local_progress"][self.PROGRESS_KEY]
             driven = ctx.distance_since_start(self.PROGRESS_KEY)
             elapsed = t.time() - marker["time_s"]
-            if driven > self.target_distance_m  or elapsed > 15:
+            if self._distance_reached(driven) or (self.timeout_s > 0.0 and elapsed >= self.timeout_s):
                 ctx.actions.drive.stop(instant = self.instant_stop)  # Stop driving
                 self.state = DriveDistanceState.STOPPED
         elif self.state == DriveDistanceState.STOPPED:

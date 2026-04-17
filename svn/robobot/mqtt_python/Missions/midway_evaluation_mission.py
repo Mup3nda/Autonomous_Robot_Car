@@ -127,6 +127,7 @@ class DelayObjective(Objective):
 # Add objectives in the list below in the exact order they should execute.
 def build_objectives():
     objectives=[
+        GripperOpenObjective(),
     # region Following line approach roundabout
         DriveToLineObjective(
             follow_left=True,
@@ -141,14 +142,14 @@ def build_objectives():
     # region Roundabout
         DriveDistanceObjective(
             target_distance_m=0.50,
-            throttle=-0.2,
-            timeout_s=8.0,
+            throttle=-0.25,
+            timeout_s=3.0,
             instant_stop=True,
         ),
         DriveDistanceObjective(
-            target_distance_m=2.0,
-            throttle=0.25,
-            timeout_s=20.0,
+            target_distance_m=0.95,
+            throttle=0.47,
+            timeout_s=8.0,
             instant_stop=True,
         ),
         # DriveToWaypointObjective(
@@ -164,7 +165,7 @@ def build_objectives():
         ),
         DriveCircleObjective(
             radius_m=CIRCLE_RADIUS_M,
-            revolutions=1.61, # one full circle + half circle
+            revolutions=1.62, # one full circle + half circle
             forward_cmd=CIRCLE_FORWARD_CMD,
             turn_cmd=CIRCLE_TURN_CMD,
             turn_rate_scale=CIRCLE_TURN_RATE_SCALE,
@@ -178,24 +179,24 @@ def build_objectives():
         ),
     # # endregion
     # # region post-roundabout line follow and exit 
-    #     DriveToLineZoneSwitchObjective(
-    #         follow_left=LINE_ENTRY_FOLLOW_LEFT,
-    #         follow_speed=0.7,
-    #         search_speed=LINE_ENTRY_SEARCH_SPEED,
-    #         lost_line_timeout_s=LINE_ENTRY_TIMEOUT_S,
-    #         switch_zones=POST_ROUNDABOUT_SWITCH_ZONES,
-    #         ordered_switches=True,
-    #         instant_stop=False
-    #     ),
-    # #    DriveToLineObjective(
-    # #        follow_left=False,
-    # #        follow_speed=0.7,
-    # #        search_speed=0.25,
-    # #        centering_speed=0.2,
-    # #        lost_line_timeout_s=0.01,
-    # #        max_line_distance_m=1.91,
-    # #        max_duration=0.0,
-    # #        ),
+        DriveToLineZoneSwitchObjective(
+            follow_left=LINE_ENTRY_FOLLOW_LEFT,
+            follow_speed=0.7,
+            search_speed=LINE_ENTRY_SEARCH_SPEED,
+            lost_line_timeout_s=LINE_ENTRY_TIMEOUT_S,
+            switch_zones=POST_ROUNDABOUT_SWITCH_ZONES,
+            ordered_switches=True,
+            instant_stop=False
+        ),
+    #    DriveToLineObjective(
+    #        follow_left=False,
+    #        follow_speed=0.7,
+    #        search_speed=0.25,
+    #        centering_speed=0.2,
+    #        lost_line_timeout_s=0.01,
+    #        max_line_distance_m=1.91,
+    #        max_duration=0.0,
+    #        ),
     #     DriveBackwardUntilLineStopObjective(
     #         reverse_speed=-0.2,
     #         line_found_confidence=2,
