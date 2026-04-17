@@ -148,10 +148,11 @@ def build_objectives():
         # DelayObjective(1.0),
         # ArmUpObjective(),
 
-        ArmUpObjective(),
-        GripperOpenObjective(),
-        SearchAndNavigateToPlatform(marker_id=5)
+        # ArmUpObjective(),
+        # GripperOpenObjective(),
+        # SearchAndNavigateToPlatform(marker_id=5)
         
+
         # SearchAndNavigateToAruco(marker_id=20,turn_rate=0.4),
         # ArmDownObjective(wait_after_s=2.0),
         # ArmUpObjective(),
