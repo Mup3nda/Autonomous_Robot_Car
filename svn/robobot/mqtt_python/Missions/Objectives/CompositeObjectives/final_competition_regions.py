@@ -11,7 +11,12 @@ from Objectives.drive_to_timer_and_back_objective import DriveToTimerAndBackObje
 from Objectives.drive_to_waypoint_objective import DriveToWaypointObjective
 from Objectives.drive_to_waypoint_until_line_count_objective import DriveToWaypointUntilLineCountObjective
 from Objectives.drive_turn_angle_objective import DriveTurnAngleObjective
+from Objectives.gripper_open_objective import GripperOpenObjective
+from Objectives.search_and_navigate_to_aruco_objective import SearchAndNavigateToAruco
 from Objectives.reset_origin_objective import ResetOriginObjective
+
+
+DUMMY_ARUCO_MARKER_ID = 0
 
 
 class DelayObjective(Objective):
@@ -39,7 +44,7 @@ class FollowLineApproachRoundaboutComposite(CompositeObjective):
                 follow_speed=0.4,
                 search_speed=0.25,
                 centering_speed=0.2,
-                lost_line_timeout_s=0.3,
+                lost_line_timeout_s=0,
                 max_line_distance_m=1.90,
                 max_duration=0.0,
             )
@@ -117,7 +122,7 @@ class FollowLineBeforeKnockCupComposite(CompositeObjective):
                 follow_speed=0.4,
                 search_speed=0.25,
                 centering_speed=0.2,
-                lost_line_timeout_s=0.0,
+                lost_line_timeout_s=0,
                 max_duration=0.0,
                 max_line_distance_m=0.6,
             ),
@@ -165,7 +170,8 @@ class GoToBlueBallDropoffComposite(CompositeObjective):
     name = "go_to_blue_ball_dropoff"
 
     def __init__(self, nav_mode):
-        super().__init__([
+        marker_id = DUMMY_ARUCO_MARKER_ID
+        objectives: list[Objective] = [
             DelayObjective(2.0),
             DriveToWaypointObjective(
                 waypoint=(0.9, 1.3),
@@ -174,11 +180,14 @@ class GoToBlueBallDropoffComposite(CompositeObjective):
                 relative_heading_deg=0.0,
                 nav_mode=nav_mode,
             ),
+            SearchAndNavigateToAruco(marker_id=marker_id, desired_distance=0.35),
             ArmDownObjective(),
+            GripperOpenObjective(),
             DelayObjective(2.0),
             ArmUpObjective(),
             DriveTurnAngleObjective(angle_deg=170.0, linear_cmd=0.0, timeout_s=6.0),
-        ])
+        ]
+        super().__init__(objectives)
 
 
 class GoToBallPickupLocationBComposite(CompositeObjective):
@@ -201,7 +210,8 @@ class GoToRedBallDropoffComposite(CompositeObjective):
     name = "go_to_red_ball_dropoff"
 
     def __init__(self, nav_mode):
-        super().__init__([
+        marker_id = DUMMY_ARUCO_MARKER_ID
+        objectives: list[Objective] = [
             DriveToWaypointObjective(
                 waypoint=(1.35, 0.8),
                 is_local=False,
@@ -209,11 +219,14 @@ class GoToRedBallDropoffComposite(CompositeObjective):
                 relative_heading_deg=90.0,
                 nav_mode=nav_mode,
             ),
+            SearchAndNavigateToAruco(marker_id=marker_id, desired_distance=0.35),
             ArmDownObjective(),
+            GripperOpenObjective(),
             DelayObjective(2.0),
             ArmUpObjective(),
             DriveTurnAngleObjective(angle_deg=-90.0, linear_cmd=0.0, timeout_s=6.0),
-        ])
+        ]
+        super().__init__(objectives)
 
 
 class GoToPlatformPickupComposite(CompositeObjective):
@@ -243,7 +256,8 @@ class GoToPlatformDropoffDComposite(CompositeObjective):
     name = "go_to_platform_dropoff_d"
 
     def __init__(self, nav_mode):
-        super().__init__([
+        marker_id = DUMMY_ARUCO_MARKER_ID
+        objectives: list[Objective] = [
             DriveToWaypointObjective(
                 waypoint=(1.89, 1.1),
                 is_local=False,
@@ -251,11 +265,14 @@ class GoToPlatformDropoffDComposite(CompositeObjective):
                 relative_heading_deg=165.0,
                 nav_mode=nav_mode,
             ),
+            SearchAndNavigateToAruco(marker_id=marker_id, desired_distance=0.35),
             ArmDownObjective(),
+            GripperOpenObjective(),
             DelayObjective(2.0),
             ArmUpObjective(),
             DriveTurnAngleObjective(angle_deg=180.0, linear_cmd=0.0, timeout_s=6.0),
-        ])
+        ]
+        super().__init__(objectives)
 
 
 class GoToPlatformPickupAgainComposite(CompositeObjective):
@@ -277,7 +294,8 @@ class GoToPlatformDropoffAComposite(CompositeObjective):
     name = "go_to_platform_dropoff_a"
 
     def __init__(self, nav_mode):
-        super().__init__([
+        marker_id = DUMMY_ARUCO_MARKER_ID
+        objectives: list[Objective] = [
             DriveToWaypointObjective(
                 waypoint=(1.94, 1.6),
                 is_local=False,
@@ -292,10 +310,13 @@ class GoToPlatformDropoffAComposite(CompositeObjective):
                 relative_heading_deg=-90.0,
                 nav_mode=nav_mode,
             ),
+            SearchAndNavigateToAruco(marker_id=marker_id, desired_distance=0.35),
             ArmDownObjective(),
+            GripperOpenObjective(),
             DelayObjective(2.0),
             ArmUpObjective(),
-        ])
+        ]
+        super().__init__(objectives)
 
 
 class ReturnToFinishLineComposite(CompositeObjective):
@@ -327,7 +348,7 @@ class GoToLineAndFollowToEndComposite(CompositeObjective):
                 follow_speed=0.7,
                 search_speed=0.25,
                 centering_speed=0.2,
-                lost_line_timeout_s=0.0,
+                lost_line_timeout_s=0,
                 max_duration=0.0,
             ),
         ])
