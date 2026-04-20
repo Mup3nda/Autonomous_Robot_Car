@@ -81,7 +81,7 @@ class Nav:
         ], dtype=float)
 
         self.BLEND_ALPHA = 0.9
-        self.PREDICTION_HORIZON = 4.0
+        self.PREDICTION_HORIZON = 2.0
         self.LOST_TIMEOUT = 1
         self.last_seen_time = 0
         
