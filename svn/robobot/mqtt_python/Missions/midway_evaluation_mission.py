@@ -142,13 +142,13 @@ def build_objectives():
     # endregion
     # region align to circle entry 
         DriveDistanceObjective(
-            target_distance_m=0.50,
+            target_distance_m=0.80,
             throttle=-0.25,
             timeout_s=3.0,
             instant_stop=True,
         ),
         DriveDistanceObjective(
-            target_distance_m=0.95,
+            target_distance_m=1.20,
             throttle=0.30,
             timeout_s=8.0,
             instant_stop=True,
@@ -161,7 +161,7 @@ def build_objectives():
         #     ),
         # region entry turn and align to tangent and
         DriveTurnAngleObjective(
-            angle_deg=93,
+            angle_deg=93.0,
             linear_cmd=0.0,
             timeout_s=6.0,
         ),
@@ -176,7 +176,7 @@ def build_objectives():
             timeout_s=CIRCLE_TIMEOUT_S,
         ),
         DriveTurnAngleObjective(
-            angle_deg=90.0,
+            angle_deg=93.0,
             linear_cmd=0.0,
             timeout_s=6.0,
         ),
