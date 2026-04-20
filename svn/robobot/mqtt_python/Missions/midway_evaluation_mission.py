@@ -127,6 +127,8 @@ class DelayObjective(Objective):
 # Add objectives in the list below in the exact order they should execute.
 def build_objectives():
     objectives=[
+        GripperCloseObjective(),
+        DelayObjective(2.0),
         GripperOpenObjective(),
         ArmUpObjective(),
     # region Following line approach roundabout
@@ -168,7 +170,7 @@ def build_objectives():
         # region drive circle
         DriveCircleObjective(
             radius_m=CIRCLE_RADIUS_M,
-            revolutions=1.62, # one full circle + half circle
+            revolutions=1.63, # one full circle + half circle
             forward_cmd=CIRCLE_FORWARD_CMD,
             turn_cmd=CIRCLE_TURN_CMD,
             turn_rate_scale=CIRCLE_TURN_RATE_SCALE,
