@@ -139,7 +139,7 @@ def build_objectives():
             max_duration=0.0,
             ),
     # endregion
-    # region Roundabout
+    # region align to circle entry and drive circle
         DriveDistanceObjective(
             target_distance_m=0.50,
             throttle=-0.25,
@@ -158,11 +158,13 @@ def build_objectives():
         #     print_interval=20,
         #     nav_mode=WAYPOINT_NAV_MODE,
         #     ),
+        # region entry turn and align to tangent and
         DriveTurnAngleObjective(
             angle_deg=90,
             linear_cmd=0.0,
             timeout_s=6.0,
         ),
+        # region drive circle
         DriveCircleObjective(
             radius_m=CIRCLE_RADIUS_M,
             revolutions=1.62, # one full circle + half circle
