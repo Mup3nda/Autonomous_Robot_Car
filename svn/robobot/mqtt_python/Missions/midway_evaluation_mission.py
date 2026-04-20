@@ -128,6 +128,7 @@ class DelayObjective(Objective):
 def build_objectives():
     objectives=[
         GripperOpenObjective(),
+        ArmUpObjective(),
     # region Following line approach roundabout
         DriveToLineObjective(
             follow_left=True,
@@ -139,7 +140,7 @@ def build_objectives():
             max_duration=0.0,
             ),
     # endregion
-    # region align to circle entry and drive circle
+    # region align to circle entry 
         DriveDistanceObjective(
             target_distance_m=0.50,
             throttle=-0.25,
@@ -148,7 +149,7 @@ def build_objectives():
         ),
         DriveDistanceObjective(
             target_distance_m=0.95,
-            throttle=0.47,
+            throttle=0.30,
             timeout_s=8.0,
             instant_stop=True,
         ),
@@ -160,7 +161,7 @@ def build_objectives():
         #     ),
         # region entry turn and align to tangent and
         DriveTurnAngleObjective(
-            angle_deg=90,
+            angle_deg=93,
             linear_cmd=0.0,
             timeout_s=6.0,
         ),
