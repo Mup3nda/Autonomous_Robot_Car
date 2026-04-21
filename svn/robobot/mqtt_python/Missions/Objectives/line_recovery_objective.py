@@ -2,6 +2,7 @@
 from objective import Objective
 from Objectives.drive_to_line_objective import DriveToLineObjective
 from Objectives.drive_turn_angle_objective import DriveTurnAngleObjective
+from Objectives.drive_to_timer_and_back_objective import DriveToTimerAndBackObjective
 
 LINE_RECOVERY_FOLLOW_LEFT = False
 LINE_RECOVERY_FOLLOW_SPEED = 0.75
@@ -37,7 +38,10 @@ class LineRecovery(Objective):
                 search_speed=search_speed,
                 lost_line_timeout_s=lost_line_timeout_s,
                 search_timeout_s=search_timeout_s,
+                max_line_distance_m=2.5,
             ),
+        DriveToTimerAndBackObjective(drive_back=False),
+            
         ]
         self.index = 0
         self.active = False

@@ -38,9 +38,21 @@ class DriveToTimerAndBackObjective(Objective):
     TIMEOUT_S = 20.0
     WAIT_BEFORE_BACKWARD_S = 1.0
     STOP_VELOCITY_THRESHOLD = 0.001
+    def __init__(
+        self,
+        targect_distance=TARGET_DISTANCE_M,
+        drive_back=False,
+    ):
+        super().__init__()
+        self.targect_distance = float(targect_distance)
+        self.drive_back = bool(drive_back)
+
 
     def start(self, ctx):
-        self.state = DriveToTimerAndBackState.FORWARD_START
+        if self.drive_back:
+            self.state = DriveToTimerAndBackState.BACKWARD_START
+        else:
+            self.state = DriveToTimerAndBackState.FORWARD_START
         ctx.actions.drive.leds(0, 100, 0)  # Green
         print("% Drive out and back -------------------------")
 
@@ -56,7 +68,7 @@ class DriveToTimerAndBackObjective(Objective):
             driven = ctx.distance_since_start(self.FORWARD_PROGRESS_KEY)
             elapsed = t.time() - marker["time_s"]
 
-            if driven >= self.TARGET_DISTANCE_M or elapsed > self.TIMEOUT_S:
+            if driven >= self.targect_distance or elapsed > self.TIMEOUT_S:
                 ctx.actions.drive.stop(instant=False)
                 self.state = DriveToTimerAndBackState.FORWARD_STOPPED
 
@@ -65,13 +77,24 @@ class DriveToTimerAndBackObjective(Objective):
                 marker = ctx.memory["_local_progress"][self.FORWARD_PROGRESS_KEY]
                 driven = ctx.distance_since_start(self.FORWARD_PROGRESS_KEY)
                 elapsed = t.time() - marker["time_s"]
-                print(f"# forward leg drove {driven:.3f}m in {elapsed:.3f}s")
-                ctx.reset_state_time()
-                self.state = DriveToTimerAndBackState.WAIT_BEFORE_BACKWARD
-        
+                if self.drive_back:
+                    marker = ctx.memory["_local_progress"][self.FORWARD_PROGRESS_KEY]
+                    driven = abs(ctx.distance_since_start(self.FORWARD_PROGRESS_KEY))
+                    elapsed = t.time() - marker["time_s"]
+                    print(f"# fordward leg drove {driven:.3f}m in {elapsed:.3f}s")
+                    self._done = True
+                else:
+                    print(f"# forward leg drove {driven:.3f}m in {elapsed:.3f}s")
+                    ctx.reset_state_time()
+                    self.state = DriveToTimerAndBackState.WAIT_BEFORE_BACKWARD
+                
         elif self.state == DriveToTimerAndBackState.WAIT_BEFORE_BACKWARD:
             if ctx.state_time_passed() >= self.WAIT_BEFORE_BACKWARD_S:
                 self.state = DriveToTimerAndBackState.BACKWARD_START
+        
+        elif self.state == DriveToTimerAndBackState.WAIT_BEFORE_FORWARD:
+            if ctx.state_time_passed() >= self.WAIT_BEFORE_BACKWARD_S:
+                self.state = DriveToTimerAndBackState.FORWARD_START
                 
         elif self.state == DriveToTimerAndBackState.BACKWARD_START:
             ctx.start_local_progress(self.BACKWARD_PROGRESS_KEY)
@@ -84,17 +107,22 @@ class DriveToTimerAndBackObjective(Objective):
             driven = abs(ctx.distance_since_start(self.BACKWARD_PROGRESS_KEY))
             elapsed = t.time() - marker["time_s"]
 
-            if driven >= self.TARGET_DISTANCE_M + self.OFFSET_STOP_DIST or elapsed > self.TIMEOUT_S:
+            if driven >= self.targect_distance + self.OFFSET_STOP_DIST or elapsed > self.TIMEOUT_S:
                 ctx.actions.drive.stop()
                 self.state = DriveToTimerAndBackState.BACKWARD_STOPPED
 
         elif self.state == DriveToTimerAndBackState.BACKWARD_STOPPED:
             if abs(ctx.pose.velocity()) < self.STOP_VELOCITY_THRESHOLD:
-                marker = ctx.memory["_local_progress"][self.BACKWARD_PROGRESS_KEY]
-                driven = abs(ctx.distance_since_start(self.BACKWARD_PROGRESS_KEY))
-                elapsed = t.time() - marker["time_s"]
-                print(f"# backward leg drove {driven:.3f}m in {elapsed:.3f}s")
-                self._done = True
+                if self.drive_back:
+                    ctx.reset_state_time()
+                    self.state = DriveToTimerAndBackState.WAIT_BEFORE_FORWARD
+                else:
+                    marker = ctx.memory["_local_progress"][self.BACKWARD_PROGRESS_KEY]
+                    driven = abs(ctx.distance_since_start(self.BACKWARD_PROGRESS_KEY))
+                    elapsed = t.time() - marker["time_s"]
+                    print(f"# backward leg drove {driven:.3f}m in {elapsed:.3f}s")
+                    self._done = True
+
 
         self._log_progress(ctx)
 
@@ -117,6 +145,7 @@ class DriveToTimerAndBackObjective(Objective):
             DriveToTimerAndBackState.BACKWARD_START,
             DriveToTimerAndBackState.BACKWARD_DRIVING,
             DriveToTimerAndBackState.BACKWARD_STOPPED,
+            DriveToTimerAndBackState.WAIT_BEFORE_FORWARD,
         ):
             if self.BACKWARD_PROGRESS_KEY in ctx.memory.get("_local_progress", {}):
                 marker = ctx.memory["_local_progress"][self.BACKWARD_PROGRESS_KEY]
