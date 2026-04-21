@@ -23,6 +23,7 @@ class SearchAndNavigateToBlueBall(CompositeObjective):
                 turn_rate=turn_rate,
                 min_confidence=min_confidence,
                 print_interval=search_print_interval,
+                scan_mode=LookForBlueBallObjective.SCAN_MODE_SWEEP_90,
             ),
             NavigateToBlueBallObjective(
                 desired_distance=desired_distance,

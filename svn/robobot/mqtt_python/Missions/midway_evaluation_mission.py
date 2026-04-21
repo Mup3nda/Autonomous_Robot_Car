@@ -17,7 +17,6 @@ from uservice import service
 from mission_runner import MissionRunner
 from robot_actions import RobotActions
 from mission_context import MissionContext
-from objective import Objective
 from Objectives.drive_circle_objective import DriveCircleObjective
 from Objectives.drive_to_waypoint_objective import DriveToWaypointObjective
 from Objectives.drive_turn_angle_objective import DriveTurnAngleObjective
@@ -39,6 +38,9 @@ from Objectives.drive_to_timer_and_back_objective import DriveToTimerAndBackObje
 from Objectives.reset_origin_objective import ResetOriginObjective
 from Objectives.drive_backward_until_line_stop_objective import DriveBackwardUntilLineStopObjective
 from Objectives.drive_to_waypoint_until_line_count_objective import DriveToWaypointUntilLineCountObjective
+from Objectives.delay_objective import DelayObjective
+from Objectives.grab_target_objective import GrabTargetObjective
+from Objectives.drop_target_objective import DropTargetObjective
 from sodom import odom
 
 # Roundabout three-step tuning parameters.
@@ -101,28 +103,9 @@ POST_ROUNDABOUT_SWITCH_ZONES = [
         "trigger_dist_m": 13.5,
         "follow_left": False,
         "follow_speed": 0.45,
-        "lost_line_timeout_s": 0.0
+        "lost_line_timeout_s": 0.0,
     }
 ]
-
-class DelayObjective(Objective):
-    """Wait for a fixed amount of time, then finish."""
-
-    name = "delay"
-
-    def __init__(self, duration_s):
-        super().__init__()
-        self.duration_s = float(duration_s)
-
-    def start(self, ctx):
-        self._done = self.duration_s <= 0.0
-
-    def tick(self, ctx):
-        if ctx.state_time_passed() >= self.duration_s:
-            self._done = True
-
-    def stop(self, ctx):
-        pass
 
 #
 # Add objectives in the list below in the exact order they should execute.
@@ -131,7 +114,7 @@ def build_objectives():
         GripperCloseObjective(),
         DelayObjective(2.0),
         GripperOpenObjective(),
-        ArmUpObjective(),
+    #    ArmUpObjective(),
     ## region Following line approach roundabout
     #    DriveToLineObjective(
     #        follow_left=True,
@@ -226,7 +209,7 @@ def build_objectives():
              centering_speed=0.2,
              lost_line_timeout_s=0.0,
              max_duration = 0.0,
-             max_line_distance_m=0.6,
+             max_line_distance_m=0.5,
              ),
          DelayObjective(2.0),
      # endregion
@@ -261,7 +244,8 @@ def build_objectives():
              relative_heading_deg=-100.0,
              nav_mode=WAYPOINT_NAV_MODE,
              ),
-         SearchAndNavigateToBlueBall(turn_rate=0.5),
+         SearchAndNavigateToBlueBall(turn_rate=0.3),
+         GrabTargetObjective(nav_mode=WAYPOINT_NAV_MODE),
      # end region
          DelayObjective(2.0),
      # region go to blue ball drop off location
@@ -273,9 +257,7 @@ def build_objectives():
              nav_mode=WAYPOINT_NAV_MODE,
              ),
          SearchAndNavigateToAruco(marker_id=12,desired_distance=0.7),
-         ArmDownObjective(),
-         DelayObjective(2.0),
-         ArmUpObjective(),
+         DropTargetObjective(delay_s=1.0),
          DriveTurnAngleObjective(
              angle_deg=170.0,
              linear_cmd=0.0,
@@ -291,7 +273,8 @@ def build_objectives():
              nav_mode=WAYPOINT_NAV_MODE,
              ),
         SearchAndNavigateToRedBall(),
-         DelayObjective(2.0),
+        GrabTargetObjective(nav_mode=WAYPOINT_NAV_MODE),
+        DelayObjective(2.0),
      # end region
      # region go to red ball drop off location
          DriveToWaypointObjective(
@@ -301,9 +284,9 @@ def build_objectives():
              relative_heading_deg=90.0,
              nav_mode=WAYPOINT_NAV_MODE,
              ),
-         ArmDownObjective(),
-         DelayObjective(2.0),
-         ArmUpObjective(),
+        SearchAndNavigateToAruco(marker_id=15,desired_distance=0.7),
+         DropTargetObjective(
+             delay_s=1.0),
          DriveTurnAngleObjective(
              angle_deg=-90.0,
              linear_cmd=0.0,

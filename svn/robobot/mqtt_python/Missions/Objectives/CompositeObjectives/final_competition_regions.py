@@ -1,4 +1,4 @@
-from objective import CompositeObjective, Objective
+from objective import CompositeObjective
 
 from Objectives.arm_down_objective import ArmDownObjective
 from Objectives.arm_middle_objective import ArmMiddleObjective
@@ -11,29 +11,13 @@ from Objectives.drive_to_timer_and_back_objective import DriveToTimerAndBackObje
 from Objectives.drive_to_waypoint_objective import DriveToWaypointObjective
 from Objectives.drive_to_waypoint_until_line_count_objective import DriveToWaypointUntilLineCountObjective
 from Objectives.drive_turn_angle_objective import DriveTurnAngleObjective
+from Objectives.delay_objective import DelayObjective
 from Objectives.gripper_open_objective import GripperOpenObjective
 from Objectives.search_and_navigate_to_aruco_objective import SearchAndNavigateToAruco
 from Objectives.reset_origin_objective import ResetOriginObjective
 
 
 DUMMY_ARUCO_MARKER_ID = 0
-
-
-class DelayObjective(Objective):
-    name = "delay"
-
-    def __init__(self, duration_s):
-        super().__init__()
-        self.duration_s = float(duration_s)
-
-    def start(self, ctx):
-        self._done = self.duration_s <= 0.0
-
-    def tick(self, ctx):
-        if ctx.state_time_passed() >= self.duration_s:
-            self._done = True
-
-
 class FollowLineApproachRoundaboutComposite(CompositeObjective):
     name = "follow_line_approach_roundabout"
 

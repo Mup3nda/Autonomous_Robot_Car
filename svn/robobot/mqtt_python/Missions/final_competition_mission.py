@@ -16,7 +16,6 @@ from uservice import service
 from mission_runner import MissionRunner
 from robot_actions import RobotActions
 from mission_context import MissionContext
-from objective import Objective
 from Objectives.drive_circle_objective import DriveCircleObjective
 from Objectives.drive_to_waypoint_objective import DriveToWaypointObjective
 from Objectives.drive_turn_angle_objective import DriveTurnAngleObjective
@@ -36,6 +35,7 @@ from Objectives.drive_to_timer_and_back_objective import DriveToTimerAndBackObje
 from Objectives.reset_origin_objective import ResetOriginObjective
 from Objectives.drive_backward_until_line_stop_objective import DriveBackwardUntilLineStopObjective
 from Objectives.drive_to_waypoint_until_line_count_objective import DriveToWaypointUntilLineCountObjective
+from Objectives.delay_objective import DelayObjective
 from Objectives.CompositeObjectives.final_competition_regions import (
     FollowLineApproachRoundaboutComposite,
     RoundaboutComposite,
@@ -116,28 +116,9 @@ POST_ROUNDABOUT_SWITCH_ZONES = [
         "trigger_dist_m": 13.5,
         "follow_left": False,
         "follow_speed": 0.45,
-        "lost_line_timeout_s": 0.0
+        "lost_line_timeout_s": 0.0,
     }
 ]
-
-class DelayObjective(Objective):
-    """Wait for a fixed amount of time, then finish."""
-
-    name = "delay"
-
-    def __init__(self, duration_s):
-        super().__init__()
-        self.duration_s = float(duration_s)
-
-    def start(self, ctx):
-        self._done = self.duration_s <= 0.0
-
-    def tick(self, ctx):
-        if ctx.state_time_passed() >= self.duration_s:
-            self._done = True
-
-    def stop(self, ctx):
-        pass
 
 
 # Add objectives in the list below in the exact order they should execute.
