@@ -24,6 +24,7 @@ class SearchAndNavigateToRedBall(CompositeObjective):
                 min_confidence=min_confidence,
                 print_interval=search_print_interval,
                 color="red_orange",
+                scan_mode=LookForBallObjective.SCAN_MODE_SWEEP_90,
             ),
             NavigateToBallObjective(
                 desired_distance=desired_distance,
