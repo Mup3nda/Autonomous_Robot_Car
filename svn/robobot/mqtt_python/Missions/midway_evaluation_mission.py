@@ -359,7 +359,7 @@ def build_objectives():
      # region return to finish line
          DelayObjective(2.0),
          DriveToWaypointUntilLineCountObjective(
-             waypoint=(1.3,5.0),
+             waypoint=(1.6,5.0),
              is_local=False,
              print_interval=20,
              nav_mode=WAYPOINT_NAV_MODE,
