@@ -172,10 +172,11 @@ def build_objectives():
     # # region post-roundabout line follow and exit 
         DriveToLineLockStraightHeadingObjective(
             follow_left=LINE_ENTRY_FOLLOW_LEFT,
-            follow_speed=0.3,
+            follow_speed=0.5,
             search_speed=LINE_ENTRY_SEARCH_SPEED,
             lost_line_timeout_s=LINE_ENTRY_TIMEOUT_S,
-            heading_track_window_s=0.45,
+            heading_track_window_s=4.0,
+            heading_tolerance_deg=0.5,
             instant_stop=False,
         ),
     #    DriveToLineObjective(
@@ -315,7 +316,7 @@ def build_objectives():
      # end region
      # region go to platform drop off location D
          DriveToWaypointObjective(
-             waypoint=(1.89,1.1),
+             waypoint=(1.94,0.7),
              is_local=False,
              print_interval=20,
              relative_heading_deg=165.0,
