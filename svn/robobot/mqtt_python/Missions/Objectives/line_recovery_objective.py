@@ -11,6 +11,7 @@ LINE_RECOVERY_LOST_LINE_TIMEOUT_S = 0.35
 LINE_RECOVERY_SEARCH_TIMEOUT_S = 4.0
 LINE_RECOVERY_TURN_ANGLE_DEG = 90.0
 LINE_RECOVERY_TURN_TIMEOUT_S = 6.0
+LINE_MAX_DISTANCE = 25
 
 class LineRecovery(Objective):
     name = "line_recovery"
@@ -24,6 +25,7 @@ class LineRecovery(Objective):
         search_timeout_s=LINE_RECOVERY_SEARCH_TIMEOUT_S,
         turn_angle_deg=LINE_RECOVERY_TURN_ANGLE_DEG,
         turn_timeout_s=LINE_RECOVERY_TURN_TIMEOUT_S,
+        max_line_distance_m=LINE_MAX_DISTANCE
     ):
         super().__init__()
         self.objectives = [
@@ -38,7 +40,7 @@ class LineRecovery(Objective):
                 search_speed=search_speed,
                 lost_line_timeout_s=lost_line_timeout_s,
                 search_timeout_s=search_timeout_s,
-                max_line_distance_m=4.3,
+                max_line_distance_m=max_line_distance_m,
             ),
             DriveToTimerAndBackObjective(drive_back=True),
             
