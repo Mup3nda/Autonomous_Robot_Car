@@ -23,10 +23,18 @@
 
 ## function to handle ctrl-C and reasonable shutdown
 def signal_handler(sig, frame):
-    print('UService:: You pressed Ctrl+C!')
+  # Avoid print() in signal context; it can re-enter buffered stdout.
+  try:
+    os.write(2, b'UService:: You pressed Ctrl+C!\n')
+  except Exception:
+    pass
+  try:
     service.stop = True
+  except Exception:
+    pass
 
 import signal
+import os
 import argparse
 import time as t
 import random

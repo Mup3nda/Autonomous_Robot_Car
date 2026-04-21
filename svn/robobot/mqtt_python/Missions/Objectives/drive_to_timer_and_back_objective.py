@@ -22,6 +22,7 @@ class DriveToTimerAndBackState(IntEnum):
     BACKWARD_START = 4
     BACKWARD_DRIVING = 5
     BACKWARD_STOPPED = 6
+    WAIT_BEFORE_FORWARD = 7
 
 
 class DriveToTimerAndBackObjective(Objective):
