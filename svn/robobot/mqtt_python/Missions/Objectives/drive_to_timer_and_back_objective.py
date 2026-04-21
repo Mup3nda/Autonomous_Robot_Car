@@ -41,12 +41,16 @@ class DriveToTimerAndBackObjective(Objective):
     STOP_VELOCITY_THRESHOLD = 0.001
     def __init__(
         self,
-        targect_distance=TARGET_DISTANCE_M,
+        targect_distance_forward=TARGET_DISTANCE_M,
+        targect_distance_backward=TARGET_DISTANCE_M,
         drive_back=False,
+
     ):
         super().__init__()
-        self.targect_distance = float(targect_distance)
+        self.targect_distance_forward= float(targect_distance_forward)
+        self.targect_distance_backward= float(targect_distance_backward)
         self.drive_back = bool(drive_back)
+        
 
 
     def start(self, ctx):
@@ -69,7 +73,7 @@ class DriveToTimerAndBackObjective(Objective):
             driven = ctx.distance_since_start(self.FORWARD_PROGRESS_KEY)
             elapsed = t.time() - marker["time_s"]
 
-            if driven >= self.targect_distance or elapsed > self.TIMEOUT_S:
+            if driven >= self.targect_distance_forward or elapsed > self.TIMEOUT_S:
                 ctx.actions.drive.stop(instant=False)
                 self.state = DriveToTimerAndBackState.FORWARD_STOPPED
 
@@ -108,7 +112,7 @@ class DriveToTimerAndBackObjective(Objective):
             driven = abs(ctx.distance_since_start(self.BACKWARD_PROGRESS_KEY))
             elapsed = t.time() - marker["time_s"]
 
-            if driven >= self.targect_distance + self.OFFSET_STOP_DIST or elapsed > self.TIMEOUT_S:
+            if driven >= self.targect_distance_backward + self.OFFSET_STOP_DIST or elapsed > self.TIMEOUT_S:
                 ctx.actions.drive.stop()
                 self.state = DriveToTimerAndBackState.BACKWARD_STOPPED
 
