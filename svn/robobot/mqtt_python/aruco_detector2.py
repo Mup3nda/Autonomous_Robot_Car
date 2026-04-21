@@ -7,11 +7,13 @@ import cv2                          # OpenCV for image processing
 from flask import Flask, Response   # Web server for MJPEG streaming
 import logging
 import yaml
-from scam import cam
+#from scam import cam
+#from scam_usb import cam_usb as cam
 from sgpio import gpio
 from uservice import service
 from target_detector import TargetDetector
 from threading import Thread
+from datetime import datetime
 import time as t
 
 logging.basicConfig(level=logging.INFO)
@@ -56,7 +58,7 @@ class ArucoDetector(TargetDetector):
                  cam, 
                  gpio, 
                  service, 
-                 camera_config='/home/local/Autonomous_Robot_Car/CV/aruco/oliver_calibration.yaml', 
+                 camera_config='/home/local/Autonomous_Robot_Car/svn/robobot/calibrations/usb_cam_640x480.yaml', 
                  target_id=None, 
                  manage_camera=False
     ):
@@ -77,8 +79,6 @@ class ArucoDetector(TargetDetector):
         self.running = False
         self.thread = None
         self.update_interval = 0.033
-        
-        
         
         # Contructor fields
         self.manage_camera = manage_camera
@@ -113,10 +113,11 @@ class ArucoDetector(TargetDetector):
     
     def stop(self):
         # Clean up any resources if necessary
-        self.terminate()
         if self.manage_camera and self.camera_started_by_detector:
             self.cam.terminate()
             print("% ArucoDetector:: Stopped")
+        
+        self.terminate()
     
     def terminate(self):
         if self.running:
@@ -138,7 +139,7 @@ class ArucoDetector(TargetDetector):
                 continue
             
             if self.frame_fail_count > 0:
-                print(f"% Camera recovered after {self.frame_fail_count} failed frames")
+                print("% Camera recovered after {self.frame_fail_count} failed frames")
                 self.frame_fail_count = 0
                 
             frame_out, detected = self.detect_aruco(
@@ -250,26 +251,27 @@ class ArucoDetector(TargetDetector):
                 # Pixel center of the marker corners in the image (used by Nav for rotation)
                 pixel_x = float(np.mean(image_points[:, 0]))
                 pixel_y = float(np.mean(image_points[:, 1]))
+                
+                R, _ = cv2.Rodrigues(rvec)
+                n = R @ np.array([0, 0, 1])
+                lr_tilt_rad = math.atan2(n[0], -n[2]) # tan(x,-z) (point towards the aruco
+                lr_tilt_deg = -math.degrees(lr_tilt_rad)
+                
+                #bearing_rad = math.atan2(x,z)
+                bearing_rad = math.atan2(-x,z)
+                bearing_deg = math.degrees(bearing_rad)
 
-                # NOTE: SHOULD USE THIS FOR FINAL !!!!!!!!!!!!!!!!!!!
                 detected_markers[current_id] = {
-                    "x": float(pixel_x),        # for testing in pixel
-                    "y": float(pixel_y),        # for testing in pixel
+                    "time_stamp": t.time(),
+                    "x": float(x),        # tvec x — lateral offset (meters)
+                    "y": float(y),        # tvec y — vertical offset (meters)
                     "z": float(z),        # tvec z — forward depth (meters)
                     "distance": distance, # Euclidean 3D distance (meters)
                     "pixel_x": pixel_x,  # pixel x center of marker (used by Nav)
                     "pixel_y": pixel_y,  # pixel y center of marker
+                    "lr_tilt": lr_tilt_deg, # aruco marker titled
+                    "bearing": bearing_deg # angle detecting the aruco marker
                 }
-                
-                # # NOTE: SHOULD USE THIS FOR THE FINAL !!!!!!!!!!!!!!!!
-                # detected_markers[current_id] = {
-                #     "x": float(x),        # tvec x — lateral offset (meters)
-                #     "y": float(y),        # tvec y — vertical offset (meters)
-                #     "z": float(z),        # tvec z — forward depth (meters)
-                #     "distance": distance, # Euclidean 3D distance (meters)
-                #     "pixel_x": pixel_x,  # pixel x center of marker (used by Nav)
-                #     "pixel_y": pixel_y,  # pixel y center of marker
-                # }
                 
         self.detected_markers = detected_markers
         self.last_frame = frame
@@ -291,20 +293,17 @@ class ArucoDetector(TargetDetector):
         
         image_width = self.last_frame.shape[1] if self.last_frame is not None else 820
 
-        # Bearing: horizontal angle from camera forward axis to marker.
-        # tvec x is lateral (positive = right), tvec z is depth (forward).
-        # Negate x so positive bearing = target is to the left, matching SWorldPoint convention.
-        bearing = math.atan2(-target["x"], target["z"])
-
         return {
             "id":       selected_id,
+            "time":     target["time_stamp"],
             "x":        target["pixel_x"],  # pixel x center — required by Nav for rotation
             "y":        target["pixel_y"],  # pixel y center
+            "tilt":     target["lr_tilt"],  # aruco marker titled
+            "bearing":  target["bearing"],  # horizontal angle to marker (radians, positive = left)
             "tvec_x":   target["x"],        # lateral offset in meters (camera frame)
             "tvec_y":   target["y"],        # vertical offset in meters (camera frame)
-            "z":        target["z"],        # forward depth in meters (camera frame)
+            "tvec_z":   target["z"],        # forward depth in meters (camera frame)
             "distance": target["distance"], # Euclidean 3D distance in meters
-            "bearing":  bearing,            # horizontal angle to marker (radians, positive = left)
             "image_width": image_width,     # required by Nav for pixel-to-angle conversion
             "valid":    True,
         }
@@ -336,8 +335,8 @@ class ArucoDetector(TargetDetector):
                             f"ID: {target['id']}, "
                             f"dist:{target['distance']:.3f}m, "
                             f"(x={target['x']:.1f}, y={target['y']:.1f})"
+                            f"bearing: {target['bearing']:.2f}, tilt: {target['tilt']:.2f} "
                         )
-                
                 ok, buffer = cv2.imencode(
                     '.jpg',
                     frame,
@@ -365,8 +364,7 @@ class ArucoDetector(TargetDetector):
                     port=args['port'],
                     threaded=True)    
         finally:
-            if self.manage_camera and self.camera_started_by_detector:
-                self.cam.terminate()
+            self.cam.terminate()
             cv2.destroyAllWindows()
 
     def run_local_gui(self):
@@ -383,13 +381,14 @@ class ArucoDetector(TargetDetector):
 
                 if target is None:
                     if tick % 2 == 0:
-                        print("% No target found")
+                        print("% No target found aruco2")
                 else:
                     if tick % 2 == 0:
                         print(
                             f"ID: {target['id']}, "
                             f"dist:{target['distance']:.3f}m, "
                             f"(x={target['x']:.1f}, y={target['y']:.1f})"
+                            f"bearing: {target['bearing']}, tilt: {target['tilt']} "
                         )
                 cv2.imshow("Aruco Detect", frame)
                 
@@ -398,8 +397,7 @@ class ArucoDetector(TargetDetector):
                     break
                 
         finally:
-            if self.manage_camera and self.camera_started_by_detector:
-                self.cam.terminate()
+            self.cam.terminate()
             cv2.destroyAllWindows()
 
     def display_text(self, frame, image_points, x , y, z, distance):
@@ -423,6 +421,8 @@ class ArucoDetector(TargetDetector):
 
 
 if __name__=='__main__':
+
+    from scam_usb import cam_usb as cam
     
     aruco = ArucoDetector(cam=cam, gpio=gpio, service=service, manage_camera = True)
     
@@ -456,8 +456,11 @@ if __name__=='__main__':
         print(
             f"% Startup get_target: id={startup_target['id']}, "
             f"dist={startup_target['distance']:.3f}m"
+            f" bearing = {startup_target['bearing']:.3f}° "
+            f" tilt = {startup_target['tilt']:.3f} °"
+            
         )
-    
+        
     if args.get("stream", False):
         aruco.run_mjpeg_stream(args)
     elif args.get("local", False):

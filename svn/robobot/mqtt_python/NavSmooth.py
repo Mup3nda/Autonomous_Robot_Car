@@ -17,7 +17,7 @@ class NavSmooth:
         self.desired_distance = desired_distance_to_target
         self.ctx = ctx
 
-        self.MAX_SPEED = 0.4
+        self.MAX_SPEED = 0.7
         self.MAX_W_SPEED = 0.45
 
         self.KP = 0.8
@@ -30,7 +30,7 @@ class NavSmooth:
 
         self.TOLERANCIA_R = 5
         self.TOLERANCIA_R_RAD = 0.02
-        self.TOLERANCIA_D = 0.03
+        self.TOLERANCIA_D = 0.02
 
         # Tuning constants for smooth-mode behavior
         self.ROT_INTEGRAL_ACTIVE_BAND = 0.6

@@ -12,8 +12,9 @@ if ROOT_DIR not in sys.path:
     sys.path.insert(0, ROOT_DIR)
 
 
+from Objectives.search_and_navigate_to_red_ball import SearchAndNavigateToRedBall
+from Objectives.look_for_aruco_objective import LookForArucoObjective
 from uservice import service
-
 from mission_runner import MissionRunner
 from robot_actions import RobotActions
 from mission_context import MissionContext
@@ -23,10 +24,25 @@ from Objectives.drive_turn_angle_objective import DriveTurnAngleObjective
 from Objectives.align_to_circle_tangent_objective import AlignToCircleTangentObjective
 from Objectives.search_and_navigate_to_blue_ball_objective import SearchAndNavigateToBlueBall
 from Objectives.arm_up_objective import ArmUpObjective
+from Objectives.arm_middle_objective import ArmMiddleObjective
 from Objectives.arm_down_objective import ArmDownObjective
+from Objectives.arm_middle_objective import ArmMiddleObjective
+from Objectives.gripper_open_objective import GripperOpenObjective
+from Objectives.gripper_middle_objective import GripperMiddleObjective
+from Objectives.gripper_close_objective import GripperCloseObjective
 from Objectives.drive_to_line_objective import DriveToLineObjective
+from Objectives.drive_to_line_zone_switch_objective import DriveToLineZoneSwitchObjective
+from Objectives.drive_distance_objective import DriveDistanceObjective
 from Objectives.search_and_navigate_to_aruco_objective import SearchAndNavigateToAruco
 from Objectives.search_and_navigate_to_platform_objective import SearchAndNavigateToPlatform
+from Objectives.drive_to_timer_and_back_objective import DriveToTimerAndBackObjective
+from Objectives.reset_origin_objective import ResetOriginObjective
+from Objectives.drive_backward_until_line_stop_objective import DriveBackwardUntilLineStopObjective
+from Objectives.drive_to_waypoint_until_line_count_objective import DriveToWaypointUntilLineCountObjective
+from Objectives.delay_objective import DelayObjective
+from Objectives.grab_target_objective import GrabTargetObjective
+from Objectives.drop_target_objective import DropTargetObjective
+from sodom import odom
 
 # Roundabout three-step tuning parameters.
 # Step 1: Entry line follow
@@ -80,7 +96,19 @@ ENTRY_TURN_2_DEG = CIRCLE_ENTRY_TANGENT_HEADING_DEG - ENTRY_TURN_1_DEG
 LINE_EXIT_FOLLOW_LEFT = False
 LINE_EXIT_FOLLOW_SPEED = 0.75
 
+# Zone-based side/speed switches for the post-roundabout line follow.
+# Tune x/y/radius in world frame using MissionLogs plot output.
+POST_ROUNDABOUT_SWITCH_ZONES = [
+    {
+        "name": "slow_down_zone",
+        "trigger_dist_m": 13.5,
+        "follow_left": False,
+        "follow_speed": 0.45,
+        "lost_line_timeout_s": 0.0,
+    }
+]
 
+#
 # Add objectives in the list below in the exact order they should execute.
 def build_objectives():
     objectives = [
@@ -134,8 +162,23 @@ def build_objectives():
         
         
     ]
+    
+
     return objectives
 
+def store_robot_position(ctx):
+    """Store global odometry pose samples for mission route plotting."""
+    log_dir = os.path.join(THIS_DIR, "MissionLogs")
+    os.makedirs(log_dir, exist_ok=True)
+    log_file = os.path.join(log_dir, "robot_position_log.txt")
+    with open(log_file, "a") as f:
+        x_world, y_world, h_world = odom.get_world_pose()
+        sample_ts = odom.pose_source.poseTime.timestamp()
+        obj_name = str(ctx.memory.get("_mission_current_objective") or "unknown").replace(",", ";")
+        obj_idx = ctx.memory.get("_mission_current_objective_index")
+        obj_idx_str = "" if obj_idx is None else str(int(obj_idx))
+        # CSV: pose_timestamp_s, x_world_m, y_world_m, heading_rad, objective_name, objective_index
+        f.write(f"{sample_ts:.3f},{x_world:.3f},{y_world:.3f},{h_world:.4f},{obj_name},{obj_idx_str}\n")
 
 if __name__ == "__main__":
     if service.process_running("midway-evaluation-mission"):
@@ -148,11 +191,17 @@ if __name__ == "__main__":
         print("% Starting midway evaluation mission")
         service.setup("localhost")
         if service.connected:
+            log_dir = os.path.join(THIS_DIR, "MissionLogs")
+            os.makedirs(log_dir, exist_ok=True)
+            log_file = os.path.join(log_dir, "robot_position_log.txt")
+            open(log_file, "w").close()
+            print("% Cleared MissionLogs/robot_position_log.txt for new run")
+
             ctx = MissionContext(service)
             ctx.actions.arm.bind_memory(ctx.memory)
             ctx.actions.arm.move_up()
             objectives = build_objectives()
-            runner = MissionRunner(objectives, ctx)
+            runner = MissionRunner(objectives, ctx, tick_hook=store_robot_position)
             runner.run()
         service.terminate()
     print("% Main Terminated")

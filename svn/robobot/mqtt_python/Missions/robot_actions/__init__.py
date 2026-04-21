@@ -8,6 +8,8 @@ from .edge import EdgeActions
 from .navigation import NavigationAction
 from .vision import VisionActions
 from .servo import ServoArmActions
+from .gripper import ServoGripActions
+from .ir import IRSensorActions
 
 class RobotActions:
     """Aggregates all robot control actions: drive, edge, navigation, and vision.
@@ -24,3 +26,6 @@ class RobotActions:
         self.navigation = NavigationAction()  # Navigation with any TargetDetector
         self.vision = VisionActions(cam, edge, gpio, service)  # Image capture and analysis
         self.arm = ServoArmActions(service)             # Arm servo control
+        self.gripper = ServoGripActions(service)         # Gripper servo control
+        from sir import ir
+        self.ir = IRSensorActions(ir)                   # Shared IR distance stream

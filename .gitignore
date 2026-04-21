@@ -69,8 +69,11 @@ svn/robobot/mqtt_python/Missions/logfile.txt*
 svn/robobot/mqtt_python/pid/
 
 svn/log/ip_disp.out
+svn/log
+.gitignore
 svn/log/
 svn/log/rebootinfo.txt
+svn/robobot/mqtt_python/Code.ipynb
 svn/log/ip_disp.out
 svn/log/rebootinfo.txt
 svn/log/log_mqtt_ip_disp.txt

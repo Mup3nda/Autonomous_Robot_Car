@@ -9,16 +9,19 @@ class Nav:
 
     def __init__(self):
         self.detector = None
-        self.desired_distance = None
+        self.desired_distance = 0.32
         self.target = None
         self.is_running = False
         self.nav_thread = None
+        self.COMPENSATE_PARAMETER = 30
 
-    def setup(self, detector, desired_distance_to_target, ctx):
+    def setup(self, detector, desired_distance_to_target, COMPENSATE_PARAMETER, ctx):
 
         self.detector = detector
         self.desired_distance = desired_distance_to_target
         self.ctx = ctx
+        self.COMPENSATE_PARAMETER = COMPENSATE_PARAMETER
+
 
         # navigation state
         self.rotation_phase = True
@@ -50,7 +53,9 @@ class Nav:
         self.LAST_ERROR = 0.0
         
         # desired vertical position of the ball
-        self.DESIRED_DISTANCE = 0.28
+
+        self.DESIRED_DISTANCE = self.desired_distance
+        #self.DESIRED_DISTANCE = 0.28
         #self.DESIRED_DISTANCE = 0.41
 
         # tolerances
@@ -101,10 +106,10 @@ class Nav:
                     dt = 0.05
 
                 img_width = self.target.get("image_width", 820)
-                img_center = img_width / 2.0
+                img_center = (img_width) / 2.0
 
                 # ---------- rotation error ----------
-                pixel_error = img_center - self.target["x"]
+                pixel_error = img_center - self.target["x"] - self.COMPENSATE_PARAMETER #To compensate the arm offset
                 rotation_error = pixel_error * (self.CAMERA_FOV / img_width)
 
                 # ---------- y error ----------

@@ -60,7 +60,7 @@ class SIr:
             f") {self.irInterval:.4f} sec " +
             str(self.irUpdCnt))
 
-    def decode(self, topic, msg):
+    def decode(self, topic, msg): 
         # decode MQTT message
         used = True
         if topic == "T0/ir" or topic == "T0/ird":
