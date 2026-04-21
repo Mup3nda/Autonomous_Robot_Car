@@ -103,10 +103,12 @@ class DriveToLineObjective(Objective):
             if search_elapsed > self.search_timeout_s:
                 # Stop if traveled >1m or >15s timeout without finding line
                 ctx.actions.drive.stop(instant=self.instant_stop)
+                ctx.memory["line_failed"] = True
                 self.state = DriveToLineState.STOPPED
                 
             if ctx.actions.edge.is_line_valid(confidence=LINE_FOUND_CONFIDENCE):
                 # Line detected! Switch to centering mode at low speed
+                ctx.memory["line_failed"] = False
                 ctx.actions.edge.start_following(velocity=self.centering_speed, follow_left=self.follow_left)
                 self.dist_to_line = search_dist  # Record distance to line
                 ctx.start_local_progress(self.ALONG_LINE_PROGRESS_KEY)
