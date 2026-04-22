@@ -57,7 +57,7 @@ WAYPOINT_FOR_CIRCLE_M = (0.3, 0.0)  # Distance (forward, sideways) from line end
 WAYPOINT_NAV_MODE = "smooth"  # "smooth" (drive+turn together) or "sequential" (rotate-then-drive)
 
 # Step 3: Circle roundabout
-CIRCLE_RADIUS_M = 0.36
+CIRCLE_RADIUS_M = 0.35
 CIRCLE_REVOLUTIONS = 1.5
 CIRCLE_FORWARD_CMD = 0.28
 CIRCLE_TURN_CMD = None  # Set e.g. 0.24 to override auto radius-based turning.
@@ -124,23 +124,29 @@ def build_objectives():
             search_speed=0.25,
             centering_speed=0.2,
             lost_line_timeout_s=0.3,
-            max_line_distance_m=1.90,
+            max_line_distance_m=1.75,
             max_duration=0.0,
             ),
-    # endregion
-    # region align to circle entry 
-        DriveDistanceObjective(
-            target_distance_m=0.80,
-            throttle=-0.25,
-            timeout_s=3.0,
-            instant_stop=True,
-        ),
-        DriveDistanceObjective(
-            target_distance_m=1.20,
-            throttle=0.30,
+            DriveDistanceObjective(
+            target_distance_m=0.55,
+            throttle=0.27,
             timeout_s=8.0,
             instant_stop=True,
         ),
+    # endregion
+    # region align to circle entry 
+        # DriveDistanceObjective(
+        #     target_distance_m=0.80,
+        #     throttle=-0.25,
+        #     timeout_s=3.0,
+        #     instant_stop=True,
+        # ),
+        # DriveDistanceObjective(
+        #     target_distance_m=1.20,
+        #     throttle=0.30,
+        #     timeout_s=8.0,
+        #     instant_stop=True,
+        # ),
         # DriveToWaypointObjective(
         #     waypoint=(0.40,0.0),
         #     is_local=True,
@@ -149,14 +155,14 @@ def build_objectives():
         #     ),
         # region entry turn and align to tangent and
         DriveTurnAngleObjective(
-            angle_deg=93.0,
+            angle_deg=84.0,
             linear_cmd=0.0,
             timeout_s=6.0,
         ),
         # region drive circle
         DriveCircleObjective(
             radius_m=CIRCLE_RADIUS_M,
-            revolutions=1.63, # one full circle + half circle
+            revolutions=1.6, # one full circle + half circle
             forward_cmd=CIRCLE_FORWARD_CMD,
             turn_cmd=CIRCLE_TURN_CMD,
             turn_rate_scale=CIRCLE_TURN_RATE_SCALE,
@@ -164,7 +170,7 @@ def build_objectives():
             timeout_s=CIRCLE_TIMEOUT_S,
         ),
         DriveTurnAngleObjective(
-            angle_deg=93.0,
+            angle_deg=90.0,
             linear_cmd=0.0,
             timeout_s=6.0,
         ),
