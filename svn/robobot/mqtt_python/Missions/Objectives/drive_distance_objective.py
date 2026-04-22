@@ -20,11 +20,16 @@ class DriveDistanceObjective(Objective):
     name = "drive_distance_meter"
     PROGRESS_KEY = "drive_meter"
     
-    def __init__(self, target_distance_m=1.0, throttle=0.2, timeout_s=15.0):
+    def __init__(self, target_distance_m=1.0, throttle=0.3, timeout_s=15.0, instant_stop=False):
         super().__init__()
         self.target_distance_m = float(target_distance_m)
         self.throttle = float(throttle)
         self.timeout_s = float(timeout_s)
+        self.instant_stop = bool(instant_stop)
+
+    def _distance_reached(self, driven_m):
+        """Distance completion should work for both forward and reverse driving."""
+        return abs(float(driven_m)) >= abs(self.target_distance_m)
     
 
     def start(self, ctx):
@@ -45,8 +50,8 @@ class DriveDistanceObjective(Objective):
             marker = ctx.memory["_local_progress"][self.PROGRESS_KEY]
             driven = ctx.distance_since_start(self.PROGRESS_KEY)
             elapsed = t.time() - marker["time_s"]
-            if driven > self.target_distance_m  or elapsed > 15:
-                ctx.actions.drive.stop()  # Stop driving
+            if self._distance_reached(driven) or (self.timeout_s > 0.0 and elapsed >= self.timeout_s):
+                ctx.actions.drive.stop(instant = self.instant_stop)  # Stop driving
                 self.state = DriveDistanceState.STOPPED
         elif self.state == DriveDistanceState.STOPPED:
             # State 2: Stopped - wait for velocity to settle to near-zero
@@ -69,5 +74,5 @@ class DriveDistanceObjective(Objective):
     def stop(self, ctx):
         """Clean up: turn off LED and stop the robot."""
         ctx.actions.drive.leds(0, 0, 0)  # Turn off LEDs
-        ctx.actions.drive.stop()  # Stop all movement
+        ctx.actions.drive.stop(instant=self.instant_stop)  # Stop all movement
         print("% Driving 1m ------------------------- end")

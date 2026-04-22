@@ -33,6 +33,12 @@ from Objectives.drive_to_line_objective import DriveToLineObjective
 from Objectives.search_and_navigate_to_aruco_objective import SearchAndNavigateToAruco
 from Objectives.search_and_navigate_to_platform_objective import SearchAndNavigateToPlatform
 from Objectives.drive_distance_objective import DriveDistanceObjective
+from Objectives.reset_origin_objective import ResetOriginObjective
+from Objectives.drive_backward_until_line_stop_objective import DriveBackwardUntilLineStopObjective
+from Objectives.drive_to_timer_and_back_objective import DriveToTimerAndBackObjective
+
+
+
 
 # Roundabout three-step tuning parameters.
 # Step 1: Entry line follow
@@ -148,10 +154,45 @@ def build_objectives():
         # DelayObjective(1.0),
         # ArmUpObjective(),
 
+    # DRIVE FROM THE LINE TO THE TIMER
         ArmUpObjective(),
-        GripperOpenObjective(),
+        #GripperOpenObjective(),
+        DriveBackwardUntilLineStopObjective(
+             reverse_speed=-0.2,
+             line_found_confidence=2,
+             timeout_s=8.0,
+             max_distance_m=1.5,
+         ), 
+        ResetOriginObjective(), # new 0,0,0 origin after following line end
+        DelayObjective(1.0),
+        #DriveDistanceObjective(target_distance_m=2.0),
+        # # DriveToTimerAndBackObjective(target_distance = 2.0),
+        DriveToWaypointObjective(
+            waypoint=(2.2, 0.10),
+            is_local=False,
+            print_interval=20,
+            relative_heading_deg=0.0,
+            nav_mode=WAYPOINT_NAV_MODE,
+        ),
+        DriveToWaypointObjective(
+            waypoint=(1.8, 1.5),
+            is_local=False,
+            print_interval=20,
+            relative_heading_deg=-20.0,
+            nav_mode=WAYPOINT_NAV_MODE,
+        ),
+        DelayObjective(1.0),
+        SearchAndNavigateToPlatform(marker_id=5, turn_rate=-0.18),
+        ArmUpObjective(),
         SearchAndNavigateToPlatform(marker_id=5),
         ArmMiddleObjective(),
+        DelayObjective(1.0),
+        DriveTurnAngleObjective(
+            angle_deg=-120.0,
+            linear_cmd=0.0,
+            timeout_s=6.0,
+        ),
+        DelayObjective(1.0),
 
         # SearchAndNavigateToAruco(marker_id=20,turn_rate=0.4),
         # ArmDownObjective(wait_after_s=2.0),

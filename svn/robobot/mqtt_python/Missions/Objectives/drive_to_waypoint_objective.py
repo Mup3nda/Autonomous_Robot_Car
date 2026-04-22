@@ -5,6 +5,7 @@ import math
 
 from mission_context import MissionContext
 from objective import Objective
+from sodom import odom
 
 # Add parent directory to path
 import sys
@@ -96,7 +97,7 @@ class DriveToWaypointObjective(Objective):
         self.state = DriveToWaypointState.NAVIGATING
         self.tick_count = 0
         self._done = False
-        self.start_heading_rad = float(ctx.pose.pose[2])
+        _, _, self.start_heading_rad = odom.get_world_pose()
 
         if self.relative_heading_rad is None:
             self.target_heading_rad = None
@@ -157,7 +158,7 @@ class DriveToWaypointObjective(Objective):
                         f"conf={target_info.get('confidence', 0)}"
                     )
         elif self.state == DriveToWaypointState.ALIGNING_HEADING:
-            current_heading = float(ctx.pose.pose[2])
+            _, _, current_heading = odom.get_world_pose()
             err = self._wrap_to_pi(self.target_heading_rad - current_heading)
 
             if abs(err) <= self.heading_tolerance_rad:
