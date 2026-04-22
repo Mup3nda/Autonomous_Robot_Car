@@ -12,11 +12,12 @@ if ROOT_DIR not in sys.path:
     sys.path.insert(0, ROOT_DIR)
 
 
+from Objectives.search_and_navigate_to_red_ball import SearchAndNavigateToRedBall
+from Objectives.look_for_aruco_objective import LookForArucoObjective
 from uservice import service
 from mission_runner import MissionRunner
 from robot_actions import RobotActions
 from mission_context import MissionContext
-from objective import Objective
 from Objectives.drive_circle_objective import DriveCircleObjective
 from Objectives.drive_to_waypoint_objective import DriveToWaypointObjective
 from Objectives.drive_turn_angle_objective import DriveTurnAngleObjective
@@ -38,6 +39,10 @@ from Objectives.drive_to_timer_and_back_objective import DriveToTimerAndBackObje
 from Objectives.reset_origin_objective import ResetOriginObjective
 from Objectives.drive_backward_until_line_stop_objective import DriveBackwardUntilLineStopObjective
 from Objectives.drive_to_waypoint_until_line_count_objective import DriveToWaypointUntilLineCountObjective
+from Objectives.delay_objective import DelayObjective
+from Objectives.grab_target_objective import GrabTargetObjective
+from Objectives.drop_target_objective import DropTargetObjective
+from Objectives.line_recovery_objective import LineRecovery
 from sodom import odom
 
 # Roundabout three-step tuning parameters.
@@ -100,33 +105,14 @@ POST_ROUNDABOUT_SWITCH_ZONES = [
         "trigger_dist_m": 13.5,
         "follow_left": False,
         "follow_speed": 0.45,
-        "lost_line_timeout_s": 0.0
+        "lost_line_timeout_s": 0.0,
     }
 ]
 
-class DelayObjective(Objective):
-    """Wait for a fixed amount of time, then finish."""
-
-    name = "delay"
-
-    def __init__(self, duration_s):
-        super().__init__()
-        self.duration_s = float(duration_s)
-
-    def start(self, ctx):
-        self._done = self.duration_s <= 0.0
-
-    def tick(self, ctx):
-        if ctx.state_time_passed() >= self.duration_s:
-            self._done = True
-
-    def stop(self, ctx):
-        pass
-
-
+#
 # Add objectives in the list below in the exact order they should execute.
 def build_objectives():
-    objectives=[
+    objectives = [
         GripperCloseObjective(),
         DelayObjective(2.0),
         GripperOpenObjective(),
@@ -139,7 +125,6 @@ def build_objectives():
             centering_speed=0.2,
             lost_line_timeout_s=0.3,
             max_line_distance_m=1.90,
-            instant_stop=True,
             max_duration=0.0,
             ),
     # endregion
@@ -152,7 +137,7 @@ def build_objectives():
         ),
         DriveDistanceObjective(
             target_distance_m=1.20,
-            throttle=0.27,
+            throttle=0.30,
             timeout_s=8.0,
             instant_stop=True,
         ),
@@ -164,14 +149,14 @@ def build_objectives():
         #     ),
         # region entry turn and align to tangent and
         DriveTurnAngleObjective(
-            angle_deg=80.0,
+            angle_deg=93.0,
             linear_cmd=0.0,
             timeout_s=6.0,
         ),
         # region drive circle
         DriveCircleObjective(
             radius_m=CIRCLE_RADIUS_M,
-            revolutions=1.61, #1.63 one full circle + half circle
+            revolutions=1.63, # one full circle + half circle
             forward_cmd=CIRCLE_FORWARD_CMD,
             turn_cmd=CIRCLE_TURN_CMD,
             turn_rate_scale=CIRCLE_TURN_RATE_SCALE,
@@ -179,7 +164,7 @@ def build_objectives():
             timeout_s=CIRCLE_TIMEOUT_S,
         ),
         DriveTurnAngleObjective(
-            angle_deg=98.0,
+            angle_deg=93.0,
             linear_cmd=0.0,
             timeout_s=6.0,
         ),
@@ -402,9 +387,9 @@ def build_objectives():
     #         ),
 
     # Sequence for grabbing targets
-        # GripperCloseObjective(),
-        # ArmUpObjective(),
-        # SearchAndNavigateToBlueBall(),
+       # GripperCloseObjective(),
+       # ArmUpObjective(),
+       # SearchAndNavigateToBlueBall(),
         # GripperOpenObjective(),
         # DelayObjective(1.0),
         # ArmDownObjective(wait_after_s=2.0),
@@ -419,6 +404,8 @@ def build_objectives():
         # GripperCloseObjective(),
         # DelayObjective(1.0)
         # ArmUpObjective(),
+        
+        
     ]
     
 
