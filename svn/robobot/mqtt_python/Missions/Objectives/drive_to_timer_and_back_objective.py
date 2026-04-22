@@ -43,13 +43,14 @@ class DriveToTimerAndBackObjective(Objective):
         offset_stop_distance = OFFSET_STOP_DIST,
         forward_throttle = FORWARD_THROTTLE,
         backward_throttle = BACKWARD_THROTTLE,
+
         
         ):
         super().__init__()
-        self.target_distance = target_distance
-        self.offset_stop_distance = offset_stop_distance,
-        self.forward_throttle = forward_throttle,
-        self.backward_throttle = backward_throttle,
+        self.target_distance = float(target_distance)
+        self.offset_stop_distance = float(offset_stop_distance)
+        self.forward_throttle = float(forward_throttle)
+        self.backward_throttle = float(backward_throttle)
         
     def start(self, ctx):
         self.state = DriveToTimerAndBackState.FORWARD_START
@@ -68,7 +69,7 @@ class DriveToTimerAndBackObjective(Objective):
             driven = ctx.distance_since_start(self.FORWARD_PROGRESS_KEY)
             elapsed = t.time() - marker["time_s"]
 
-            if driven >= self.TARGET_DISTANCE_M or elapsed > TIMEOUT_S:
+            if driven >= self.target_distance or elapsed > TIMEOUT_S:
                 ctx.actions.drive.stop(instant=False)
                 self.state = DriveToTimerAndBackState.FORWARD_STOPPED
 
@@ -88,7 +89,7 @@ class DriveToTimerAndBackObjective(Objective):
         elif self.state == DriveToTimerAndBackState.BACKWARD_START:
             ctx.start_local_progress(self.BACKWARD_PROGRESS_KEY)
             #ctx.actions.drive.rc(self.bacward_throttle, STEERING)
-            ctx.actions.drive.ramp_to(self.bacward_throttle, STEERING)
+            ctx.actions.drive.ramp_to(self.backward_throttle, STEERING)
             self.state = DriveToTimerAndBackState.BACKWARD_DRIVING
 
         elif self.state == DriveToTimerAndBackState.BACKWARD_DRIVING:
@@ -96,7 +97,7 @@ class DriveToTimerAndBackObjective(Objective):
             driven = abs(ctx.distance_since_start(self.BACKWARD_PROGRESS_KEY))
             elapsed = t.time() - marker["time_s"]
 
-            if driven >= self.TARGET_DISTANCE_M + self.OFFSET_STOP_DIST or elapsed > TIMEOUT_S:
+            if driven >= self.target_distance + self.offset_stop_distance or elapsed > TIMEOUT_S:
                 ctx.actions.drive.stop()
                 self.state = DriveToTimerAndBackState.BACKWARD_STOPPED
 
