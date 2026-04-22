@@ -27,6 +27,8 @@ server.add_stream(stream)
 server.start()
 print("% USE THE STREAMING ADRESS BELOW!!!!!!!")
 print(f"% USB WEBCAM streaming on http://0.0.0.0:{PORT}/usb_stream.mjpg")
+print(f"% TO KILL STREAM: sudo pkill -f usb_stream_server.py")
+print(f"% START STREAM: python3 ~/Autonomous_Robot_Car/svn/robobot/stream_server/usb_stream_server.py")
 
 try:
   while True:
