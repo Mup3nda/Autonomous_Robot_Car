@@ -125,6 +125,26 @@ class DelayObjective(Objective):
 # Add objectives in the list below in the exact order they should execute.
 def build_objectives():
     objectives=[
+        # Drive to the first timer
+        DriveToLineObjective(
+            follow_left=True,
+            follow_speed=0.4,
+            search_speed=0.25,
+            centering_speed=0.2,
+            lost_line_timeout_s=0.0,
+            max_duration = 0.0,
+            max_line_distance_m=2.3,
+            ),
+        DelayObjective(2.0),
+        DriveTurnAngleObjective(
+            angle_deg=-90.0,
+            linear_cmd=0.0,
+            timeout_s=6.0,
+        ),
+        DelayObjective(2.0),
+        DriveToTimerAndBackObjective(target_distance = 2.0),
+        DelayObjective(2.0),
+        
     ## region Following line
      #   DriveToLineObjective(
      #       follow_left=True,
