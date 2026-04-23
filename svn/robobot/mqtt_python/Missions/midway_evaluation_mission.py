@@ -159,6 +159,7 @@ def build_objectives():
             timeout_s=6.0,
         ),
        #endregion
+       #region Follow line until extra time
         DriveToLineObjective(follow_left=LINE_ENTRY_FOLLOW_LEFT,
                             follow_speed=0.45,
                             search_speed=LINE_ENTRY_SEARCH_SPEED,
@@ -182,12 +183,18 @@ def build_objectives():
              relative_heading_deg=None,
              nav_mode=WAYPOINT_NAV_MODE,
              ),
-        DriveToLineObjective(follow_left=LINE_ENTRY_FOLLOW_LEFT,
-                            follow_speed=0.65,
-                            search_speed=LINE_ENTRY_SEARCH_SPEED,
-                            lost_line_timeout_s=LINE_ENTRY_TIMEOUT_S,
-                            search_timeout_s= 2.5,
-                            instant_stop=False),
+        #endregion
+        #region Go back to line and go up the ramp
+         #endregion
+        DriveToLineLockStraightHeadingObjective(
+            follow_left=LINE_ENTRY_FOLLOW_LEFT,
+            follow_speed=0.5,
+            search_speed=LINE_ENTRY_SEARCH_SPEED,
+            lost_line_timeout_s=LINE_ENTRY_TIMEOUT_S,
+            heading_track_window_s=4.0,
+            heading_tolerance_deg=0.5,
+            instant_stop=False,
+        ),
         LineRecovery(),
         DriveBackwardUntilLineStopObjective(
              reverse_speed=-0.2,
@@ -195,6 +202,7 @@ def build_objectives():
              timeout_s=8.0,
              max_distance_m=1.5,
          ), 
+
          ResetOriginObjective(), # new 0,0,0 origin after following line end
          DelayObjective(0.5),
      # endregion
