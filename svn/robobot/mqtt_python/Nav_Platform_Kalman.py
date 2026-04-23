@@ -82,7 +82,7 @@ class Nav:
 
         self.BLEND_ALPHA = 0.9
         self.PREDICTION_HORIZON = 1.5
-        self.LOST_TIMEOUT = 2 #1
+        self.LOST_TIMEOUT = 2.2 #1
         self.last_seen_time = 0
         
         # --- ANGLE APPROACH CONFIG ---

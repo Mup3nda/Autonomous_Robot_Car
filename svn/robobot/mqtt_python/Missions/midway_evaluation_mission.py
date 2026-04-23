@@ -189,7 +189,7 @@ def build_objectives():
             timeout_s=6.0,
         ),
         ArmUpObjective(),
-        GripperOpenObjective(),
+        GripperMiddleObjective(),
         SearchAndNavigateToPlatform(marker_id=5),
         ArmMiddleObjective(),
         DelayObjective(2),
