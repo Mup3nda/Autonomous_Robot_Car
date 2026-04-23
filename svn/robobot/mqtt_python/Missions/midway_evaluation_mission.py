@@ -2,6 +2,7 @@
 
 import os
 import sys
+import time
 import math
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -43,6 +44,7 @@ from Objectives.drive_to_waypoint_until_line_count_objective import DriveToWaypo
 from Objectives.delay_objective import DelayObjective
 from Objectives.grab_target_objective import GrabTargetObjective
 from Objectives.drop_target_objective import DropTargetObjective
+from Objectives.line_recovery_objective import LineRecovery
 from sodom import odom
 
 # Roundabout three-step tuning parameters.
@@ -57,7 +59,7 @@ WAYPOINT_FOR_CIRCLE_M = (0.3, 0.0)  # Distance (forward, sideways) from line end
 WAYPOINT_NAV_MODE = "smooth"  # "smooth" (drive+turn together) or "sequential" (rotate-then-drive)
 
 # Step 3: Circle roundabout
-CIRCLE_RADIUS_M = 0.36
+CIRCLE_RADIUS_M = 0.349
 CIRCLE_REVOLUTIONS = 1.5
 CIRCLE_FORWARD_CMD = 0.28
 CIRCLE_TURN_CMD = None  # Set e.g. 0.24 to override auto radius-based turning.
@@ -112,90 +114,89 @@ POST_ROUNDABOUT_SWITCH_ZONES = [
 #
 # Add objectives in the list below in the exact order they should execute.
 def build_objectives():
-    objectives=[
-    #    GripperCloseObjective(),
-    #    DelayObjective(2.0),
-    #    GripperOpenObjective(),
-    ##    ArmUpObjective(),
-    ## region Following line approach roundabout
-    #    DriveToLineObjective(
-    #        follow_left=True,
-    #        follow_speed=0.4,
-    #        search_speed=0.25,
-    #        centering_speed=0.2,
-    #        lost_line_timeout_s=0.3,
-    #        max_line_distance_m=1.90,
-    #        max_duration=0.0,
-    #        ),
-    ## endregion
-    ## region align to circle entry 
-    #    DriveDistanceObjective(
-    #        target_distance_m=0.20,
-    #        throttle=-0.25,
-    #        timeout_s=3.0,
-    #        instant_stop=True,
-    #    ),
-    #    DriveDistanceObjective(
-    #        target_distance_m=0.70,
-    #        throttle=0.30,
-    #        timeout_s=8.0,
-    #        instant_stop=True,
-    #    ),
-    #    # DriveToWaypointObjective(
-    #    #     waypoint=(0.40,0.0),
-    #    #     is_local=True,
-    #    #     print_interval=20,
-    #    #     nav_mode=WAYPOINT_NAV_MODE,
-    #    #     ),
-    #    # region entry turn and align to tangent and
-    #    DriveTurnAngleObjective(
-    #        angle_deg=93.0,
-    #        linear_cmd=0.0,
-    #        timeout_s=6.0,
-    #    ),
-    #    # region drive circle
-    #    DriveCircleObjective(
-    #        radius_m=CIRCLE_RADIUS_M,
-    #        revolutions=1.63, # one full circle + half circle
-    #        forward_cmd=CIRCLE_FORWARD_CMD,
-    #        turn_cmd=CIRCLE_TURN_CMD,
-    #        turn_rate_scale=CIRCLE_TURN_RATE_SCALE,
-    #        clockwise=CIRCLE_CLOCKWISE,
-    #        timeout_s=CIRCLE_TIMEOUT_S,
-    #    ),
-    #    DriveTurnAngleObjective(
-    #        angle_deg=93.0,
-    #        linear_cmd=0.0,
-    #        timeout_s=6.0,
-    #    ),
-    ## # endregion
-    # # region post-roundabout line follow and exit 
-        DriveToLineLockStraightHeadingObjective(
-            follow_left=LINE_ENTRY_FOLLOW_LEFT,
-            follow_speed=0.5,
-            search_speed=LINE_ENTRY_SEARCH_SPEED,
-            lost_line_timeout_s=LINE_ENTRY_TIMEOUT_S,
-            heading_track_window_s=4.0,
-            heading_tolerance_deg=0.5,
-            instant_stop=False,
+    objectives = [
+        GripperCloseObjective(),
+        DelayObjective(2.0),
+        GripperOpenObjective(),
+        ArmUpObjective(),
+    # region Following line approach roundabout
+        DriveToLineObjective(
+            follow_left=True,
+            follow_speed=0.40,
+            search_speed=0.25,
+            centering_speed=0.2,
+            lost_line_timeout_s=0.3,
+            max_line_distance_m=1.77,
+            max_duration=0.0,
+            ),
+        DelayObjective(0.5),
+        DriveDistanceObjective(
+            target_distance_m=0.52,
+            throttle=0.30,
+            timeout_s=8.0,
+            instant_stop=True,
         ),
-    #    DriveToLineObjective(
-    #        follow_left=False,
-    #        follow_speed=0.7,
-    #        search_speed=0.25,
-    #        centering_speed=0.2,
-    #        lost_line_timeout_s=0.01,
-    #        max_line_distance_m=1.91,
-    #        max_duration=0.0,
-    #        ),
-         DriveBackwardUntilLineStopObjective(
+
+        # region entry turn and align to tangent and drive circle
+        DriveTurnAngleObjective(
+            angle_deg=82.0,
+            linear_cmd=0.0,
+            timeout_s=6.0,
+        ),
+        
+        DriveCircleObjective(
+            radius_m=CIRCLE_RADIUS_M,
+            revolutions=1.6, # one full circle + half circle
+            forward_cmd=0.28,
+            turn_cmd=CIRCLE_TURN_CMD,
+            turn_rate_scale=CIRCLE_TURN_RATE_SCALE,
+            clockwise=CIRCLE_CLOCKWISE,
+            timeout_s=CIRCLE_TIMEOUT_S,
+        ),
+        DriveTurnAngleObjective(
+            angle_deg=93.0,
+            linear_cmd=0.0,
+            timeout_s=6.0,
+        ),
+       #endregion
+        DriveToLineObjective(follow_left=LINE_ENTRY_FOLLOW_LEFT,
+                            follow_speed=0.45,
+                            search_speed=LINE_ENTRY_SEARCH_SPEED,
+                            lost_line_timeout_s=LINE_ENTRY_TIMEOUT_S,
+                            max_line_distance_m=4.0,
+                            instant_stop=False),
+        LineRecovery(max_line_distance_m=3.2),
+        DelayObjective(0.3),
+        ResetOriginObjective(), # new 0,0,0 origin after following line end
+        DriveToWaypointObjective(
+             waypoint=(0.4,-1.4),
+             is_local=False,
+             print_interval=20,
+             relative_heading_deg=None,
+             nav_mode=WAYPOINT_NAV_MODE,
+             ),
+        DriveToWaypointObjective(
+             waypoint=(0.0,0.0),
+             is_local=False,
+             print_interval=20,
+             relative_heading_deg=None,
+             nav_mode=WAYPOINT_NAV_MODE,
+             ),
+        DriveToLineObjective(follow_left=LINE_ENTRY_FOLLOW_LEFT,
+                            follow_speed=0.65,
+                            search_speed=LINE_ENTRY_SEARCH_SPEED,
+                            lost_line_timeout_s=LINE_ENTRY_TIMEOUT_S,
+                            search_timeout_s= 2.5,
+                            instant_stop=False),
+        LineRecovery(),
+        DriveBackwardUntilLineStopObjective(
              reverse_speed=-0.2,
              line_found_confidence=2,
              timeout_s=8.0,
              max_distance_m=1.5,
          ), 
          ResetOriginObjective(), # new 0,0,0 origin after following line end
-         DelayObjective(1.0),
+         DelayObjective(0.5),
      # endregion
      #region Get extra time return to line
          ArmUpObjective(),
@@ -403,6 +404,8 @@ def build_objectives():
         # GripperCloseObjective(),
         # DelayObjective(1.0)
         # ArmUpObjective(),
+        
+        
     ]
     
 

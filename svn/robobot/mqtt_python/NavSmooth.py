@@ -18,7 +18,7 @@ class NavSmooth:
         self.ctx = ctx
 
         self.MAX_SPEED = 0.7
-        self.MAX_W_SPEED = 0.45
+        self.MAX_W_SPEED = 0.9
 
         self.KP = 0.8
         self.KI = 0.02
