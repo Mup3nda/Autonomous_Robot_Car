@@ -42,7 +42,7 @@ class LineRecovery(Objective):
                 search_timeout_s=search_timeout_s,
                 max_line_distance_m=max_line_distance_m,
             ),
-            DriveToTimerAndBackObjective(drive_back=True),
+            
             
         ]
         self.index = 0

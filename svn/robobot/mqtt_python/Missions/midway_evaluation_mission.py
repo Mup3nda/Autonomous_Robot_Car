@@ -128,9 +128,9 @@ def build_objectives():
             max_line_distance_m=1.77,
             max_duration=0.0,
             ),
-        DelayObjective(1.0),
+        DelayObjective(0.5),
         DriveDistanceObjective(
-            target_distance_m=0.53,
+            target_distance_m=0.52,
             throttle=0.30,
             timeout_s=8.0,
             instant_stop=True,
@@ -146,7 +146,7 @@ def build_objectives():
         DriveCircleObjective(
             radius_m=CIRCLE_RADIUS_M,
             revolutions=1.6, # one full circle + half circle
-            forward_cmd=CIRCLE_FORWARD_CMD,
+            forward_cmd=0.28,
             turn_cmd=CIRCLE_TURN_CMD,
             turn_rate_scale=CIRCLE_TURN_RATE_SCALE,
             clockwise=CIRCLE_CLOCKWISE,
@@ -162,16 +162,30 @@ def build_objectives():
                             follow_speed=0.45,
                             search_speed=LINE_ENTRY_SEARCH_SPEED,
                             lost_line_timeout_s=LINE_ENTRY_TIMEOUT_S,
-                            max_line_distance_m=4.8,
+                            max_line_distance_m=4.0,
                             instant_stop=False),
-        LineRecovery(max_line_distance_m=4.7),
-        DriveToTimerAndBackObjective(drive_back=True,
-                                     targect_distance_forward=1.7),
+        LineRecovery(max_line_distance_m=3.2),
+        DelayObjective(0.3),
+        ResetOriginObjective(), # new 0,0,0 origin after following line end
+        DriveToWaypointObjective(
+             waypoint=(0.4,-1.4),
+             is_local=False,
+             print_interval=20,
+             relative_heading_deg=None,
+             nav_mode=WAYPOINT_NAV_MODE,
+             ),
+        DriveToWaypointObjective(
+             waypoint=(0.0,0.0),
+             is_local=False,
+             print_interval=20,
+             relative_heading_deg=None,
+             nav_mode=WAYPOINT_NAV_MODE,
+             ),
         DriveToLineObjective(follow_left=LINE_ENTRY_FOLLOW_LEFT,
                             follow_speed=0.65,
                             search_speed=LINE_ENTRY_SEARCH_SPEED,
                             lost_line_timeout_s=LINE_ENTRY_TIMEOUT_S,
-                            search_timeout_s=0.3,
+                            search_timeout_s= 2.5,
                             instant_stop=False),
         LineRecovery(),
         DriveBackwardUntilLineStopObjective(
@@ -181,7 +195,7 @@ def build_objectives():
              max_distance_m=1.5,
          ), 
          ResetOriginObjective(), # new 0,0,0 origin after following line end
-         DelayObjective(1.0),
+         DelayObjective(0.5),
      # endregion
      #region Get extra time return to line
          ArmUpObjective(),

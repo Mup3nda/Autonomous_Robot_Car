@@ -56,7 +56,7 @@ class DriveToWaypointObjective(Objective):
         relative_heading_deg=None,
         heading_tolerance_deg=3.0,
         heading_kp=1.4,
-        heading_max_turn_cmd=0.35,
+        heading_max_turn_cmd=0.9,
         heading_min_turn_cmd=0.12,
         is_local=False,
     ):
