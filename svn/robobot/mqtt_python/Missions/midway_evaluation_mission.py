@@ -184,7 +184,7 @@ def build_objectives():
         # DelayObjective(1.0),
         #SearchAndNavigateToPlatform(marker_id=5, turn_rate=0.18),
         DriveTurnAngleObjective(
-            angle_deg=35.0,
+            angle_deg=32.0,
             linear_cmd=0.0,
             timeout_s=6.0,
         ),
