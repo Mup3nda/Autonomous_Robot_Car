@@ -132,12 +132,12 @@ class DelayObjective(Objective):
 def build_objectives():
     objectives = [
         ArmUpObjective(),
-        DriveUntilEndRamp(follow_left=True,
-            follow_speed=0.40,
-            search_speed=0.25,
-            centering_speed=0.25,
-            lost_line_timeout_s=1.5),
-        DelayObjective(1.0),
+        # DriveUntilEndRamp(follow_left=True,
+        #     follow_speed=0.40,
+        #     search_speed=0.25,
+        #     centering_speed=0.25,
+        #     lost_line_timeout_s=1.5),
+        # DelayObjective(1.0),
         DriveToWaypointObjective(
               waypoint=(0.2,0),
               is_local=True,
@@ -182,17 +182,18 @@ def build_objectives():
         DriveToLineObjective(follow_speed=0.5,max_duration=2.0, stop_after_centering=True),
         DriveToLineUntilCurveObjective(curve_detection_delay_s=1.0, follow_speed=0.3),
         DelayObjective(1.0),
-        DriveTurnAngleObjective(-10.0, linear_cmd=0.0, turn_cmd=0.6, timeout_s=5.0),
+        SearchAndNavigateToHole(desired_distance=0.50),
+        # DriveTurnAngleObjective(-10.0, linear_cmd=0.0, turn_cmd=0.6, timeout_s=5.0),
         
-        DriveToWaypointObjective(
-              waypoint=(0.1,0),
-              is_local=True,
-              print_interval=20,
-              relative_heading_deg=0.0,
-              nav_mode=WAYPOINT_NAV_MODE,
-              ), 
-        ArmDownObjective(wait_after_s=2.0),
-        DelayObjective(1.0),
+        # DriveToWaypointObjective(
+        #       waypoint=(0.1,0),
+        #       is_local=True,
+        #       print_interval=20,
+        #       relative_heading_deg=0.0,
+        #       nav_mode=WAYPOINT_NAV_MODE,
+        #       ), 
+        # ArmDownObjective(wait_after_s=2.0),
+        # DelayObjective(1.0),
         # DriveToWaypointObjective(
         #       waypoint=(0.1,0),
         #       is_local=True,
