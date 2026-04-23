@@ -42,6 +42,7 @@ from sodom import odom
 from Objectives.search_and_navigate_to_golf_ball import SearchAndNavigateToGolfBall
 from Objectives.drive_until_end_ramp import DriveUntilEndRamp
 from Objectives.drive_to_line_objective_ramp_imu import DriveToLineObjectiveIMU
+from Objectives.search_and_navigate_to_hole_objective import SearchAndNavigateToHole
 
 # Roundabout three-step tuning parameters.
 # Step 1: Entry line follow
@@ -154,7 +155,8 @@ def build_objectives():
             lost_line_timeout_s=0.5,
             max_duration_s=40.0,
         ),
- 
+
+        SearchAndNavigateToHole(),
         #SearchAndNavigateToBlueBall(),
         #ArmDownObjective(wait_after_s=2.0),
 
