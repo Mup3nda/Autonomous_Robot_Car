@@ -41,7 +41,7 @@ class NavigateToBallObjective(Objective):
         self.nav_mode = str(nav_mode).lower()
         self.color = str(color).lower()
         self.tick_count = 0
-        self.COMPENSATE_PARAMETER = 30
+        self.COMPENSATE_PARAMETER = 0
 
     def start(self, ctx: MissionContext):
         """Initialize navigation to blue ball using NavigationAction."""
@@ -63,7 +63,7 @@ class NavigateToBallObjective(Objective):
     def tick(self, ctx: MissionContext):
         """Execute one iteration of navigation."""
         self.tick_count += 1
-        
+        print(f"Desired distance to ball: {self.desired_distance}m")
         # Check if navigation objective is complete
         if ctx.actions.navigation.is_complete():
             #ctx.actions.arm.move_down()  # Deploy arm to pick up ball

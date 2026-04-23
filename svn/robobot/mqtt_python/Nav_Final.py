@@ -53,7 +53,7 @@ class Nav:
         self.LAST_ERROR = 0.0
         
         # desired vertical position of the ball
-        self.DESIRED_DISTANCE = 0.32
+        self.DESIRED_DISTANCE = 0.35
         #self.DESIRED_DISTANCE = 0.41
 
         # tolerances

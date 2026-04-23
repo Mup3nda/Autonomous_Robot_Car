@@ -15,7 +15,7 @@ class SearchAndNavigateToGolfBall(CompositeObjective):
         turn_rate=0.5,
         min_confidence=1,
         search_print_interval=20,
-        desired_distance=0.41,
+        desired_distance=0.50,
         navigate_print_interval=20,
     ):
         objectives = [
@@ -26,7 +26,7 @@ class SearchAndNavigateToGolfBall(CompositeObjective):
                 color="red_orange",
             ),
             NavigateToBallObjective(
-                desired_distance=desired_distance,
+                desired_distance=0.6,
                 print_interval=navigate_print_interval,
                 nav_mode="sequential",
                 color="red_orange"
