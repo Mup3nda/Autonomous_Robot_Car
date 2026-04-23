@@ -126,7 +126,7 @@ def build_objectives():
             follow_speed=0.8,
             search_speed=0.25,
             centering_speed=0.2,
-            lost_line_timeout_s=0.5,
+            lost_line_timeout_s=0.8,
             max_line_distance_m=5.7,#1.77
             max_duration=0.0,
             instant_stop=False

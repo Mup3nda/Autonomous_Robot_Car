@@ -89,11 +89,11 @@ class SEdge:
           'maxIntegral': 0.75
         },
         'fast': {
-            'Kp': 0.6,   # Original proportional gain (works well at 0.95 m/s)
+            'Kp': 0.7,   # Original proportional gain (works well at 0.95 m/s)
             'Ki': 0.2,    # Original integral gain
             'Kd': 0.25,   # Original derivative gain
-            'derivativeAlpha': 0.8,    # Original low-pass filter
-            'maxIntegral': 0.8
+            'derivativeAlpha': 0.7,    # Original low-pass filter
+            'maxIntegral': 0.6
         }
     }
     # Currently active profile parameters
@@ -200,9 +200,13 @@ class SEdge:
       os.makedirs(self.pidLogDir, exist_ok=True)
       ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
       header = (
-        "timestamp,edge_upd_cnt,profile,target_velocity,velocity,dt,error,pos_left,pos_right,"
-        "P,I,D,Y,line_integral,line_deriv_filtered,line_valid,crossing,high,average,"
-        "edge0,edge1,edge2,edge3,edge4,edge5,edge6,edge7\n"
+        "timestamp,edge_n_timestamp,edge_timestamp,edge_n_upd_cnt,edge_upd_cnt,profile,"
+        "follow_left,ref_position,target_velocity,velocity,dt,error,line_position,pos_left,pos_right,"
+        "P,I,D,de_raw,Y,lineKp,lineKi,lineKd,derivative_alpha,max_integral,"
+        "line_integral,line_deriv_filtered,ctrl_sat,rate_limited,max_turnrate,wheelbase,max_wheel_vel,"
+        "cmd_timestamp,cmd_velocity,cmd_turnrate,line_valid,line_valid_cnt,crossing,crossing_cnt,high,average,line_valid_threshold,crossing_threshold,"
+        "edge_n0,edge_n1,edge_n2,edge_n3,edge_n4,edge_n5,edge_n6,edge_n7,"
+        "edge_raw0,edge_raw1,edge_raw2,edge_raw3,edge_raw4,edge_raw5,edge_raw6,edge_raw7\n"
       )
       for profile in ("slow", "medium", "fast"):
         fn = os.path.join(self.pidLogDir, f"pid_{profile}.csv")
@@ -213,20 +217,27 @@ class SEdge:
         self.pidLogFiles[profile] = f
       print(f"% Edge:: PID logs initialized in {self.pidLogDir}")
 
-    def logPIDSample(self, dt, e, P, I, D):
+    def logPIDSample(self, dt, e, linePosition, P, I, D, de_raw, ctrlSaturated, rateLimited, max_turnrate, cmdTimestamp):
       """Write one PID control sample to the active profile log file."""
       if self.currentProfile not in self.pidLogFiles:
         return
       f = self.pidLogFiles[self.currentProfile]
       row = (
-        f"{datetime.now().timestamp():.6f},{self.edge_nUpdCnt},{self.currentProfile},"
-        f"{self.targetVelocity:.4f},{self.velocity:.4f},{dt:.5f},{e:.5f},"
-        f"{self.posLeft:.5f},{self.posRight:.5f},{P:.5f},{I:.5f},{D:.5f},{self.lineY:.5f},"
+        f"{datetime.now().timestamp():.6f},{self.edge_nTime.timestamp():.6f},{self.edgeTime.timestamp():.6f},"
+        f"{self.edge_nUpdCnt},{self.edgeUpdCnt},{self.currentProfile},"
+        f"{1 if self.followLeft else 0},{self.refPosition:.5f},{self.targetVelocity:.4f},{self.velocity:.4f},"
+        f"{dt:.5f},{e:.5f},{linePosition:.5f},{self.posLeft:.5f},{self.posRight:.5f},"
+        f"{P:.5f},{I:.5f},{D:.5f},{de_raw:.5f},{self.lineY:.5f},"
+        f"{self.lineKp:.5f},{self.lineKi:.5f},{self.lineKd:.5f},{self.derivativeAlpha:.5f},{self.maxIntegral:.5f},"
         f"{self.lineIntegral:.5f},{self.lineDerivFiltered:.5f},"
-        f"{1 if self.lineValid else 0},{1 if self.crossingLine else 0},"
-        f"{self.high},{self.average:.2f},"
+        f"{1 if ctrlSaturated else 0},{1 if rateLimited else 0},{max_turnrate:.5f},{self.wheelbase:.5f},{self.maxWheelVel:.5f},"
+        f"{cmdTimestamp:.6f},{self.velocity:.5f},{self.lineY:.5f},"
+        f"{1 if self.lineValid else 0},{self.lineValidCnt},{1 if self.crossingLine else 0},{self.crossingLineCnt},"
+        f"{self.high},{self.average:.2f},{self.lineValidThreshold},{self.crossingThreshold},"
         f"{self.edge_n[0]},{self.edge_n[1]},{self.edge_n[2]},{self.edge_n[3]},"
-        f"{self.edge_n[4]},{self.edge_n[5]},{self.edge_n[6]},{self.edge_n[7]}\n"
+        f"{self.edge_n[4]},{self.edge_n[5]},{self.edge_n[6]},{self.edge_n[7]},"
+        f"{self.edge[0]},{self.edge[1]},{self.edge[2]},{self.edge[3]},"
+        f"{self.edge[4]},{self.edge[5]},{self.edge[6]},{self.edge[7]}\n"
       )
       f.write(row)
       self.pidLogCount += 1
@@ -494,9 +505,10 @@ class SEdge:
       from uservice import service
       # Calculate current error
       if self.followLeft:
-        e = self.refPosition - self.posLeft
+        linePosition = self.posLeft
       else:
-        e = self.refPosition - self.posRight
+        linePosition = self.posRight
+      e = self.refPosition - linePosition
       # when line (posLeft or posRight) is to (much) to the right edge position is positive.
       # The robot is thus too much to the left.
       # To correct we need a negative turn rate (CV),
@@ -531,17 +543,22 @@ class SEdge:
       #
       # Control output
       self.lineY = P + I + D
+      ctrlSaturated = False
       #
       # Output saturation
       if self.lineY > 4:
         self.lineY = 4
+        ctrlSaturated = True
       elif self.lineY < -4:
         self.lineY = -4
+        ctrlSaturated = True
       #
       # Rate limiting: prevent wheel velocity saturation
       # velDif = wheelbase * turnrate, so:
       # v_right = linVel + velDif/2 <= maxWheelVel
       # Therefore: turnrate <= 2 * (maxWheelVel - linVel) / wheelbase
+      max_turnrate = 0.0
+      rateLimited = False
       if self.velocity > 0.001:
         max_turnrate = 2.0 * (self.maxWheelVel - self.velocity) / self.wheelbase
         if max_turnrate < 0:
@@ -549,15 +566,17 @@ class SEdge:
         if abs(self.lineY) > max_turnrate:
           # Clamp turn rate to physically achievable limit
           self.lineY = max_turnrate if self.lineY > 0 else -max_turnrate
+          rateLimited = True
       #
       # Save error for next iteration
       self.lineE0 = e
-      # Save PID tuning telemetry per active profile
-      self.logPIDSample(dt, e, P, I, D)
       #
       # make response
-      par = f"rc {self.velocity:.3f} {self.lineY:.3f} {t.time()}"
+      cmdTimestamp = t.time()
+      par = f"rc {self.velocity:.3f} {self.lineY:.3f} {cmdTimestamp}"
       service.send("robobot/cmd/ti", par) # send new turn command, maintaining velocity
+      # Save PID tuning telemetry per active profile
+      self.logPIDSample(dt, e, linePosition, P, I, D, de_raw, ctrlSaturated, rateLimited, max_turnrate, cmdTimestamp)
       # debug print
       if True: # self.edge_nUpdCnt % 20 == 0:
         print(f"% Edge::followLine PID: e={e:.3f}, P={P:.3f}, I={I:.3f}, D={D:.3f}, y={self.lineY:.3f} -> {par}")
