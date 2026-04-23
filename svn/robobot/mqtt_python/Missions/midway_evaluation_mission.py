@@ -122,14 +122,15 @@ def build_objectives():
     # region Following line approach roundabout
         DriveToLineObjective(
             follow_left=True,
-            follow_speed=0.40,
+            follow_speed=0.90,
             search_speed=0.25,
             centering_speed=0.2,
             lost_line_timeout_s=0.3,
-            max_line_distance_m=1.77,
+            max_line_distance_m=1.64,#1.77
             max_duration=0.0,
+            instant_stop=False
             ),
-        DelayObjective(0.5),
+        #DelayObjective(0.5),
         DriveDistanceObjective(
             target_distance_m=0.52,
             throttle=0.30,
@@ -161,13 +162,13 @@ def build_objectives():
        #endregion
        #region Follow line until extra time
         DriveToLineObjective(follow_left=LINE_ENTRY_FOLLOW_LEFT,
-                            follow_speed=0.45,
+                            follow_speed=0.6,
                             search_speed=LINE_ENTRY_SEARCH_SPEED,
                             lost_line_timeout_s=LINE_ENTRY_TIMEOUT_S,
                             max_line_distance_m=4.0,
                             instant_stop=False),
         LineRecovery(max_line_distance_m=3.2),
-        DelayObjective(0.3),
+        DelayObjective(0.5),
         ResetOriginObjective(), # new 0,0,0 origin after following line end
         DriveToWaypointObjective(
              waypoint=(0.4,-1.4),
@@ -204,13 +205,13 @@ def build_objectives():
          ), 
 
          ResetOriginObjective(), # new 0,0,0 origin after following line end
-         DelayObjective(0.5),
+         #DelayObjective(0.1),
      # endregion
      #region Get extra time return to line
          ArmUpObjective(),
          DriveToTimerAndBackObjective(),
          # region Following line
-         DelayObjective(2.0),
+        # DelayObjective(2.0),
      # endregion
      # region Following line before knocking down cup
          DriveToLineObjective(
@@ -222,17 +223,17 @@ def build_objectives():
              max_duration = 0.0,
              max_line_distance_m=0.5,
              ),
-         DelayObjective(2.0),
+        # DelayObjective(2.0),
      # endregion
      # region arm out and knock down cup by turning left 90 degree
          ArmMiddleObjective(),
-         DelayObjective(2.0),
+         DelayObjective(0.1),
          DriveTurnAngleObjective(
              angle_deg=-100,
              linear_cmd=0.0,
              timeout_s=6.0,
          ),
-         DelayObjective(2.0),
+        # DelayObjective(0.2),
          ArmUpObjective(),
          DriveTurnAngleObjective(
              angle_deg=100,
@@ -258,7 +259,7 @@ def build_objectives():
          SearchAndNavigateToBlueBall(turn_rate=0.3),
          GrabTargetObjective(nav_mode=WAYPOINT_NAV_MODE),
      # end region
-         DelayObjective(2.0),
+         #DelayObjective(2.0),
      # region go to blue ball drop off location
          DriveToWaypointObjective(
              waypoint=(0.9,1.3),
@@ -285,7 +286,7 @@ def build_objectives():
              ),
         SearchAndNavigateToRedBall(),
         GrabTargetObjective(nav_mode=WAYPOINT_NAV_MODE),
-        DelayObjective(2.0),
+       # DelayObjective(2.0),
      # end region
      # region go to red ball drop off location
          DriveToWaypointObjective(
@@ -305,7 +306,7 @@ def build_objectives():
          ),
      # end region
      # region go to platform pick up location
-         DelayObjective(2.0),
+         #DelayObjective(2.0),
          DriveToWaypointObjective(
              waypoint=(1.94,0.7),
              is_local=False,
@@ -367,7 +368,7 @@ def build_objectives():
              DropTargetObjective(delay_s=1.0),
      #end region
      # region return to finish line
-         DelayObjective(2.0),
+         #DelayObjective(2.0),
          DriveToWaypointUntilLineCountObjective(
              waypoint=(1.6,5.0),
              is_local=False,

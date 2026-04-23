@@ -47,6 +47,7 @@ class DriveActions:
             for i in range(steps):
                 factor = (steps - i - 1) / steps
                 self.rc(start_v * factor, start_w * factor)
+                print("Instant Stopping step: " + str(i))
                 time.sleep(0.05)
         self.rc(0.0, 0.0)
         

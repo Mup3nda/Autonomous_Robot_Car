@@ -75,25 +75,25 @@ class SEdge:
     # PID profiles for different velocities
     pidProfiles = {
         'slow': {
-            'Kp': 1.1,    # More aggressive proportional gain for slow speeds
-            'Ki': 0.2,    # Increased integral gain
-            'Kd': 0.15,   # Increased derivative gain
-            'derivativeAlpha': 0.5,    # More low-pass filtering for noise reduction
-            'maxIntegral': 1.5
+            'Kp': 0.85,    # More aggressive proportional gain for slow speeds
+            'Ki': 0.3,    # Increased integral gain
+            'Kd': 0.18,   # Increased derivative gain
+            'derivativeAlpha': 0.22,    # More low-pass filtering for noise reduction
+            'maxIntegral': 1.0
         },
         'medium': {
           'Kp': 0.72,    # Reduced proportional gain to lower oscillation at ~0.45 m/s
-          'Ki': 0.20,    # Reduced integral gain to avoid windup-driven wobble
+          'Ki': 0.3,    # Reduced integral gain to avoid windup-driven wobble
           'Kd': 0.18,    # Increased derivative damping
-          'derivativeAlpha': 0.40,   # More low-pass filtering on derivative term
+          'derivativeAlpha': 0.20,   # More low-pass filtering on derivative term
           'maxIntegral': 0.75
         },
         'fast': {
-            'Kp': 0.8,   # Original proportional gain (works well at 0.95 m/s)
+            'Kp': 0.6,   # Original proportional gain (works well at 0.95 m/s)
             'Ki': 0.2,    # Original integral gain
             'Kd': 0.25,   # Original derivative gain
-            'derivativeAlpha': 0.6,    # Original low-pass filter
-            'maxIntegral': 1.2
+            'derivativeAlpha': 0.8,    # Original low-pass filter
+            'maxIntegral': 0.8
         }
     }
     # Currently active profile parameters

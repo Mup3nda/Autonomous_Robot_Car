@@ -175,11 +175,12 @@ class DriveToLineObjective(Objective):
                 f"# drive to line {self.dist_to_line:.3f}m, then along line "
                 f"{along_line_dist:.3f}m in {along_line_time:.3f} seconds"
             )
-            ctx.actions.drive.stop(instant=self.instant_stop)
+            #ctx.actions.drive.stop(instant=self.instant_stop)
             self._done = True  # Mark objective as complete
 
     def stop(self, ctx):
         """Clean up: turn off LED and stop the robot."""
         ctx.actions.drive.leds(0, 0, 0)  # Turn off LEDs
-        ctx.actions.drive.stop(instant=self.instant_stop)  # Stop all movement
+        if abs(ctx.pose.velocity()) > STOPPED_VELOCITY_EPS:
+            ctx.actions.drive.stop(instant=self.instant_stop)  # Stop all movement
         print("% Driving to line ------------------------- end")
