@@ -2,9 +2,7 @@
 
 import os
 import sys
-import time
 import math
-import time
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 ROOT_DIR = os.path.dirname(THIS_DIR)
@@ -14,44 +12,49 @@ if ROOT_DIR not in sys.path:
     sys.path.insert(0, ROOT_DIR)
 
 
-from Objectives.search_and_navigate_to_red_ball import SearchAndNavigateToRedBall
-from Objectives.look_for_aruco_objective import LookForArucoObjective
 from uservice import service
 from mission_runner import MissionRunner
 from robot_actions import RobotActions
 from mission_context import MissionContext
+from objective import Objective
 from Objectives.drive_circle_objective import DriveCircleObjective
 from Objectives.drive_to_waypoint_objective import DriveToWaypointObjective
 from Objectives.drive_turn_angle_objective import DriveTurnAngleObjective
 from Objectives.align_to_circle_tangent_objective import AlignToCircleTangentObjective
 from Objectives.search_and_navigate_to_blue_ball_objective import SearchAndNavigateToBlueBall
 from Objectives.arm_up_objective import ArmUpObjective
-from Objectives.arm_middle_objective import ArmMiddleObjective
 from Objectives.arm_down_objective import ArmDownObjective
 from Objectives.arm_middle_objective import ArmMiddleObjective
 from Objectives.gripper_open_objective import GripperOpenObjective
 from Objectives.gripper_middle_objective import GripperMiddleObjective
 from Objectives.gripper_close_objective import GripperCloseObjective
 from Objectives.drive_to_line_objective import DriveToLineObjective
-from Objectives.drive_to_line_until_curve_objective import DriveToLineUntilCurveObjective
 from Objectives.drive_to_line_zone_switch_objective import DriveToLineZoneSwitchObjective
-from Objectives.drive_to_line_lock_straight_heading_objective import DriveToLineLockStraightHeadingObjective
-from Objectives.drive_distance_objective import DriveDistanceObjective
 from Objectives.search_and_navigate_to_aruco_objective import SearchAndNavigateToAruco
 from Objectives.search_and_navigate_to_platform_objective import SearchAndNavigateToPlatform
 from Objectives.drive_to_timer_and_back_objective import DriveToTimerAndBackObjective
 from Objectives.reset_origin_objective import ResetOriginObjective
 from Objectives.drive_backward_until_line_stop_objective import DriveBackwardUntilLineStopObjective
 from Objectives.drive_to_waypoint_until_line_count_objective import DriveToWaypointUntilLineCountObjective
-from Objectives.delay_objective import DelayObjective
-from Objectives.grab_target_objective import GrabTargetObjective
-from Objectives.drop_target_objective import DropTargetObjective
-from Objectives.line_recovery_objective import LineRecovery
+from Objectives.CompositeObjectives.final_competition_regions import (
+    FollowLineApproachRoundaboutComposite,
+    RoundaboutComposite,
+    PostRoundaboutLineFollowAndExitComposite,
+    GetExtraTimeReturnToLineComposite,
+    FollowLineBeforeKnockCupComposite,
+    KnockDownCupComposite,
+    GoToBallPickupLocationAComposite,
+    GoToBlueBallDropoffComposite,
+    GoToBallPickupLocationBComposite,
+    GoToRedBallDropoffComposite,
+    GoToPlatformPickupComposite,
+    GoToPlatformDropoffDComposite,
+    GoToPlatformPickupAgainComposite,
+    GoToPlatformDropoffAComposite,
+    ReturnToFinishLineComposite,
+    GoToLineAndFollowToEndComposite,
+)
 from sodom import odom
-from Objectives.search_and_navigate_to_golf_ball import SearchAndNavigateToGolfBall
-from Objectives.drive_until_end_ramp import DriveUntilEndRamp
-from Objectives.drive_to_line_objective_ramp_imu import DriveToLineObjectiveIMU
-from Objectives.search_and_navigate_to_hole_objective import SearchAndNavigateToHole
 
 # Roundabout three-step tuning parameters.
 # Step 1: Entry line follow
@@ -65,7 +68,7 @@ WAYPOINT_FOR_CIRCLE_M = (0.3, 0.0)  # Distance (forward, sideways) from line end
 WAYPOINT_NAV_MODE = "smooth"  # "smooth" (drive+turn together) or "sequential" (rotate-then-drive)
 
 # Step 3: Circle roundabout
-CIRCLE_RADIUS_M = 0.349
+CIRCLE_RADIUS_M = 0.36
 CIRCLE_REVOLUTIONS = 1.5
 CIRCLE_FORWARD_CMD = 0.28
 CIRCLE_TURN_CMD = None  # Set e.g. 0.24 to override auto radius-based turning.
@@ -113,142 +116,63 @@ POST_ROUNDABOUT_SWITCH_ZONES = [
         "trigger_dist_m": 13.5,
         "follow_left": False,
         "follow_speed": 0.45,
-        "lost_line_timeout_s": 0.0,
+        "lost_line_timeout_s": 0.0
     }
 ]
 
-#
+class DelayObjective(Objective):
+    """Wait for a fixed amount of time, then finish."""
+
+    name = "delay"
+
+    def __init__(self, duration_s):
+        super().__init__()
+        self.duration_s = float(duration_s)
+
+    def start(self, ctx):
+        self._done = self.duration_s <= 0.0
+
+    def tick(self, ctx):
+        if ctx.state_time_passed() >= self.duration_s:
+            self._done = True
+
+    def stop(self, ctx):
+        pass
+
+
 # Add objectives in the list below in the exact order they should execute.
 def build_objectives():
     objectives = [
-        ArmUpObjective(),
-        #  DriveUntilEndRamp(follow_left=False,
-        #      follow_speed=0.5,
-        #      search_speed=0.25,
-        #      centering_speed=0.25,
-        #      lost_line_timeout_s=0.3),
-        #  DelayObjective(1.0),
-        DriveToLineObjective(follow_speed=0.5,max_duration=15.0, stop_after_centering=False),
-        #DriveToLineUntilCurveObjective(curve_detection_delay_s=1.0, follow_speed=0.3),
-        DriveToWaypointObjective(
-              waypoint=(0.2,0),
-              is_local=True,
-              print_interval=20,
-              relative_heading_deg=0.0,
-              nav_mode=WAYPOINT_NAV_MODE,
-              ),
-        DriveTurnAngleObjective(85.0, linear_cmd=0.0, turn_cmd=0.8, timeout_s=5.0),
-        SearchAndNavigateToGolfBall(desired_distance=0.6),
-        #SearchAndNavigateToBlueBall(),
-        GripperOpenObjective(),
-        DelayObjective(1.0),
-        ArmDownObjective(wait_after_s=2.0),
-        DelayObjective(1.0),
-        DriveToWaypointObjective(
-              waypoint=(0.05,0),
-              is_local=True,
-              print_interval=20,
-              relative_heading_deg=0.0,
-              nav_mode=WAYPOINT_NAV_MODE,
-              ),
-        GripperCloseObjective(),
-        DelayObjective(2.0),
-        ArmUpObjective(),
-        DelayObjective(1.0), 
-        DriveTurnAngleObjective(-150.0, linear_cmd=0.01, turn_cmd=0.8, timeout_s=5.0),
-        # DriveToWaypointObjective(
-        #       waypoint=(0,-0.4),
-        #       is_local=True,
-        #       print_interval=20,
-        #       relative_heading_deg=-122.0,
-        #       nav_mode=WAYPOINT_NAV_MODE,
-        #       ), 
-        DriveToWaypointObjective(
-              waypoint=(0.3,0),
-              is_local=True,
-              print_interval=20,
-              relative_heading_deg=0,
-              nav_mode=WAYPOINT_NAV_MODE,
-              ), 
-        DriveTurnAngleObjective(40.0, linear_cmd=0.0, turn_cmd=0.8, timeout_s=5.0),
-        DriveToLineObjective(follow_speed=0.5,max_duration=2.0, stop_after_centering=True),
-        DriveToLineUntilCurveObjective(curve_detection_delay_s=1.0, follow_speed=0.3),
-        DelayObjective(1.0),
-        SearchAndNavigateToHole(desired_distance=0.80),
-        # DriveTurnAngleObjective(-10.0, linear_cmd=0.0, turn_cmd=0.6, timeout_s=5.0),
-        
-        # DriveToWaypointObjective(
-        #       waypoint=(0.1,0),
-        #       is_local=True,
-        #       print_interval=20,
-        #       relative_heading_deg=0.0,
-        #       nav_mode=WAYPOINT_NAV_MODE,
-        #       ), 
-        ArmDownObjective(wait_after_s=2.0),
-        # DelayObjective(1.0),
-        # DriveToWaypointObjective(
-        #       waypoint=(0.1,0),
-        #       is_local=True,
-        #       print_interval=20,
-        #       relative_heading_deg=0.0,
-        #       nav_mode=WAYPOINT_NAV_MODE,
-        #       ), 
-        DelayObjective(1.0), 
-        GripperOpenObjective(),
-        DelayObjective(1.0), 
-        DriveToWaypointObjective(
-              waypoint=(0.1,0),
-              is_local=True,
-              print_interval=20,
-              relative_heading_deg=0,
-              nav_mode=WAYPOINT_NAV_MODE,
-              ), 
-        DelayObjective(1.0), 
-        ArmUpObjective(),
-        # DriveTurnAngleObjective(-25.0, linear_cmd=0.07, turn_cmd=0.1, timeout_s=5.0),
-        # GripperCloseObjective(),
-        # ArmUpObjective(),
-        # DelayObjective(1.0),
-        DriveTurnAngleObjective(100.0, linear_cmd=0.01, turn_cmd=0.8, timeout_s=5.0),
-        # DriveToWaypointObjective(
-        #       waypoint=(0.30,0),
-        #       is_local=True,
-        #       print_interval=20,
-        #       relative_heading_deg=0.0,
-        #       nav_mode=WAYPOINT_NAV_MODE,
-        #       ), 
-        DriveToLineObjective(),
-        #DriveTurnAngleObjective(-70.0, linear_cmd=0.0, turn_cmd=0.8, timeout_s=5.0),
-        #DriveToWaypointObjective(waypoint=(1.0,0.0), reset_origin=True, print_interval=10, nav_mode=WAYPOINT_NAV_MODE),
-        #DriveTurnAngleObjective(-50.0, linear_cmd=0.0, turn_cmd=0.8, timeout_s=5.0),
-        # DriveToLineUntilCurveObjective(
-        #     follow_left=LINE_ENTRY_FOLLOW_LEFT,
-        #     search_speed=LINE_ENTRY_SEARCH_SPEED,
-        #     follow_speed=LINE_ENTRY_FOLLOW_SPEED,
-        #     curve_threshold=1.0,
-        #     min_follow_time_s=1.0,
-        #     lost_line_timeout_s=0.5,
-        #     max_duration_s=40.0,
-        # ),
- 
-        #SearchAndNavigateToBlueBall(),
-        #ArmDownObjective(wait_after_s=2.0),
-
-        #ArmUpObjective(),
-        #SearchAndNavigateToAruco(marker_id=53,turn_rate=0.3),
-        #ArmDownObjective(wait_after_s=2.0),
-
-        #ArmUpObjective(),
-        # SearchAndNavigateToPlatform(marker_id=5),
-        # ArmDownObjective(wait_after_s=2.0),
-
-        # SearchAndNavigateToBlueBall(turn_rate=0.8),
-        # ArmDownObjective(wait_after_s=2.0),
-        # # ArmUpObjective(),
-
-        # SearchAndNavigateToAruco(marker_id=20,turn_rate=0.4),
-        # ArmDownObjective(wait_after_s=2.0),
-        #ArmUpObjective(),
+        FollowLineApproachRoundaboutComposite(),
+        RoundaboutComposite(
+            nav_mode=WAYPOINT_NAV_MODE,
+            radius_m=CIRCLE_RADIUS_M,
+            revolutions=1.61,
+            forward_cmd=CIRCLE_FORWARD_CMD,
+            turn_cmd=CIRCLE_TURN_CMD,
+            turn_rate_scale=CIRCLE_TURN_RATE_SCALE,
+            clockwise=CIRCLE_CLOCKWISE,
+            timeout_s=CIRCLE_TIMEOUT_S,
+        ),
+        PostRoundaboutLineFollowAndExitComposite(
+            follow_left=LINE_ENTRY_FOLLOW_LEFT,
+            search_speed=LINE_ENTRY_SEARCH_SPEED,
+            switch_zones=POST_ROUNDABOUT_SWITCH_ZONES,
+            lost_line_timeout_s=LINE_ENTRY_TIMEOUT_S,
+        ),
+        GetExtraTimeReturnToLineComposite(),
+        FollowLineBeforeKnockCupComposite(),
+        KnockDownCupComposite(),
+        GoToBallPickupLocationAComposite(nav_mode=WAYPOINT_NAV_MODE),
+        GoToBlueBallDropoffComposite(nav_mode=WAYPOINT_NAV_MODE),
+        GoToBallPickupLocationBComposite(nav_mode=WAYPOINT_NAV_MODE),
+        GoToRedBallDropoffComposite(nav_mode=WAYPOINT_NAV_MODE),
+        GoToPlatformPickupComposite(nav_mode=WAYPOINT_NAV_MODE),
+        GoToPlatformDropoffDComposite(nav_mode=WAYPOINT_NAV_MODE),
+        GoToPlatformPickupAgainComposite(nav_mode=WAYPOINT_NAV_MODE),
+        GoToPlatformDropoffAComposite(nav_mode=WAYPOINT_NAV_MODE),
+        ReturnToFinishLineComposite(nav_mode=WAYPOINT_NAV_MODE),
+        GoToLineAndFollowToEndComposite(),
     ]
     
 
@@ -269,14 +193,14 @@ def store_robot_position(ctx):
         f.write(f"{sample_ts:.3f},{x_world:.3f},{y_world:.3f},{h_world:.4f},{obj_name},{obj_idx_str}\n")
 
 if __name__ == "__main__":
-    if service.process_running("midway-evaluation-mission"):
-        print("% midway-evaluation-mission is already running - terminating")
+    if service.process_running("final-competition-mission"):
+        print("% final-competition-mission is already running - terminating")
         print("%   if it is partially crashed in the background, then try:")
-        print("%     pkill midway-evaluation-mission")
+        print("%     pkill final-competition-mission")
         print("%   or, if that fails use the most brutal kill")
-        print("%     pkill -9 midway-evaluation-mission")
+        print("%     pkill -9 final-competition-mission")
     else:
-        print("% Starting midway evaluation mission")
+        print("% Starting final competition mission")
         service.setup("localhost")
         if service.connected:
             log_dir = os.path.join(THIS_DIR, "MissionLogs")

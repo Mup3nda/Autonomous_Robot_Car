@@ -19,6 +19,8 @@ class SearchAndNavigateToAruco(CompositeObjective):
         desired_distance=0.4,
         navigate_print_interval=20,
         COMPENSATE_PARAMETER = 20,
+        scan_mode=LookForArucoObjective.SCAN_MODE_SPIN,
+
     ):
         objectives = [
             LookForArucoObjective(
@@ -26,6 +28,7 @@ class SearchAndNavigateToAruco(CompositeObjective):
                 turn_rate=turn_rate,
                 min_confidence=min_confidence,
                 print_interval=search_print_interval,
+                scan_mode=scan_mode,
             ),
             NavigateToArucoObjective(
                 marker_id = marker_id,

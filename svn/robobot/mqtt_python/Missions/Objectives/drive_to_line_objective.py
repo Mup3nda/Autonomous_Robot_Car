@@ -19,13 +19,13 @@ SEARCH_SPEED = 0.2
 CENTERING_SPEED = 0.2
 FOLLOW_SPEED = 0.80
 SEARCH_MAX_DISTANCE_M = 15.0
-SEARCH_TIMEOUT_S = 15.0
+SEARCH_TIMEOUT_S = 3.0
 LINE_FOUND_CONFIDENCE = 4
 CENTERED_CONFIDENCE = 8
 CENTERED_MIN_TIME_S = 2.0
 CENTERING_TIMEOUT_S = 4.0
 FOLLOW_VALID_CONFIDENCE = 2
-LOST_LINE_TIMEOUT_S = 5
+LOST_LINE_TIMEOUT_S = 5.0
 STOPPED_VELOCITY_EPS = 0.001
 FOLLOW_LEFT = False  # Set to True to follow line on left side instead of right
 
@@ -55,6 +55,7 @@ class DriveToLineObjective(Objective):
         instant_stop=True,
         max_duration=0.0,
         stop_after_centering=False,
+        search_timeout_s=SEARCH_TIMEOUT_S,
     ):
         super().__init__()
         self.follow_left = bool(follow_left)
@@ -66,6 +67,8 @@ class DriveToLineObjective(Objective):
         self.instant_stop = bool(instant_stop)
         self.max_duration = float(max_duration)
         self.stop_after_centering = bool(stop_after_centering)
+        self.search_timeout_s = float(search_timeout_s)
+
     def start(self, ctx):
         """Initialize local progress trackers without resetting global odometry."""
         self.state = DriveToLineState.START
@@ -102,12 +105,15 @@ class DriveToLineObjective(Objective):
             search_marker = ctx.memory["_local_progress"][self.SEARCH_PROGRESS_KEY]
             search_dist = ctx.distance_since_start(self.SEARCH_PROGRESS_KEY)
             search_elapsed = t.time() - search_marker["time_s"]
-            if search_dist > SEARCH_MAX_DISTANCE_M or search_elapsed > SEARCH_TIMEOUT_S:
+            if search_elapsed > self.search_timeout_s:
                 # Stop if traveled >1m or >15s timeout without finding line
                 ctx.actions.drive.stop(instant=self.instant_stop)
+                ctx.memory["line_failed"] = True
                 self.state = DriveToLineState.STOPPED
+                
             if ctx.actions.edge.is_line_valid(confidence=LINE_FOUND_CONFIDENCE):
                 # Line detected! Switch to centering mode at low speed
+                ctx.memory["line_failed"] = False
                 ctx.actions.edge.start_following(velocity=self.centering_speed, follow_left=self.follow_left)
                 self.dist_to_line = search_dist  # Record distance to line
                 ctx.start_local_progress(self.ALONG_LINE_PROGRESS_KEY)
