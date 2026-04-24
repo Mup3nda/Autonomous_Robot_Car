@@ -552,11 +552,10 @@ class SEdge:
         linePosition = self.posLeft
       else:
         linePosition = self.posRight
-      e = self.refPosition - linePosition
-      # when line (posLeft or posRight) is to (much) to the right edge position is positive.
-      # The robot is thus too much to the left.
-      # To correct we need a negative turn rate (CV),
-      # so sign of e is OK
+      e = linePosition - self.refPosition
+      # When the line is to the right, linePosition is positive.
+      # Positive turn rate in rc() rotates the robot to the right,
+      # so the sign of e must be positive for a line on the right.
       #
       # Get sample time in seconds
       dt = self.edge_nInterval / 1000.0  # convert ms to seconds
