@@ -34,14 +34,14 @@ class NavigateToBallObjective(Objective):
         "sequential" (rotate-then-drive) or "smooth" (simultaneous drive+turn)
     """
     
-    def __init__(self, desired_distance=0.41, print_interval=20, nav_mode="sequential", color="blue"): #NavMode "sequential" or "smooth". Sequential is Nav.py Smooth is NavSmooth.py
+    def __init__(self, desired_distance=0.32, print_interval=20, nav_mode="sequential", color="blue", COMPENSATE_PARAMETER=20): #NavMode "sequential" or "smooth". Sequential is Nav.py Smooth is NavSmooth.py
         super().__init__()
         self.desired_distance = desired_distance
         self.print_interval = print_interval
         self.nav_mode = str(nav_mode).lower()
         self.color = str(color).lower()
         self.tick_count = 0
-        self.COMPENSATE_PARAMETER = 20
+        self.COMPENSATE_PARAMETER = COMPENSATE_PARAMETER
 
     def start(self, ctx: MissionContext):
         """Initialize navigation to blue ball using NavigationAction."""

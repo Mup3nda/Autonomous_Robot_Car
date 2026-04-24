@@ -25,7 +25,7 @@ class NavigateToHoleObjective(Objective):
         self.print_interval = print_interval
         self.nav_mode = str(nav_mode).lower()
         self.tick_count = 0
-        self.COMPENSATE_PARAMETER = 30
+        self.COMPENSATE_PARAMETER = 40
 
     def start(self, ctx: MissionContext):
         """Initialize navigation to hole."""
