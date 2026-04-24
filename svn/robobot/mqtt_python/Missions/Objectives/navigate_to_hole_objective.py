@@ -19,13 +19,13 @@ class NavigateToHoleObjective(Objective):
     Uses the same navigation pipeline as balls, but with SHole detector.
     """
 
-    def __init__(self, desired_distance=0.40, print_interval=20, nav_mode="sequential"):
+    def __init__(self, desired_distance=0.40, print_interval=20, nav_mode="sequential", COMPENSATE_PARAMETER = 35):
         super().__init__()
         self.desired_distance = desired_distance
         self.print_interval = print_interval
         self.nav_mode = str(nav_mode).lower()
         self.tick_count = 0
-        self.COMPENSATE_PARAMETER = 40
+        self.COMPENSATE_PARAMETER = COMPENSATE_PARAMETER
 
     def start(self, ctx: MissionContext):
         """Initialize navigation to hole."""

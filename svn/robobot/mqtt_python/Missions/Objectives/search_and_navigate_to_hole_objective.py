@@ -17,6 +17,7 @@ class SearchAndNavigateToHole(CompositeObjective):
         search_print_interval=20,
         desired_distance=0.35,
         navigate_print_interval=20,
+        COMPENSATE_PARAMETER = 35
     ):
         objectives = [
             LookForHoleObjective(
@@ -27,7 +28,8 @@ class SearchAndNavigateToHole(CompositeObjective):
             NavigateToHoleObjective(
                 desired_distance=desired_distance,
                 print_interval=navigate_print_interval,
-                nav_mode="sequential"
+                nav_mode="sequential",
+                COMPENSATE_PARAMETER = COMPENSATE_PARAMETER
             ),
         ]
         super().__init__(objectives)

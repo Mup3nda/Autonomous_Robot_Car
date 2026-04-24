@@ -17,6 +17,7 @@ class SearchAndNavigateToGolfBall(CompositeObjective):
         search_print_interval=20,
         desired_distance=0.50,
         navigate_print_interval=20,
+        COMPENSATE_PARAMETER = 30,
     ):
         objectives = [
             LookForBallObjective(
@@ -30,7 +31,7 @@ class SearchAndNavigateToGolfBall(CompositeObjective):
                 print_interval=navigate_print_interval,
                 nav_mode="sequential",
                 color="red_orange",
-                COMPENSATE_PARAMETER=30
+                COMPENSATE_PARAMETER=COMPENSATE_PARAMETER
             ),
         ]
         super().__init__(objectives)
