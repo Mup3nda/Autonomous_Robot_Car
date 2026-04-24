@@ -38,21 +38,35 @@ class NavigateToArucoObjective(Objective):
         "sequential" (rotate-then-drive) or "smooth" (simultaneous drive+turn)
     """
     
-    def __init__(self, marker_id=53, desired_distance=0.41, print_interval=20, nav_mode="aruco"): #NavMode "aruco" for aruco controller. Sequential is Nav.py Smooth is NavSmooth.py
+    def __init__(
+        self, 
+        marker_id=53, 
+        desired_distance=0.41, 
+        print_interval=20, 
+        nav_mode="aruco", 
+        use_found_marker_from_memory=False): #NavMode "aruco" for aruco controller. Sequential is Nav.py Smooth is NavSmooth.py
         super().__init__()
         self.desired_distance = desired_distance
         self.print_interval = print_interval
         self.nav_mode = str(nav_mode).lower()
         self.tick_count = 0
         self.marker_id = marker_id
+        self.use_found_marker_from_memory = use_found_marker_from_memory
+        self.activate_marker = marker_id
 
     def start(self, ctx: MissionContext):
         """Initialize navigation to ArUco marker using NavigationAction."""
         self.state = NavigateToArucoState.MOVING
         self.tick_count = 0
         
+        self.activate_marker = self.marker_id
+        if self.use_found_marker_from_memory:
+            found_id = ctx.memory("aruco_found_id")
+            if found_id is not None:
+                self.activate_marker = found_id
+        
         # Create detector for the target ArUco marker
-        detector = ArucoDetector(cam=ctx.cam, gpio=ctx.gpio, service=ctx.service, target_id=self.marker_id)
+        detector = ArucoDetector(cam=ctx.cam, gpio=ctx.gpio, service=ctx.service, target_id=self.activate_marker)
         
         # Setup navigation action with this detector
         ctx.actions.navigation.setup_detector(detector)
@@ -61,7 +75,7 @@ class NavigateToArucoObjective(Objective):
                                      nav_mode=self.nav_mode)
         ctx.actions.navigation.start()
         
-        print(f"% Objective: Navigate To ArUco Marker {self.marker_id} (target_distance={self.desired_distance}m, nav_mode={self.nav_mode})")
+        print(f"% Objective: Navigate To ArUco Marker {self.active_marker_id} (target_distance={self.desired_distance}m, nav_mode={self.nav_mode})")
     
     def tick(self, ctx: MissionContext):
         """Execute one iteration of navigation."""

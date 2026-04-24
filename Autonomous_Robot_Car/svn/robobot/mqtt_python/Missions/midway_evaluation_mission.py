@@ -148,14 +148,19 @@ def build_objectives():
         # DelayObjective(1.0),
         # ArmUpObjective(),
 
-        ArmUpObjective(),
-        GripperOpenObjective(),
-        SearchAndNavigateToPlatform(marker_id=5)
+        # ArmUpObjective(),
+        # GripperOpenObjective(),
+        # SearchAndNavigateToPlatform(marker_id=5)
         
 
-        # SearchAndNavigateToAruco(marker_id=20,turn_rate=0.4),
-        # ArmDownObjective(wait_after_s=2.0),
-        # ArmUpObjective(),
+        # LOOKING FOR CUBE AFTER KCOKING
+        ArmUpObjective(),
+        GripperOpenObjective(),
+        SearchAndNavigateToAruco(marker_id=53, fallback_marker_id=20, search_time_out=6.0, turn_rate=0.4),
+        ArmDownObjective(wait_after_s=2.0),
+        DelayObjective(1.0),
+        GripperCloseObjective(),
+        ArmUpObjective(),
         
         ]
     return objectives

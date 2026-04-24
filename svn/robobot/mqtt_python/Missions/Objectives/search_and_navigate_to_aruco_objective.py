@@ -13,6 +13,8 @@ class SearchAndNavigateToAruco(CompositeObjective):
     def __init__(
         self,
         marker_id=0,
+        fallback_marker_id=None,
+        search_time_out=5.0,
         turn_rate=0.5,
         min_confidence=1,
         search_print_interval=20,
@@ -22,6 +24,8 @@ class SearchAndNavigateToAruco(CompositeObjective):
         objectives = [
             LookForArucoObjective(
                 marker_id = marker_id,
+                fallback_marker_id=None,
+                search_time_out=5.0,
                 turn_rate=turn_rate,
                 min_confidence=min_confidence,
                 print_interval=search_print_interval,

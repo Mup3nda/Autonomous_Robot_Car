@@ -183,27 +183,33 @@ def build_objectives():
         # ),
         # DelayObjective(1.0),
         # SearchAndNavigateToPlatform(marker_id=5, turn_rate=0.18),
-        DriveTurnAngleObjective(
-            angle_deg=30.0,
-            linear_cmd=0.0,
-            timeout_s=6.0,
-        ),
+        # # DETECT ARUCO PLATFORM
+        # DriveTurnAngleObjective(
+        #     angle_deg=30.0,
+        #     linear_cmd=0.0,
+        #     timeout_s=6.0,
+        # ),
+        # ArmUpObjective(),
+        # GripperOpenObjective(),
+        # SearchAndNavigateToPlatform(marker_id=5),
+        # ArmMiddleObjective(),
+        # DelayObjective(2),
+        # GripperMiddleObjective(),
+        # DriveTurnAngleObjective(
+        #     angle_deg=120.0,
+        #     linear_cmd=0.0,
+        #     timeout_s=6.0,
+        # ),
+        # DelayObjective(1.0),
+        
+        # LOOKING FOR CUBE AFTER KCOKING
         ArmUpObjective(),
         GripperOpenObjective(),
-        SearchAndNavigateToPlatform(marker_id=5),
-        ArmMiddleObjective(),
-        DelayObjective(2),
-        GripperMiddleObjective(),
-        DriveTurnAngleObjective(
-            angle_deg=120.0,
-            linear_cmd=0.0,
-            timeout_s=6.0,
-        ),
+        SearchAndNavigateToAruco(marker_id=53, fallback_marker_id=20, timeout_s=6.0, turn_rate=0.4),
+        ArmDownObjective(wait_after_s=2.0),
         DelayObjective(1.0),
-
-        # SearchAndNavigateToAruco(marker_id=20,turn_rate=0.4),
-        # ArmDownObjective(wait_after_s=2.0),
-        # ArmUpObjective(),
+        GripperCloseObjective(),
+        ArmUpObjective(),
         
         ]
     return objectives
