@@ -122,6 +122,7 @@ def build_objectives():
         DelayObjective(2.0),
         GripperOpenObjective(),
         ArmUpObjective(),
+        ArmUpObjective(),
     # region Following line approach roundabout
    # DriveTurnAngleObjective(180),
         DriveToLineObjective(
@@ -130,8 +131,7 @@ def build_objectives():
             search_speed=0.25,
             centering_speed=0.2,
             lost_line_timeout_s=0.8,
-            max_line_distance_m=5.7,#1.77
-            max_duration=0.0,
+            max_line_distance_m=0,#1.77
             instant_stop=False
             ),
             DriveTurnAngleObjective(180),

@@ -75,39 +75,40 @@ class SEdge:
     # PID profiles for different velocities
     pidProfiles = {
         'slow': {
-            'Kp': 0.85,    # More aggressive proportional gain for slow speeds
-            'Ki': 0.3,    # Increased integral gain
-            'Kd': 0.18,   # Increased derivative gain
-            'derivativeAlpha': 0.22,    # More low-pass filtering for noise reduction
-            'maxIntegral': 1.0
+            'Kp': 0.80,    # Slightly calmer proportional gain for slow speeds
+            'Ki': 0.25,    # Keep some integral action without windup
+            'Kd': 0.16,   # Moderate derivative damping
+            'derivativeAlpha': 0.30,    # More low-pass filtering for noise reduction
+            'maxIntegral': 0.90
         },
         'medium': {
-          'Kp': 0.72,    # Reduced proportional gain to lower oscillation at ~0.45 m/s
-          'Ki': 0.3,    # Reduced integral gain to avoid windup-driven wobble
-          'Kd': 0.18,    # Increased derivative damping
-          'derivativeAlpha': 0.20,   # More low-pass filtering on derivative term
-          'maxIntegral': 0.75
+          'Kp': 0.68,    # Reduced proportional gain to lower oscillation at ~0.45 m/s
+          'Ki': 0.22,    # Reduced integral gain to avoid windup-driven wobble
+          'Kd': 0.16,   # Increased derivative damping
+          'derivativeAlpha': 0.28,   # More low-pass filtering on derivative term
+          'maxIntegral': 0.65
         },
         'fast': {
-            'Kp': 1.0,   # Original proportional gain (works well at 0.95 m/s)
-            'Ki': 0.3,    # Original integral gain
-            'Kd': 0.18,   # Original derivative gain
-            'derivativeAlpha': 0.9,    # Original low-pass filter
-            'maxIntegral': 0.6
+            'Kp': 0.90,   # Back off proportional gain to reduce corner overshoot
+            'Ki': 0.20,   # Keep integral correction modest at high speed
+            'Kd': 0.14,   # Lower derivative gain to avoid D-kick on long bends
+            'derivativeAlpha': 0.35,    # More smoothing than the original fast profile
+            'maxIntegral': 0.50
         }
     }
     # Currently active profile parameters
     lineKp = 0.75  # Proportional gain (rad/s per sensor value)
     lineKi = 0.2  # Integral gain (rad/s per (sensor value * sec))
     lineKd = 0.08 # Derivative gain (rad/s per (sensor value / sec)))
-    derivativeAlpha = 0.6  # Low-pass filter for derivative (0-1, lower = more filtering)
-    maxErrorRate = 40.0  # Clamp on error derivative to limit D-kick from sensor jumps
-    maxIntegral = 1.2 # anti-windup limit for integral term
+    derivativeAlpha = 0.35  # Low-pass filter for derivative (0-1, lower = more filtering)
+    maxErrorRate = 25.0  # Clamp on error derivative to limit D-kick from sensor jumps
+    maxIntegral = 0.5 # anti-windup limit for integral term
     currentProfile = 'fast'  # Track which profile is active
     # PID state variables
     lineE0 = 0.0      # previous error
     lineIntegral = 0.0 # accumulated integral error
     lineDerivFiltered = 0.0  # filtered derivative term
+    linePositionFiltered = 0.0  # filtered line position used to calm fast-profile oscillation
     lineY = 0.0       # control output (rad/s)
     centroidPosition = 0.0
     centroidWeightSum = 0.0
@@ -554,6 +555,14 @@ class SEdge:
         linePosition = self.posLeft
       else:
         linePosition = self.posRight
+      rawLinePosition = linePosition
+      if self.currentProfile == 'fast' and self.lineValid:
+        if self.linePositionFiltered == 0.0:
+          self.linePositionFiltered = rawLinePosition
+        self.linePositionFiltered = 0.25 * rawLinePosition + 0.75 * self.linePositionFiltered
+        linePosition = self.linePositionFiltered
+      elif self.lineValid:
+        self.linePositionFiltered = rawLinePosition
       e = linePosition - self.refPosition
       # When the line is to the right, linePosition is positive.
       # Positive turn rate in rc() rotates the robot to the right,
@@ -611,7 +620,7 @@ class SEdge:
           f"valid={int(self.lineValid)} cnt={self.lineValidCnt} "
           f"targetV={self.targetVelocity:.3f} velocity={self.velocity:.3f} "
           f"centroid={self.centroidPosition:.3f} wsum={self.centroidWeightSum:.1f} "
-          f"posL={self.posLeft:.3f} posR={self.posRight:.3f} "
+          f"posL={self.posLeft:.3f} posR={self.posRight:.3f} filt={self.linePositionFiltered:.3f} "
           f"e={e:.3f} de_raw={de_raw:.3f} d_f={self.lineDerivFiltered:.3f} "
           f"P={P:.3f} I={I:.3f} D={D:.3f} y={self.lineY:.3f} "
           f"sat={int(ctrlSaturated)} rate={int(rateLimited)} profile={self.currentProfile}"
@@ -637,6 +646,7 @@ class SEdge:
       self.lineE0 = 0.0
       self.lineIntegral = 0.0
       self.lineDerivFiltered = 0.0
+      self.linePositionFiltered = 0.0
       self.lineY = 0.0
       print("% LineCtrl:: PID controller reset")
 
