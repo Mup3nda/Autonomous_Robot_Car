@@ -99,6 +99,9 @@ ENTRY_TURN_2_DEG = CIRCLE_ENTRY_TANGENT_HEADING_DEG - ENTRY_TURN_1_DEG
 LINE_EXIT_FOLLOW_LEFT = False
 LINE_EXIT_FOLLOW_SPEED = 0.75
 
+LINE_FOLLOW_DEBUG = True
+LINE_FOLLOW_DEBUG_PRINT_EVERY = 10
+
 # Zone-based side/speed switches for the post-roundabout line follow.
 # Tune x/y/radius in world frame using MissionLogs plot output.
 POST_ROUNDABOUT_SWITCH_ZONES = [
@@ -193,6 +196,8 @@ if __name__ == "__main__":
             ctx = MissionContext(service)
             ctx.actions.arm.bind_memory(ctx.memory)
             ctx.actions.arm.move_up()
+            ctx.actions.edge.set_debug_logging(LINE_FOLLOW_DEBUG, LINE_FOLLOW_DEBUG_PRINT_EVERY)
+            print(f"% Line-follow debug enabled: {LINE_FOLLOW_DEBUG} (every {LINE_FOLLOW_DEBUG_PRINT_EVERY} samples)")
             objectives = build_objectives()
             runner = MissionRunner(objectives, ctx, tick_hook=store_robot_position)
             runner.run()
