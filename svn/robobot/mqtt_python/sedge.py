@@ -89,10 +89,10 @@ class SEdge:
           'maxIntegral': 0.75
         },
         'fast': {
-            'Kp': 0.7,   # Original proportional gain (works well at 0.95 m/s)
-            'Ki': 0.2,    # Original integral gain
-            'Kd': 0.25,   # Original derivative gain
-            'derivativeAlpha': 0.7,    # Original low-pass filter
+            'Kp': 1.0,   # Original proportional gain (works well at 0.95 m/s)
+            'Ki': 0.3,    # Original integral gain
+            'Kd': 0.18,   # Original derivative gain
+            'derivativeAlpha': 0.9,    # Original low-pass filter
             'maxIntegral': 0.6
         }
     }
