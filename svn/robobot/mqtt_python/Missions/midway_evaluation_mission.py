@@ -122,26 +122,9 @@ POST_ROUNDABOUT_SWITCH_ZONES = [
 def build_objectives():
     objectives = [
         ArmUpObjective(),
-        #  DriveUntilEndRamp(follow_left=False,
-        #      follow_speed=0.5,
-        #      search_speed=0.25,
-        #      centering_speed=0.25,
-        #      lost_line_timeout_s=0.3),
-        #  DelayObjective(1.0),
         DriveToLineObjective(follow_speed=0.5, stop_after_centering=False, max_line_distance_m=5.7),
-        DriveToLineObjective(follow_speed=0.5,max_duration=2.0, stop_after_centering=True),
         DriveToLineUntilCurveObjective(curve_detection_delay_s=1.0, follow_speed=0.3),
-        # #DriveToLineUntilCurveObjective(curve_detection_delay_s=1.0, follow_speed=0.3),
-        # DriveToWaypointObjective(
-        #       waypoint=(0.2,0),
-        #       is_local=True,
-        #       print_interval=20,
-        #       relative_heading_deg=0.0,
-        #       nav_mode=WAYPOINT_NAV_MODE,
-        #       ),
-        # DriveTurnAngleObjective(85.0, linear_cmd=0.0, turn_cmd=0.8, timeout_s=5.0),
         SearchAndNavigateToGolfBall(desired_distance=0.35),
-        #SearchAndNavigateToBlueBall(),
         GripperOpenObjective(),
         DelayObjective(1.0),
         ArmDownObjective(wait_after_s=2.0),
@@ -158,13 +141,6 @@ def build_objectives():
         ArmUpObjective(),
         DelayObjective(1.0), 
         DriveTurnAngleObjective(-150.0, linear_cmd=0.01, turn_cmd=0.8, timeout_s=5.0),
-        # DriveToWaypointObjective(
-        #       waypoint=(0,-0.4),
-        #       is_local=True,
-        #       print_interval=20,
-        #       relative_heading_deg=-122.0,
-        #       nav_mode=WAYPOINT_NAV_MODE,
-        #       ), 
         DriveToWaypointObjective(
               waypoint=(0.3,0),
               is_local=True,
@@ -177,24 +153,7 @@ def build_objectives():
         DriveToLineUntilCurveObjective(curve_detection_delay_s=1.0, follow_speed=0.3),
         DelayObjective(1.0),
         SearchAndNavigateToHole(desired_distance=0.35),
-        # DriveTurnAngleObjective(-10.0, linear_cmd=0.0, turn_cmd=0.6, timeout_s=5.0),
-        
-        # DriveToWaypointObjective(
-        #       waypoint=(0.1,0),
-        #       is_local=True,
-        #       print_interval=20,
-        #       relative_heading_deg=0.0,
-        #       nav_mode=WAYPOINT_NAV_MODE,
-        #       ), 
         ArmDownObjective(wait_after_s=2.0),
-        # DelayObjective(1.0),
-        # DriveToWaypointObjective(
-        #       waypoint=(0.1,0),
-        #       is_local=True,
-        #       print_interval=20,
-        #       relative_heading_deg=0.0,
-        #       nav_mode=WAYPOINT_NAV_MODE,
-        #       ), 
         DelayObjective(1.0), 
         GripperOpenObjective(),
         DelayObjective(1.0), 
@@ -207,50 +166,9 @@ def build_objectives():
               ), 
         DelayObjective(1.0), 
         ArmUpObjective(),
-        # DriveTurnAngleObjective(-25.0, linear_cmd=0.07, turn_cmd=0.1, timeout_s=5.0),
-        # GripperCloseObjective(),
-        # ArmUpObjective(),
-        # DelayObjective(1.0),
         DriveTurnAngleObjective(100.0, linear_cmd=0.01, turn_cmd=0.8, timeout_s=5.0),
-        # DriveToWaypointObjective(
-        #       waypoint=(0.30,0),
-        #       is_local=True,
-        #       print_interval=20,
-        #       relative_heading_deg=0.0,
-        #       nav_mode=WAYPOINT_NAV_MODE,
-        #       ), 
         DriveToLineObjective(),
-        #DriveTurnAngleObjective(-70.0, linear_cmd=0.0, turn_cmd=0.8, timeout_s=5.0),
-        #DriveToWaypointObjective(waypoint=(1.0,0.0), reset_origin=True, print_interval=10, nav_mode=WAYPOINT_NAV_MODE),
-        #DriveTurnAngleObjective(-50.0, linear_cmd=0.0, turn_cmd=0.8, timeout_s=5.0),
-        # DriveToLineUntilCurveObjective(
-        #     follow_left=LINE_ENTRY_FOLLOW_LEFT,
-        #     search_speed=LINE_ENTRY_SEARCH_SPEED,
-        #     follow_speed=LINE_ENTRY_FOLLOW_SPEED,
-        #     curve_threshold=1.0,
-        #     min_follow_time_s=1.0,
-        #     lost_line_timeout_s=0.5,
-        #     max_duration_s=40.0,
-        # ),
- 
-        #SearchAndNavigateToBlueBall(),
-        #ArmDownObjective(wait_after_s=2.0),
-
-        #ArmUpObjective(),
-        #SearchAndNavigateToAruco(marker_id=53,turn_rate=0.3),
-        #ArmDownObjective(wait_after_s=2.0),
-
-        #ArmUpObjective(),
-        # SearchAndNavigateToPlatform(marker_id=5),
-        # ArmDownObjective(wait_after_s=2.0),
-
-        # SearchAndNavigateToBlueBall(turn_rate=0.8),
-        # ArmDownObjective(wait_after_s=2.0),
-        # # ArmUpObjective(),
-
-        # SearchAndNavigateToAruco(marker_id=20,turn_rate=0.4),
-        # ArmDownObjective(wait_after_s=2.0),
-        #ArmUpObjective(),
+        
     ]
     
 
