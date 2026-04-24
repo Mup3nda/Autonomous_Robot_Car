@@ -101,6 +101,7 @@ class SEdge:
     lineKi = 0.2  # Integral gain (rad/s per (sensor value * sec))
     lineKd = 0.08 # Derivative gain (rad/s per (sensor value / sec)))
     derivativeAlpha = 0.6  # Low-pass filter for derivative (0-1, lower = more filtering)
+    maxErrorRate = 40.0  # Clamp on error derivative to limit D-kick from sensor jumps
     maxIntegral = 1.2 # anti-windup limit for integral term
     currentProfile = 'fast'  # Track which profile is active
     # PID state variables
@@ -368,7 +369,6 @@ class SEdge:
 
     def LineDetect(self):
       sum = 0
-      posSum = 0
       high = int(1)
       # find levels (and average)
       # using normalised readings (0 (no reflection) to 1000 (calibrated white)))
@@ -386,30 +386,24 @@ class SEdge:
       self.lineValid = self.high >= self.lineValidThreshold
       if self.lineValid:
         self.lineLastSeenTime = datetime.now()
-      # find line position
-      # from left side - stop at first value above half of the brightest
+      # Find line position using centroid on darkness weights.
+      # Sensor coordinates are fixed from left to right.
       if self.lineValid:
-        posLeft = -3.5 # max left
-        if self.edge_n[0] < self.lineValidThreshold:
-          posLeft = -3 # between sensor 1 and 2 or more right
-          for i in range(1,8):
-            if self.edge_n[i] < self.lineValidThreshold:
-              posLeft += 1;
-            else:
-              break;
-        posRight = 3.5 # max right
-        if self.edge_n[7] < self.lineValidThreshold:
-          posRight = 3 # may be between sensor 8 and 7 or more left
-          for i in range(1,8):
-            if self.edge_n[7-i] < self.lineValidThreshold:
-              posRight -= 1;
-            else:
-              break;
-        self.posLeft = posLeft
-        self.posRight = posRight
-      else:
-        # just keep old value
-        pass
+        sensorPos = (-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5)
+        weightSum = 0.0
+        weightedPosSum = 0.0
+        for i in range(8):
+          # Darker-than-threshold readings carry weight in the centroid.
+          w = float(self.lineValidThreshold - self.edge_n[i])
+          if w < 0.0:
+            w = 0.0
+          weightSum += w
+          weightedPosSum += w * sensorPos[i]
+        if weightSum > 1e-6:
+          centroid = weightedPosSum / weightSum
+          self.posLeft = centroid
+          self.posRight = centroid
+      # If line is not valid (or no darkness weight), keep previous position.
       #
       if self.lineValid and self.lineValidCnt < 20:
         self.lineValidCnt += 1
@@ -501,6 +495,28 @@ class SEdge:
 
     ##########################################################
 
+    def applyTurnLimits(self, turnrate):
+      """Apply controller output and kinematic turn-rate limits."""
+      ctrlSaturated = False
+      if turnrate > 4:
+        turnrate = 4
+        ctrlSaturated = True
+      elif turnrate < -4:
+        turnrate = -4
+        ctrlSaturated = True
+      max_turnrate = 0.0
+      rateLimited = False
+      if self.velocity > 0.001:
+        max_turnrate = 2.0 * (self.maxWheelVel - self.velocity) / self.wheelbase
+        if max_turnrate < 0:
+          max_turnrate = 0
+        if abs(turnrate) > max_turnrate:
+          turnrate = max_turnrate if turnrate > 0 else -max_turnrate
+          rateLimited = True
+      return turnrate, ctrlSaturated, rateLimited, max_turnrate
+
+    ##########################################################
+
     def followLine(self):
       from uservice import service
       # Calculate current error
@@ -527,46 +543,39 @@ class SEdge:
       # Proportional term
       P = self.lineKp * e
       #
-      # Integral term (with anti-windup)
-      self.lineIntegral += e * dt
-      # Anti-windup: clamp integral term
-      if self.lineIntegral > self.maxIntegral:
-        self.lineIntegral = self.maxIntegral
-      elif self.lineIntegral < -self.maxIntegral:
-        self.lineIntegral = -self.maxIntegral
-      I = self.lineKi * self.lineIntegral
-      #
       # Derivative term with low-pass filtering to reduce noise
       de_raw = (e - self.lineE0) / dt
+      if de_raw > self.maxErrorRate:
+        de_raw = self.maxErrorRate
+      elif de_raw < -self.maxErrorRate:
+        de_raw = -self.maxErrorRate
       self.lineDerivFiltered = self.derivativeAlpha * de_raw + (1 - self.derivativeAlpha) * self.lineDerivFiltered
       D = self.lineKd * self.lineDerivFiltered
       #
-      # Control output
+      # Conditional integral update (anti-windup + invalid-line protection)
+      oldIntegral = self.lineIntegral
+      candidateIntegral = oldIntegral
+      if self.lineValid:
+        candidateIntegral += e * dt
+        if candidateIntegral > self.maxIntegral:
+          candidateIntegral = self.maxIntegral
+        elif candidateIntegral < -self.maxIntegral:
+          candidateIntegral = -self.maxIntegral
+
+      candidateI = self.lineKi * candidateIntegral
+      yCandidate = P + candidateI + D
+      _, candCtrlSat, candRateLimited, _ = self.applyTurnLimits(yCandidate)
+
+      if self.lineValid and not candCtrlSat and not candRateLimited:
+        self.lineIntegral = candidateIntegral
+        I = candidateI
+      else:
+        self.lineIntegral = oldIntegral
+        I = self.lineKi * self.lineIntegral
+
+      # Final control output with physical limits.
       self.lineY = P + I + D
-      ctrlSaturated = False
-      #
-      # Output saturation
-      if self.lineY > 4:
-        self.lineY = 4
-        ctrlSaturated = True
-      elif self.lineY < -4:
-        self.lineY = -4
-        ctrlSaturated = True
-      #
-      # Rate limiting: prevent wheel velocity saturation
-      # velDif = wheelbase * turnrate, so:
-      # v_right = linVel + velDif/2 <= maxWheelVel
-      # Therefore: turnrate <= 2 * (maxWheelVel - linVel) / wheelbase
-      max_turnrate = 0.0
-      rateLimited = False
-      if self.velocity > 0.001:
-        max_turnrate = 2.0 * (self.maxWheelVel - self.velocity) / self.wheelbase
-        if max_turnrate < 0:
-          max_turnrate = 0  # Can't turn faster than physical limits allow
-        if abs(self.lineY) > max_turnrate:
-          # Clamp turn rate to physically achievable limit
-          self.lineY = max_turnrate if self.lineY > 0 else -max_turnrate
-          rateLimited = True
+      self.lineY, ctrlSaturated, rateLimited, max_turnrate = self.applyTurnLimits(self.lineY)
       #
       # Save error for next iteration
       self.lineE0 = e
