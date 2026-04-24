@@ -41,7 +41,7 @@ class NavigateToBallObjective(Objective):
         self.nav_mode = str(nav_mode).lower()
         self.color = str(color).lower()
         self.tick_count = 0
-        self.COMPENSATE_PARAMETER = 0
+        self.COMPENSATE_PARAMETER = 20
 
     def start(self, ctx: MissionContext):
         """Initialize navigation to blue ball using NavigationAction."""

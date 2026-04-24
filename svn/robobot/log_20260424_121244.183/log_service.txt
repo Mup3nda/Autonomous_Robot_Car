@@ -1,0 +1,21 @@
+% Service logfile
+% 1 	Time (sec)
+% 2 	Message
+1777025564.4165 msg: # Mqtt cmd connection established
+1777025564.4275 msg: Teensy connection just opened
+1777025564.1837 Setup finished OK=1
+1777025564.7394 msg: # CServo: subscribed to Teensy data
+1777025564.7394 msg: # SCurrent: subscribed to Teensy data
+1777025564.7394 msg: # SDistForce: subscribed to Teensy data
+1777025564.7394 msg: # SEdge: subscribed to Teensy data
+1777025564.7394 msg: # SEncoder: subscribed to Teensy data (pose and/or vel)
+1777025564.7394 msg: # SImu: subscribed to Teensy data (gyro and acc)
+1777025564.7394 msg: # SRobot:: subscribed to HBT
+1777025564.7394 msg: # STeensy: subscribed to Teensy data (id -> dname)
+1777025588.9011 new Master: (0) 2026-04-24 12:13:08.116287
+1777025588.9413 Log command: robobot/cmd/ti log 1
+1777025590.3083 Mixer order: robobot/cmd/ti rc 0 0
+1777025590.3512 Log command: robobot/cmd/ti log 0
+1777025564.5375 Lost Master, alive since 2026-04-24 12:13:08.116287
+1777025603.4643 msg: # STeensy: close USB
+1777025603.0338 All terminated; closing logfile
