@@ -138,6 +138,8 @@ def build_objectives():
         #      centering_speed=0.25,
         #      lost_line_timeout_s=0.3),
         #  DelayObjective(1.0),
+        DriveToLineObjective(follow_speed=0.5,max_duration=15.0, stop_after_centering=False),
+        #DriveToLineUntilCurveObjective(curve_detection_delay_s=1.0, follow_speed=0.3),
         DriveToWaypointObjective(
               waypoint=(0.2,0),
               is_local=True,
