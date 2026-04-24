@@ -126,6 +126,8 @@ class SEdge:
     targetVelocity = 0.0
     maxAccelUp = 0.15    # m/s^2, limit when increasing speed
     maxAccelDown = 0.6   # m/s^2, limit when decreasing speed
+    curveSlowdownGain = 0.9  # Reduce speed as line offset grows
+    minCurveSpeedScale = 0.45  # Never slow below this fraction from curvature alone
     # PID logging
     pidLogDir = ""
     pidLogFiles = {}
@@ -500,16 +502,18 @@ class SEdge:
 
     ##########################################################
 
-    def updateVelocityRamp(self, dt):
-      """Move current velocity toward target velocity with acceleration limits."""
+    def updateVelocityRamp(self, dt, targetVelocity=None):
+      """Move current velocity toward a target velocity with acceleration limits."""
       if dt < 0.001:
         dt = 0.001
+      if targetVelocity is None:
+        targetVelocity = self.targetVelocity
       # keep target in valid range
-      if self.targetVelocity > self.maxWheelVel:
-        self.targetVelocity = self.maxWheelVel
-      elif self.targetVelocity < 0:
-        self.targetVelocity = 0
-      delta = self.targetVelocity - self.velocity
+      if targetVelocity > self.maxWheelVel:
+        targetVelocity = self.maxWheelVel
+      elif targetVelocity < 0:
+        targetVelocity = 0
+      delta = targetVelocity - self.velocity
       if delta > 0:
         step = min(delta, self.maxAccelUp * dt)
       else:
@@ -561,8 +565,13 @@ class SEdge:
       dt = self.edge_nInterval / 1000.0  # convert ms to seconds
       if dt < 0.001:  # safety check
         dt = 0.05  # assume 50ms if invalid
-      # Apply acceleration-limited ramp toward requested velocity
-      self.updateVelocityRamp(dt)
+      # Slow down a bit as the line moves away from center so sharp turns remain controllable.
+      curveSpeedScale = 1.0 / (1.0 + self.curveSlowdownGain * abs(e))
+      if curveSpeedScale < self.minCurveSpeedScale:
+        curveSpeedScale = self.minCurveSpeedScale
+      effectiveTargetVelocity = self.targetVelocity * curveSpeedScale
+      # Apply acceleration-limited ramp toward the effective target velocity.
+      self.updateVelocityRamp(dt, effectiveTargetVelocity)
       # Tune PID profile based on currently achieved velocity
       self.selectAndApplyProfile(self.velocity)
       #
@@ -607,6 +616,7 @@ class SEdge:
         print(
           "% Edge::centroid debug: "
           f"valid={int(self.lineValid)} cnt={self.lineValidCnt} "
+          f"curveScale={curveSpeedScale:.3f} targetV={self.targetVelocity:.3f} effV={effectiveTargetVelocity:.3f} "
           f"centroid={self.centroidPosition:.3f} wsum={self.centroidWeightSum:.1f} "
           f"posL={self.posLeft:.3f} posR={self.posRight:.3f} "
           f"e={e:.3f} de_raw={de_raw:.3f} d_f={self.lineDerivFiltered:.3f} "
