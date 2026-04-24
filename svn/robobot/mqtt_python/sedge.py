@@ -109,6 +109,13 @@ class SEdge:
     lineIntegral = 0.0 # accumulated integral error
     lineDerivFiltered = 0.0  # filtered derivative term
     lineY = 0.0       # control output (rad/s)
+    centroidPosition = 0.0
+    centroidWeightSum = 0.0
+    centroidWeightedPosSum = 0.0
+    centroidValid = False
+    centroidWeights = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    debugLineFollow = False
+    debugPrintEvery = 10
     # management
     # topicRc = ""
     topicCmdT0 = ""
@@ -203,6 +210,8 @@ class SEdge:
       header = (
         "timestamp,edge_n_timestamp,edge_timestamp,edge_n_upd_cnt,edge_upd_cnt,profile,"
         "follow_left,ref_position,target_velocity,velocity,dt,error,line_position,pos_left,pos_right,"
+        "centroid_position,centroid_weight_sum,centroid_weighted_pos_sum,"
+        "centroid_w0,centroid_w1,centroid_w2,centroid_w3,centroid_w4,centroid_w5,centroid_w6,centroid_w7,"
         "P,I,D,de_raw,Y,lineKp,lineKi,lineKd,derivative_alpha,max_integral,"
         "line_integral,line_deriv_filtered,ctrl_sat,rate_limited,max_turnrate,wheelbase,max_wheel_vel,"
         "cmd_timestamp,cmd_velocity,cmd_turnrate,line_valid,line_valid_cnt,crossing,crossing_cnt,high,average,line_valid_threshold,crossing_threshold,"
@@ -218,6 +227,12 @@ class SEdge:
         self.pidLogFiles[profile] = f
       print(f"% Edge:: PID logs initialized in {self.pidLogDir}")
 
+    def setDebugLogging(self, enabled=True, printEvery=10):
+      """Enable or disable verbose line-follow diagnostics."""
+      self.debugLineFollow = bool(enabled)
+      self.debugPrintEvery = max(1, int(printEvery))
+      print(f"% Edge:: debug line follow {'enabled' if self.debugLineFollow else 'disabled'}; printEvery={self.debugPrintEvery}")
+
     def logPIDSample(self, dt, e, linePosition, P, I, D, de_raw, ctrlSaturated, rateLimited, max_turnrate, cmdTimestamp):
       """Write one PID control sample to the active profile log file."""
       if self.currentProfile not in self.pidLogFiles:
@@ -228,6 +243,9 @@ class SEdge:
         f"{self.edge_nUpdCnt},{self.edgeUpdCnt},{self.currentProfile},"
         f"{1 if self.followLeft else 0},{self.refPosition:.5f},{self.targetVelocity:.4f},{self.velocity:.4f},"
         f"{dt:.5f},{e:.5f},{linePosition:.5f},{self.posLeft:.5f},{self.posRight:.5f},"
+        f"{self.centroidPosition:.5f},{self.centroidWeightSum:.5f},{self.centroidWeightedPosSum:.5f},"
+        f"{self.centroidWeights[0]:.5f},{self.centroidWeights[1]:.5f},{self.centroidWeights[2]:.5f},{self.centroidWeights[3]:.5f},"
+        f"{self.centroidWeights[4]:.5f},{self.centroidWeights[5]:.5f},{self.centroidWeights[6]:.5f},{self.centroidWeights[7]:.5f},"
         f"{P:.5f},{I:.5f},{D:.5f},{de_raw:.5f},{self.lineY:.5f},"
         f"{self.lineKp:.5f},{self.lineKi:.5f},{self.lineKd:.5f},{self.derivativeAlpha:.5f},{self.maxIntegral:.5f},"
         f"{self.lineIntegral:.5f},{self.lineDerivFiltered:.5f},"
@@ -397,12 +415,22 @@ class SEdge:
           w = float(self.lineValidThreshold - self.edge_n[i])
           if w < 0.0:
             w = 0.0
+          self.centroidWeights[i] = w
           weightSum += w
           weightedPosSum += w * sensorPos[i]
-        if weightSum > 1e-6:
+        self.centroidWeightSum = weightSum
+        self.centroidWeightedPosSum = weightedPosSum
+        self.centroidValid = weightSum > 1e-6
+        if self.centroidValid:
           centroid = weightedPosSum / weightSum
+          self.centroidPosition = centroid
           self.posLeft = centroid
           self.posRight = centroid
+      else:
+        self.centroidValid = False
+        self.centroidWeightSum = 0.0
+        self.centroidWeightedPosSum = 0.0
+        self.centroidWeights = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
       # If line is not valid (or no darkness weight), keep previous position.
       #
       if self.lineValid and self.lineValidCnt < 20:
@@ -576,6 +604,16 @@ class SEdge:
       # Final control output with physical limits.
       self.lineY = P + I + D
       self.lineY, ctrlSaturated, rateLimited, max_turnrate = self.applyTurnLimits(self.lineY)
+      if self.debugLineFollow and (self.pidLogCount % self.debugPrintEvery == 0 or not self.lineValid or ctrlSaturated or rateLimited):
+        print(
+          "% Edge::centroid debug: "
+          f"valid={int(self.lineValid)} cnt={self.lineValidCnt} "
+          f"centroid={self.centroidPosition:.3f} wsum={self.centroidWeightSum:.1f} "
+          f"posL={self.posLeft:.3f} posR={self.posRight:.3f} "
+          f"e={e:.3f} de_raw={de_raw:.3f} d_f={self.lineDerivFiltered:.3f} "
+          f"P={P:.3f} I={I:.3f} D={D:.3f} y={self.lineY:.3f} "
+          f"sat={int(ctrlSaturated)} rate={int(rateLimited)} profile={self.currentProfile}"
+        )
       #
       # Save error for next iteration
       self.lineE0 = e

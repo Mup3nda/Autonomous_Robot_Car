@@ -35,6 +35,10 @@ class EdgeActions:
         the robot motors - use ctx.actions.drive.stop() for that.
         """
         self.edge.lineControl(0, True)
+
+    def set_debug_logging(self, enabled=True, print_every=10):
+        """Enable verbose line-follow telemetry from the edge controller."""
+        self.edge.setDebugLogging(enabled=enabled, printEvery=print_every)
     
     def is_line_valid(self, confidence=2):
         """Check if line is currently detected with sufficient confidence.
