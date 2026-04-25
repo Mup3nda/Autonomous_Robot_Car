@@ -19,21 +19,22 @@ class Nav:
         self.detector = detector
         self.desired_distance = desired_distance_to_target
         self.ctx = ctx
+        self.ctx.memory["negative_velocity_flag"] = 0
 
         self.rotation_phase = True
         self.forward_phase = False
 
         self.MAX_LINEAR_SPEED = 0.6
-        self.MAX_ANGULAR_SPEED = 0.4
+        self.MAX_ANGULAR_SPEED = 0.5
         
         self.CAMERA_FOV = 1.047 
 
-        self.K_FORWARD = 1.0
+        self.K_FORWARD = 0.75
         self.K_BEARING = 0.75
         
         # 1. Ajuste de distancias para evitar choques
-        self.DESIRED_DISTANCE = 0.40 # Distancia del punto fantasma (Carrot point)
-        self.SAFE_STOP_DISTANCE = 0.30 # Freno de emergencia absoluto (30cm de la plataforma)
+        self.DESIRED_DISTANCE = 0.33 # Distancia del punto fantasma (Carrot point)
+        self.SAFE_STOP_DISTANCE = 0.31# Freno de emergencia absoluto (30cm de la plataforma)
         
         # FIX: Tolerancia en Radianes (0.2 rad ~= 11.5 grados)
         self.BEARING_TOL = 0.2 
@@ -75,18 +76,22 @@ class Nav:
         # --- FIX: DEPTH NOISE CANCELLATION ---
         self.kf_Q = np.array([
             [0.05, 0, 0, 0],       
-            [0, 0.00001, 0, 0],    
+            [0, 0.0003, 0, 0],    
             [0, 0, 0.05, 0],       
-            [0, 0, 0, 0.00001]     
+            [0, 0, 0, 0.0001]     
         ], dtype=float)
 
-        self.BLEND_ALPHA = 0.8
-        self.PREDICTION_HORIZON = 2.0 
-        self.LOST_TIMEOUT = 0.5 
+        self.BLEND_ALPHA = 0.9
+        self.PREDICTION_HORIZON = 1.0
+        self.LOST_TIMEOUT = 2.2 #1
         self.last_seen_time = 0
         
         # --- ANGLE APPROACH CONFIG ---
-        self.APPROACH_ANGLE_RAD = math.radians(45)
+        self.APPROACH_ANGLE_RAD = math.radians(0)
+        
+        # --- NEGATIVE VELOCITY TRACKING ---
+        self.negative_vx_start_time = None
+        self.NEGATIVE_VX_THRESHOLD = 1.0  # 1 second
 
     def _init_kalman(self, init_x, init_z, init_vx, init_vz):
         self.kf_X = np.array([[init_x], [init_z], [init_vx], [init_vz]], dtype=float)
@@ -240,6 +245,32 @@ class Nav:
                         self._update_kalman(meas_global_x, meas_global_z)
                         self.last_kf_time = system_now
 
+                    # Extract velocity in x
+                    vx = self.kf_X[2, 0]
+                    
+                    if vx < 0:
+                        # Track how long velocity in x has been negative
+                        if self.negative_vx_start_time is None:
+                            self.negative_vx_start_time = system_now
+                        
+                        # Check if velocity has been negative for at least 1 second
+                        time_negative = system_now - self.negative_vx_start_time
+                        if time_negative >= self.NEGATIVE_VX_THRESHOLD:
+                            print(f"% Velocity in x has been negative for {time_negative:.2f}s, ending navigation")
+                            self.ctx.memory["negative_velocity_flag"] = 1  # Set flag
+                            self.ctx.actions.drive.stop()
+                            self.current_linear_v = 0.0
+                            self.current_angular_v = 0.0
+                            self.is_running = False
+                            break
+                        else:
+                            # Still waiting for 1 second threshold
+                            if should_log:
+                                print(f"% Velocity in x negative ({time_negative:.2f}s/{self.NEGATIVE_VX_THRESHOLD}s)")
+                    else:
+                        # Reset the timer if velocity becomes positive again
+                        self.negative_vx_start_time = None
+
                     future_global_x, future_global_z = self._predict_future_kalman(self.PREDICTION_HORIZON)
 
                     blended_global_x = (1.0 - self.BLEND_ALPHA) * meas_global_x + (self.BLEND_ALPHA * future_global_x)
@@ -287,11 +318,11 @@ class Nav:
         bearing_error = target_bearing
         
         # 1. CAPA DE SEGURIDAD ABSOLUTA (Anti-Choque físico)
-        if real_distance_to_platform < self.SAFE_STOP_DISTANCE:
+        if (real_distance_to_platform < self.SAFE_STOP_DISTANCE):
             # Clavamos frenos de avance. Le permitimos seguir rotando para no perderla de vista.
-            linear_cmd = 0.0
-            angular_cmd = self.K_BEARING * bearing_error
-            # print("! FRENO DE EMERGENCIA ACTIVO !")
+            self.ctx.actions.drive.stop()
+            self.hasReachedTarget = True
+            self.is_running = False
             
         else:
             # 2. CAPA DE ZONA MUERTA (Evitar que el robot baile alrededor del punto)
