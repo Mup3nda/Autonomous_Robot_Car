@@ -111,6 +111,77 @@ class DelayObjective(Objective):
         pass
 
 
+class CheckFallbackObjective(Objective):
+    """Check if fallback marker was used in the previous SearchAndNavigateToAruco objective."""
+
+    def __init__(self):
+        super().__init__()
+
+    def start(self, ctx):
+        fallback_flag = ctx.memory.get("fallback_flag", 0)
+        if fallback_flag == 1:
+            print("% WARNING: Fallback marker was used in search_and_navigate!")
+        else:
+            print("% INFO: Primary marker was used successfully")
+        self._done = True
+
+    def tick(self, ctx):
+        pass
+
+    def stop(self, ctx):
+        pass
+
+
+class ConditionalArmObjective(Objective):
+    """Set arm position based on fallback_flag: up if fallback used, middle if primary used."""
+
+    def __init__(self):
+        super().__init__()
+        self.arm_objective = None
+
+    def start(self, ctx):
+        fallback_flag = ctx.memory.get("fallback_flag", 0)
+        if fallback_flag == 1:
+            print("% Fallback was used: moving arm UP")
+            self.arm_objective = ArmUpObjective()
+        else:
+            print("% Primary marker used: moving arm to MIDDLE")
+            self.arm_objective = ArmMiddleObjective()
+        
+        self.arm_objective.start(ctx)
+
+    def tick(self, ctx):
+        if self.arm_objective:
+            self.arm_objective.tick(ctx)
+            self._done = self.arm_objective._done
+
+    def stop(self, ctx):
+        if self.arm_objective:
+            self.arm_objective.stop(ctx)
+
+
+class CheckNegativeVelocityObjective(Objective):
+    """Check if negative velocity was detected and end mission if flag is set."""
+
+    def __init__(self):
+        super().__init__()
+
+    def start(self, ctx):
+        negative_velocity_flag = ctx.memory.get("negative_velocity_flag", 0)
+        if negative_velocity_flag == 1:
+            print("% ERROR: Negative velocity detected! Ending mission.")
+            ctx.service.stop = True
+        else:
+            print("% INFO: No negative velocity detected.")
+        self._done = True
+
+    def tick(self, ctx):
+        pass
+
+    def stop(self, ctx):
+        pass
+
+
 # Add objectives in the list below in the exact order they should execute.
 def build_objectives():
     objectives = [
@@ -184,6 +255,7 @@ def build_objectives():
         # DelayObjective(1.0),
         # SearchAndNavigateToPlatform(marker_id=5, turn_rate=0.18),
         # # DETECT ARUCO PLATFORM
+
         DriveTurnAngleObjective(
             angle_deg=30.0,
             linear_cmd=0.0,
@@ -193,7 +265,7 @@ def build_objectives():
         GripperOpenObjective(),
         SearchAndNavigateToPlatform(marker_id=5),
         ArmMiddleObjective(),
-        DelayObjective(2),
+        DelayObjective(2.5),
         GripperMiddleObjective(),
         DriveTurnAngleObjective(
             angle_deg=120.0,
@@ -202,15 +274,24 @@ def build_objectives():
         ),
         DelayObjective(1.0),
         
+        DriveToWaypointObjective(
+            waypoint=(0.75, 0),
+            is_local=True,
+            print_interval=20,
+            relative_heading_deg=180.0,
+            nav_mode=WAYPOINT_NAV_MODE,
+        ),
+
         # LOOKING FOR CUBE AFTER KCOKING
         ArmUpObjective(),
         GripperOpenObjective(),
-        SearchAndNavigateToAruco(marker_id=53, fallback_marker_id=20, timeout_s=6.0, turn_rate=0.4),
+        SearchAndNavigateToAruco(marker_id=53, fallback_marker_id=20, turn_rate=0.4, search_timeout_s = 2.5, desired_distance=0.37),
+        CheckNegativeVelocityObjective(),  # End mission immediately if navigation saw negative x velocity
+        CheckFallbackObjective(),
         ArmDownObjective(wait_after_s=2.0),
         DelayObjective(1.0),
         GripperCloseObjective(),
-        ArmUpObjective(),
-        
+        ConditionalArmObjective(),  # Arm UP if fallback used, ARM MIDDLE if primary used
         ]
     return objectives
 

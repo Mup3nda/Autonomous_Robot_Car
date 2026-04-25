@@ -19,6 +19,7 @@ class Nav:
         self.detector = detector
         self.desired_distance = desired_distance_to_target
         self.ctx = ctx
+        self.ctx.memory["negative_velocity_flag"] = 0
 
         self.rotation_phase = True
         self.forward_phase = False
@@ -33,7 +34,7 @@ class Nav:
         
         # 1. Ajuste de distancias para evitar choques
         self.DESIRED_DISTANCE = 0.33 # Distancia del punto fantasma (Carrot point)
-        self.SAFE_STOP_DISTANCE = 0.33 # Freno de emergencia absoluto (30cm de la plataforma)
+        self.SAFE_STOP_DISTANCE = 0.31# Freno de emergencia absoluto (30cm de la plataforma)
         
         # FIX: Tolerancia en Radianes (0.2 rad ~= 11.5 grados)
         self.BEARING_TOL = 0.2 
@@ -81,12 +82,16 @@ class Nav:
         ], dtype=float)
 
         self.BLEND_ALPHA = 0.9
-        self.PREDICTION_HORIZON = 1.5
+        self.PREDICTION_HORIZON = 1.0
         self.LOST_TIMEOUT = 2.2 #1
         self.last_seen_time = 0
         
         # --- ANGLE APPROACH CONFIG ---
         self.APPROACH_ANGLE_RAD = math.radians(0)
+        
+        # --- NEGATIVE VELOCITY TRACKING ---
+        self.negative_vx_start_time = None
+        self.NEGATIVE_VX_THRESHOLD = 1.0  # 1 second
 
     def _init_kalman(self, init_x, init_z, init_vx, init_vz):
         self.kf_X = np.array([[init_x], [init_z], [init_vx], [init_vz]], dtype=float)
@@ -244,12 +249,27 @@ class Nav:
                     vx = self.kf_X[2, 0]
                     
                     if vx < 0:
-                        # Don't proceed with navigation if velocity in x is negative
-                        self.ctx.actions.drive.rc(0, 0)
-                        self.current_linear_v = 0.0
-                        self.current_angular_v = 0.0
-                        time.sleep(0.034)
-                        continue
+                        # Track how long velocity in x has been negative
+                        if self.negative_vx_start_time is None:
+                            self.negative_vx_start_time = system_now
+                        
+                        # Check if velocity has been negative for at least 1 second
+                        time_negative = system_now - self.negative_vx_start_time
+                        if time_negative >= self.NEGATIVE_VX_THRESHOLD:
+                            print(f"% Velocity in x has been negative for {time_negative:.2f}s, ending navigation")
+                            self.ctx.memory["negative_velocity_flag"] = 1  # Set flag
+                            self.ctx.actions.drive.stop()
+                            self.current_linear_v = 0.0
+                            self.current_angular_v = 0.0
+                            self.is_running = False
+                            break
+                        else:
+                            # Still waiting for 1 second threshold
+                            if should_log:
+                                print(f"% Velocity in x negative ({time_negative:.2f}s/{self.NEGATIVE_VX_THRESHOLD}s)")
+                    else:
+                        # Reset the timer if velocity becomes positive again
+                        self.negative_vx_start_time = None
 
                     future_global_x, future_global_z = self._predict_future_kalman(self.PREDICTION_HORIZON)
 

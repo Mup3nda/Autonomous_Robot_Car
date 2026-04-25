@@ -32,13 +32,14 @@ class LookForArucoObjective(Objective):
   
 		self.marker_id = marker_id
 		self.fallback_marker_id = fallback_marker_id
-		self.search_timeout_s = None if search_timeout_s is None else float(search_timeout_s)
+		self.search_timeout_s = search_timeout_s
   
 		self.tick_count = 0
 		self.detector = None
 		self.state = LookForArucoState.SEARCHING_PRIMARY
 		self.search_start_time = None
 		self.current_target_id = self.marker_id
+		self.fallback_used = False  # Track if fallback was used
 
 	def start(self, ctx: MissionContext):
 		self._done = False
@@ -80,7 +81,7 @@ class LookForArucoObjective(Objective):
 		if (
 			self.state == LookForArucoState.SEARCHING_PRIMARY
 			and self.fallback_marker_id is not None
-			and self.primary_timeout_s is not None
+			and self.search_timeout_s is not None
 		):
 			elapsed = time.time() - self.search_start_time
 			if elapsed >= self.search_timeout_s:
@@ -90,7 +91,9 @@ class LookForArucoObjective(Objective):
                 )
 
 				self.current_target_id = self.fallback_marker_id
-				self.state == LookForArucoState.SEARCHING_FALLBACK
+				self.fallback_used = True  # Mark fallback as used
+				ctx.memory["fallback_flag"] = 1  # Set flag in mission context
+				self.state = LookForArucoState.SEARCHING_FALLBACK
 				self.search_start_time = time.time()
     
 				if self.detector and hasattr(self.detector, "set_target_id"):
