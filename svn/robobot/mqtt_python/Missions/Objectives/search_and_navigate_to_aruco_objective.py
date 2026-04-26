@@ -1,4 +1,4 @@
-"""Composite objective: search for blue ball, then navigate to it."""
+"""Composite objective: search for an ArUco marker, then navigate to it."""
 
 from objective import CompositeObjective
 from Objectives.look_for_aruco_objective import LookForArucoObjective
@@ -6,7 +6,7 @@ from Objectives.navigate_to_aruco_objective import NavigateToArucoObjective
 
 
 class SearchAndNavigateToAruco(CompositeObjective):
-    """Navigating to platform"""
+    """Search for an ArUco marker, then navigate to it."""
 
     name = "Search_And_Navigate_To_Aruco"
 
@@ -17,27 +17,31 @@ class SearchAndNavigateToAruco(CompositeObjective):
         search_timeout_s=5.0,
         turn_rate=0.5,
         min_confidence=1,
-        search_print_interval=20,
+        scan_mode="spin",
+        heading_tolerance_deg=4.0,
         desired_distance=0.4,
-        navigate_print_interval=20,
+        print_interval=20,
+        nav_mode="aruco",
     ):
         self.fallback_flag = 0  # 0 = using primary marker, 1 = using fallback marker
         objectives = [
             LookForArucoObjective(
-                marker_id = marker_id,
+                marker_id=marker_id,
                 fallback_marker_id=fallback_marker_id,
                 search_timeout_s=search_timeout_s,
                 turn_rate=turn_rate,
                 min_confidence=min_confidence,
-                print_interval=search_print_interval,
+                print_interval=print_interval,
+                scan_mode=scan_mode,
+                heading_tolerance_deg=heading_tolerance_deg,
             ),
             NavigateToArucoObjective(
-                marker_id = marker_id,
+                marker_id=marker_id,
                 fallback_marker_id=fallback_marker_id,
                 search_timeout_s=search_timeout_s,
                 desired_distance=desired_distance,
-                print_interval=navigate_print_interval,
-                nav_mode="aruco"
+                print_interval=print_interval,
+                nav_mode=nav_mode,
             ),
         ]
         super().__init__(objectives)
