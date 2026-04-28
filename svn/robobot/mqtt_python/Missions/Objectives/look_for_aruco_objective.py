@@ -102,7 +102,7 @@ class LookForArucoObjective(Objective):
 		ctx.actions.drive.rc(0.0, self.turn_rate)
 
 		if self.tick_count % self.print_interval == 0:
-			print(f"% Look For {self.marker_id}: searching...")
+			print(f"% Look For {self.current_target_id}: searching...")
 
 	def stop(self, ctx: MissionContext):
 		ctx.actions.drive.stop()

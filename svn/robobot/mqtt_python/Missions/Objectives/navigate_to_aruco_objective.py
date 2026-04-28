@@ -62,7 +62,13 @@ class NavigateToArucoObjective(Objective):
         self.state = NavigateToArucoState.MOVING_PRIMARY
         self.tick_count = 0
         self.search_start_time = None  # Don't start counting until we lose the target
-        self.current_target_id = self.marker_id
+        
+        found_id = ctx.memory.get("aruco_found_id")
+        if found_id is not None:
+            self.current_target_id = found_id
+        else:
+            self.current_target_id = self.marker_id
+        
         self.has_target = False  # Initially assume no target
         
         # Create detector for the target ArUco marker
