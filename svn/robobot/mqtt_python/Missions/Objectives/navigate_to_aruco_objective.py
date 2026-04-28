@@ -40,7 +40,7 @@ class NavigateToArucoObjective(Objective):
         "sequential" (rotate-then-drive) or "smooth" (simultaneous drive+turn)
     """
     
-    def __init__(self, marker_id=53, desired_distance=0.41, print_interval=20, nav_mode="aruco", fallback_marker_id=None, search_timeout_s=None): #NavMode "aruco" for aruco controller. Sequential is Nav.py Smooth is NavSmooth.py
+    def __init__(self, marker_id=53, desired_distance=0.41, print_interval=20, nav_mode="aruco", fallback_marker_id=None, search_timeout_s=None, COMPENSATE_PARAMETER = 20): #NavMode "aruco" for aruco controller. Sequential is Nav.py Smooth is NavSmooth.py
         super().__init__()
         self.desired_distance = desired_distance
         self.print_interval = print_interval
@@ -56,6 +56,7 @@ class NavigateToArucoObjective(Objective):
         self.current_target_id = self.marker_id
         self.fallback_used = False  # Track if fallback was used
         self.has_target = False  # Track if we currently have target
+        self.COMPENSATE_PARAMETER = COMPENSATE_PARAMETER
 
     def start(self, ctx: MissionContext):
         """Initialize navigation to ArUco marker using NavigationAction."""
@@ -78,7 +79,7 @@ class NavigateToArucoObjective(Objective):
         ctx.actions.navigation.setup_detector(self.detector)
         ctx.actions.navigation.setup(desired_distance=self.desired_distance, 
                                      ctx=ctx, 
-                                     nav_mode=self.nav_mode)
+                                     nav_mode=self.nav_mode, COMPENSATE_PARAMETER=self.COMPENSATE_PARAMETER)
         ctx.actions.navigation.start()
         
         print(f"% Objective: Navigate To ArUco Marker {self.current_target_id} (target_distance={self.desired_distance}m, nav_mode={self.nav_mode}, "
@@ -105,10 +106,12 @@ class NavigateToArucoObjective(Objective):
             if self.has_target and not target_visible:
                 self.search_start_time = time.time()
                 self.has_target = False
+                elapsed = 0
             # If we regain the target, stop the clock
             elif not self.has_target and target_visible:
                 self.search_start_time = None
                 self.has_target = True
+                elapsed = 0
             # If we still don't have the target, check if timeout elapsed
             elif not target_visible and self.search_start_time is not None:
                 elapsed = time.time() - self.search_start_time
@@ -119,6 +122,7 @@ class NavigateToArucoObjective(Objective):
                     )
                     
                     self.current_target_id = self.fallback_marker_id
+                    self.detector = ArucoDetector(cam=ctx.cam, gpio=ctx.gpio, service=ctx.service, target_id=self.current_target_id)
                     self.fallback_used = True  # Mark fallback as used
                     ctx.memory["fallback_flag"] = 1  # Set flag in mission context
                     self.state = NavigateToArucoState.MOVING_FALLBACK

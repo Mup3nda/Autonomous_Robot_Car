@@ -33,7 +33,7 @@ class Nav:
         self.K_BEARING = 0.75
         
         # 1. Ajuste de distancias para evitar choques
-        self.DESIRED_DISTANCE = 0.33 # Distancia del punto fantasma (Carrot point)
+        self.DESIRED_DISTANCE = 0.32 # Distancia del punto fantasma (Carrot point)
         self.SAFE_STOP_DISTANCE = 0.31# Freno de emergencia absoluto (30cm de la plataforma)
         
         # FIX: Tolerancia en Radianes (0.2 rad ~= 11.5 grados)

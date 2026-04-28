@@ -23,6 +23,7 @@ class SearchAndNavigateToAruco(CompositeObjective):
         print_interval=20,
         max_sweep_deg = 180,
         nav_mode="aruco",
+        COMPENSATE_PARAMETER = 20,
     ):
         self.fallback_flag = 0  # 0 = using primary marker, 1 = using fallback marker
         objectives = [
@@ -44,6 +45,7 @@ class SearchAndNavigateToAruco(CompositeObjective):
                 desired_distance=desired_distance,
                 print_interval=print_interval,
                 nav_mode=nav_mode,
+                COMPENSATE_PARAMETER = COMPENSATE_PARAMETER
             ),
         ]
         super().__init__(objectives)

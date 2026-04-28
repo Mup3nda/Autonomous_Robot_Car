@@ -321,14 +321,13 @@ def build_objectives():
     #     ), 
     #
          ResetOriginObjective(), # new 0,0,0 origin after following line end
-         DelayObjective(0.5),
     #endregion
      #region Get extra time return to line
          ArmUpObjective(),
          #DriveToTimerAndBackObjective(),
 
         DriveToWaypointObjective(
-            waypoint=(2, 0),
+            waypoint=(2.2, 0),
             is_local=False,
             relative_heading_deg=0, 
             nav_mode=WAYPOINT_NAV_MODE,
@@ -354,19 +353,21 @@ def build_objectives():
         DelayObjective(1.0),
         ArmUpObjective(),
         DriveToWaypointObjective(
-            waypoint=(0.8, 0),
-            is_local=True,
-            print_interval=20,
-            relative_heading_deg=180.0, #180
+            waypoint=(1.75,0.2),
+            is_local=False,
+            relative_heading_deg=0, #180
             nav_mode=WAYPOINT_NAV_MODE,
         ),
         
-
+         self.active = bool(ctx.memory.get("line_failed", False))
+        if not self.active:
+            self._done = True
+            return
         ###### LOOKING FOR CUBE AFTER KCOKING
         GripperOpenObjective(),
         #DriveDistanceObjective(target_distance_m=0.010),
         DelayObjective(1.0),
-        SearchAndNavigateToAruco(marker_id=53, fallback_marker_id=20, turn_rate=0.3, search_timeout_s = 10.0, desired_distance=0.42, max_sweep_deg=90), #37
+        SearchAndNavigateToAruco(marker_id=53, fallback_marker_id=20, turn_rate=0.3, search_timeout_s = 2.0, desired_distance=0.38, max_sweep_deg=90, COMPENSATE_PARAMETER = 10), #37
         CheckNegativeVelocityObjective(),  # End mission immediately if navigation saw negative x velocity
         CheckFallbackObjective(),
         ArmDownObjective(wait_after_s=2.0),
@@ -377,9 +378,10 @@ def build_objectives():
         ConditionalArmObjective(),  # Arm UP if fallback used, ARM MIDDLE if primary used
 
      # end region
+     C
      # region go to platform drop off location D
          DriveToWaypointObjective(
-             waypoint=(1.94,0.7),
+             waypoint=(1.8,0.7),
              is_local=False,
              print_interval=20,
              relative_heading_deg=165.0,
@@ -411,7 +413,7 @@ def build_objectives():
              nav_mode=WAYPOINT_NAV_MODE,
              ),
          DriveToWaypointObjective(
-             waypoint=(1.5,1.82),
+             waypoint=(1.5,1.7),
              is_local=False,
              print_interval=20,
              relative_heading_deg=-90.0,
@@ -422,16 +424,14 @@ def build_objectives():
      #end region
 
     DriveToWaypointObjective(
-            waypoint=(1.5, 0.75),
-            is_local=True,
-            print_interval=20,
+            waypoint=(-0.5, 1.7),
+            is_local=False,
             relative_heading_deg=0, #180
             nav_mode=WAYPOINT_NAV_MODE,
         ),
     DriveToWaypointObjective(
             waypoint=(0, 0),
-            is_local=True,
-            print_interval=20,
+            is_local=False,
             relative_heading_deg=0, #180
             nav_mode=WAYPOINT_NAV_MODE,
         ),
