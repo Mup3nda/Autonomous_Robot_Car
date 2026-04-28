@@ -20,6 +20,7 @@ class SearchAndNavigateToAruco(CompositeObjective):
         search_print_interval=20,
         desired_distance=0.4,
         navigate_print_interval=20,
+        max_sweep_deg = 180,
     ):
         self.fallback_flag = 0  # 0 = using primary marker, 1 = using fallback marker
         objectives = [
@@ -28,6 +29,7 @@ class SearchAndNavigateToAruco(CompositeObjective):
                 fallback_marker_id=fallback_marker_id,
                 search_timeout_s=search_timeout_s,
                 turn_rate=turn_rate,
+                max_sweep_deg = max_sweep_deg,
                 min_confidence=min_confidence,
                 print_interval=search_print_interval,
             ),

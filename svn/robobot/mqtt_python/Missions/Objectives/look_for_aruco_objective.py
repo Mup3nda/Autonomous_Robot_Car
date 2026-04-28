@@ -2,6 +2,7 @@
 
 from enum import IntEnum
 import time
+import math
 
 from mission_context import MissionContext
 from objective import Objective
@@ -23,12 +24,19 @@ class LookForArucoObjective(Objective):
 		print_interval=20, 
 		marker_id=0,
 		fallback_marker_id=None,
-		search_timeout_s=None
+		search_timeout_s=None,
+		max_sweep_deg = 180
   	):
 		super().__init__()
 		self.turn_rate = float(turn_rate)
 		self.min_confidence = int(min_confidence)
 		self.print_interval = int(print_interval)
+  
+		self.max_sweep_deg = float(max_sweep_deg)
+		self.max_sweep_rad = math.radians(self.max_sweep_deg)
+		self.sweep_sign = 1
+		self.origin_heading = None
+  
   
 		self.marker_id = marker_id
 		self.fallback_marker_id = fallback_marker_id
@@ -47,6 +55,13 @@ class LookForArucoObjective(Objective):
 		self.state = LookForArucoState.SEARCHING_PRIMARY
 		self.search_start_time = time.time()
 		self.current_target_id = self.marker_id
+	
+		# Reset tripAh so we start from a known baseline
+		ctx.pose.tripAreset()
+		self.origin_heading = 0.0
+  
+        # record heading to limit sweep from this origin
+		#self.origin_heading = getattr(ctx.pose, "tripAh", None)
   
 		ctx.memory["aruco_found_id"] = None
 		ctx.memory["last_visible_target"] = None
@@ -98,8 +113,32 @@ class LookForArucoObjective(Objective):
     
 				if self.detector and hasattr(self.detector, "set_target_id"):
 					self.detector.set_target_id(self.current_target_id)
+     
+		# if self.origin_heading is None:
+		# 	turn_cmd = self.turn_rate
+		# else:
+		if self.turn_rate != 0:
+			current_heading = getattr(ctx.pose, "tripAh", 0.0)
+			print(f"Current heading: {current_heading}")
+			def _wrap_to_pi(angle):
+				while angle >= math.pi:
+					angle -= 2*math.pi
+				while angle <= -math.pi:
+					angle += 2*math.pi
+				return angle
+			
+			# relative heading change
+			relative_heading = _wrap_to_pi(current_heading - self.origin_heading)
+			half_sweep_rad = self.max_sweep_rad / 2
 
-		ctx.actions.drive.rc(0.0, self.turn_rate)
+			if relative_heading >= half_sweep_rad:
+				self.sweep_sign = -1
+			elif relative_heading <= - half_sweep_rad:
+				self.sweep_sign = 1
+
+		turn_cmd = self.turn_rate * self.sweep_sign
+   
+		ctx.actions.drive.rc(0.0, turn_cmd)
 
 		if self.tick_count % self.print_interval == 0:
 			print(f"% Look For {self.current_target_id}: searching...")

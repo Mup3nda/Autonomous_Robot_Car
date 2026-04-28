@@ -285,7 +285,9 @@ def build_objectives():
         ###### LOOKING FOR CUBE AFTER KCOKING
         ArmUpObjective(),
         GripperOpenObjective(),
-        SearchAndNavigateToAruco(marker_id=53, fallback_marker_id=20, turn_rate=0.3, search_timeout_s = 5.0, desired_distance=0.42), #37
+        #DriveDistanceObjective(target_distance_m=0.010),
+        DelayObjective(1.0),
+        SearchAndNavigateToAruco(marker_id=53, fallback_marker_id=20, turn_rate=0.3, search_timeout_s = 10.0, desired_distance=0.42, max_sweep_deg=90), #37
         CheckNegativeVelocityObjective(),  # End mission immediately if navigation saw negative x velocity
         CheckFallbackObjective(),
         ArmDownObjective(wait_after_s=2.0),
