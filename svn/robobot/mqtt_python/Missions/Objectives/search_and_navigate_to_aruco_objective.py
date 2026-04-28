@@ -21,6 +21,7 @@ class SearchAndNavigateToAruco(CompositeObjective):
         heading_tolerance_deg=4.0,
         desired_distance=0.4,
         print_interval=20,
+        max_sweep_deg = 180,
         nav_mode="aruco",
     ):
         self.fallback_flag = 0  # 0 = using primary marker, 1 = using fallback marker
@@ -30,6 +31,7 @@ class SearchAndNavigateToAruco(CompositeObjective):
                 fallback_marker_id=fallback_marker_id,
                 search_timeout_s=search_timeout_s,
                 turn_rate=turn_rate,
+                max_sweep_deg = max_sweep_deg,
                 min_confidence=min_confidence,
                 print_interval=print_interval,
                 scan_mode=scan_mode,

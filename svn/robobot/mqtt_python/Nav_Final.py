@@ -163,7 +163,7 @@ class Nav:
                 if self.forward_phase:
 
                     #print(f"Y error: {y_error}, Rotation error: {rotation_error}")
-                    print(f"Target info: {self.target}")
+                    #print(f"Target info: {self.target}")
                     
                     if self.target is None:
                         print("Lost target during forward motion")
