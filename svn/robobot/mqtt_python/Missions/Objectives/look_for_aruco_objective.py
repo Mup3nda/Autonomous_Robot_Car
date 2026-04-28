@@ -1,7 +1,6 @@
 import math
 from enum import IntEnum
 import time
-import math
 
 from mission_context import MissionContext
 from objective import Objective
@@ -29,8 +28,10 @@ class LookForArucoObjective(Objective):
 		marker_id=0,
 		fallback_marker_id=None,
 		search_timeout_s=None,
-		max_sweep_deg = 180
-  	):
+		max_sweep_deg = 180,
+		scan_mode=SCAN_MODE_SPIN,
+		heading_tolerance_deg=4.0,
+	  	):
 		super().__init__()
 		self.turn_rate = float(turn_rate)
 		self.min_confidence = int(min_confidence)
@@ -78,8 +79,7 @@ class LookForArucoObjective(Objective):
 		# Reset tripAh so we start from a known baseline
 		ctx.pose.tripAreset()
 		self.origin_heading = 0.0
-  
-        # record heading to limit sweep from this origin
+		# record heading to limit sweep from this origin
 		#self.origin_heading = getattr(ctx.pose, "tripAh", None)
   
 		ctx.memory["aruco_found_id"] = None
