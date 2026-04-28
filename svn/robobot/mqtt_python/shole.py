@@ -54,10 +54,10 @@ class SHole(TargetDetector):
     DETECTION_PARAMS = {
         "min_area": 300,
         "max_area": 5000,
-        "min_ratio": 0.40,
+        "min_ratio": 0.35,
         "min_axis": 10,
         "max_axis": 200,
-        "roi_y_start_ratio": 0.35,
+        "roi_y_start_ratio": 0.3,
     }
 
     ##########################################################

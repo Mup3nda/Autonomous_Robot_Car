@@ -23,14 +23,14 @@ class SearchAndNavigateToRedBall(CompositeObjective):
                 turn_rate=turn_rate,
                 min_confidence=min_confidence,
                 print_interval=search_print_interval,
-                color="red_orange",
+                color="red",
                 scan_mode=LookForBallObjective.SCAN_MODE_SWEEP_90,
             ),
             NavigateToBallObjective(
                 desired_distance=desired_distance,
                 print_interval=navigate_print_interval,
                 nav_mode="sequential",
-                color="red_orange"
+                color="red"
             ),
         ]
         super().__init__(objectives)
