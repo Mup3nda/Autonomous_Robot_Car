@@ -325,7 +325,14 @@ def build_objectives():
     #endregion
      #region Get extra time return to line
          ArmUpObjective(),
-         DriveToTimerAndBackObjective(),
+         #DriveToTimerAndBackObjective(),
+
+        DriveToWaypointObjective(
+            waypoint=(2, 0),
+            is_local=False,
+            relative_heading_deg=0, 
+            nav_mode=WAYPOINT_NAV_MODE,
+        ),
 
         ########## DETECT ARUCO PLATFORM 
         DriveTurnAngleObjective(
@@ -414,8 +421,22 @@ def build_objectives():
              DropTargetObjective(delay_s=1.0),
      #end region
 
+    DriveToWaypointObjective(
+            waypoint=(1.5, 0.75),
+            is_local=True,
+            print_interval=20,
+            relative_heading_deg=0, #180
+            nav_mode=WAYPOINT_NAV_MODE,
+        ),
+    DriveToWaypointObjective(
+            waypoint=(0, 0),
+            is_local=True,
+            print_interval=20,
+            relative_heading_deg=0, #180
+            nav_mode=WAYPOINT_NAV_MODE,
+        ),
               # region Following line
-         DelayObjective(2.0),
+         DelayObjective(1.0),
      # endregion
      # region Following line before knocking down cup
          DriveToLineObjective(
