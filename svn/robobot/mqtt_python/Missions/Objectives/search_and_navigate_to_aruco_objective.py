@@ -15,7 +15,7 @@ class SearchAndNavigateToAruco(CompositeObjective):
         marker_id=0,
         fallback_marker_id=None,
         search_timeout_s=5.0,
-        turn_rate=0.5,
+        turn_rate=0.3,
         min_confidence=1,
         scan_mode="spin",
         heading_tolerance_deg=4.0,

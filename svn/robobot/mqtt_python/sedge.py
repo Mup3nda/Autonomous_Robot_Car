@@ -22,7 +22,7 @@
 #* THE SOFTWARE. */
 
 
-from datetime import *
+from datetime import datetime
 import time as t
 import os
 from threading import Thread
