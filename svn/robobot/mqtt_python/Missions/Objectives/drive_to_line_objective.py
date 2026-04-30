@@ -118,7 +118,7 @@ class DriveToLineObjective(Objective):
             if ctx.actions.edge.is_line_valid(confidence=LINE_FOUND_CONFIDENCE):
                 # Line detected! Switch to centering mode at low speed
                 ctx.memory["line_failed"] = False
-                ctx.actions.edge.start_following(velocity=self.centering_speed, follow_left=self.follow_left)
+                ctx.actions.edge.start_following(velocity=self.centering_speed, follow_left=self.follow_left, stop_on_intersection=False)
                 self.dist_to_line = search_dist  # Record distance to line
                 ctx.start_local_progress(self.ALONG_LINE_PROGRESS_KEY)
                 self.along_line_started = True
@@ -138,7 +138,7 @@ class DriveToLineObjective(Objective):
                     ctx.actions.drive.stop(instant=self.instant_stop)
                     self.state = DriveToLineState.DONE
                 else:
-                    ctx.actions.edge.start_following(velocity=self.follow_speed, follow_left=self.follow_left)
+                    ctx.actions.edge.start_following(velocity=self.follow_speed, follow_left=self.follow_left, stop_on_intersection=self.intersection_stop)
                     self.state = DriveToLineState.LINE_FOLLOWING
         elif self.state == DriveToLineState.STOPPED:
             # State 2: Stopped after timeout - wait for robot to settle
@@ -168,9 +168,10 @@ class DriveToLineObjective(Objective):
                 self.state = DriveToLineState.STOPPED
                 return
 
-            # Optionally stop when an intersection is detected
-            if self.intersection_stop and ctx.actions.edge.is_intersection(confidence=self.intersection_confidence):
-                print("DriveToLineObjective: Intersection detected, stopping line follow.")
+            # Optionally stop when sedge detects an intersection
+            # (sedge stops line control immediately; objective detects it here)
+            if self.intersection_stop and not ctx.actions.edge.is_line_control_active():
+                print("DriveToLineObjective: Intersection detected by sedge, stopping.")
                 ctx.actions.edge.stop_following()
                 ctx.actions.drive.stop(instant=self.instant_stop)
                 self.state = DriveToLineState.STOPPED

@@ -73,6 +73,7 @@ class SEdge:
     #
     # follow line controller
     lineCtrl = False # private
+    stop_on_intersection = False  # if True, stop line following when intersection detected
     # Motor velocity limits
     wheelbase = 0.23  # Distance between wheels (m)
     maxWheelVel = 1.3  # Maximum wheel velocity (m/s)
@@ -467,10 +468,11 @@ class SEdge:
 
     ##########################################################
 
-    def lineControl(self, velocity, followLeft = True, refPosition = 0):
+    def lineControl(self, velocity, followLeft = True, refPosition = 0, stop_on_intersection = False):
       self.targetVelocity = max(0.0, velocity)
       self.followLeft = followLeft
       self.refPosition = refPosition
+      self.stop_on_intersection = bool(stop_on_intersection)
       # velocity 0 (or negative) is turning off line control
       wasActive = self.lineCtrl
       self.lineCtrl = self.targetVelocity > 0.001
@@ -566,6 +568,12 @@ class SEdge:
         if abs(self.lineY) > max_turnrate:
           # Clamp turn rate to physically achievable limit
           self.lineY = max_turnrate if self.lineY > 0 else -max_turnrate
+      #
+      # Check if we should stop due to intersection detection
+      if self.stop_on_intersection and self.intersectionCnt > 2:
+        # Stop line following immediately when intersection detected with sufficient confidence
+        self.lineCtrl = False
+        return
       #
       # Save error for next iteration
       self.lineE0 = e

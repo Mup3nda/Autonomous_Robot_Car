@@ -14,7 +14,7 @@ class EdgeActions:
     def __init__(self, edge):
         self.edge = edge  # Reference to sedge.SEdge instance
     
-    def start_following(self, velocity=0.2, follow_left=True, ref_position=0.0):
+    def start_following(self, velocity=0.2, follow_left=True, ref_position=0.0, stop_on_intersection=False):
         """Begin automatic line following.
         
         Enables closed-loop control that automatically steers the robot
@@ -25,8 +25,9 @@ class EdgeActions:
             velocity: Forward speed (0.0 to 1.0, where 0.2 = 20% throttle)
             follow_left: If True, follow left edge; if False, follow right edge
             ref_position: Target distance from line edge (default 0.0 = on line)
+            stop_on_intersection: If True, stop line following when intersection detected
         """
-        self.edge.lineControl(velocity, follow_left, ref_position)
+        self.edge.lineControl(velocity, follow_left, ref_position, stop_on_intersection)
     
     def stop_following(self):
         """Stop automatic line following.
@@ -71,6 +72,14 @@ class EdgeActions:
             bool: True if crossing line is detected
         """
         return self.edge.crossingLineCnt > confidence
+
+    def is_line_control_active(self):
+        """Check if line control is currently active (being processed in sedge).
+
+        Returns:
+            bool: True if lineControl is actively running PID
+        """
+        return self.edge.lineCtrl
 
     def is_intersection(self, confidence=2):
         """Check if an intersection is detected with sufficient confidence.
