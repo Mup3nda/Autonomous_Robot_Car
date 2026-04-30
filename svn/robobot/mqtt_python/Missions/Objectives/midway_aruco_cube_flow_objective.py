@@ -28,7 +28,7 @@ class MissionArucoCubeFlowObjective(Objective):
 
     def _make_cube20_pickup_waypoint(self):
         return DriveToWaypointObjective(
-            waypoint=(1.94, 0.7),
+            waypoint=(1.94, 0.3),
             is_local=False,
             print_interval=20,
             relative_heading_deg=0.0,
@@ -62,7 +62,7 @@ class MissionArucoCubeFlowObjective(Objective):
 
     def _make_pickup_again_waypoint(self):
         return DriveToWaypointObjective(
-            waypoint=(1.94, 0.7),
+            waypoint=(1.94, 0.3),
             is_local=False,
             print_interval=20,
             relative_heading_deg=0.0,
