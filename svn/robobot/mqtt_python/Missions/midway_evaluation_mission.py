@@ -23,7 +23,6 @@ from Objectives.drive_circle_objective import DriveCircleObjective
 from Objectives.drive_to_waypoint_objective import DriveToWaypointObjective
 from Objectives.drive_turn_angle_objective import DriveTurnAngleObjective
 from Objectives.align_to_circle_tangent_objective import AlignToCircleTangentObjective
-from Objectives.search_and_navigate_to_blue_ball_objective import SearchAndNavigateToBlueBall
 from Objectives.arm_up_objective import ArmUpObjective
 from Objectives.arm_middle_objective import ArmMiddleObjective
 from Objectives.arm_down_objective import ArmDownObjective
@@ -51,6 +50,7 @@ from Objectives.search_and_navigate_to_golf_ball import SearchAndNavigateToGolfB
 from Objectives.drive_until_end_ramp import DriveUntilEndRamp
 from Objectives.drive_to_line_objective_ramp_imu import DriveToLineObjectiveIMU
 from Objectives.search_and_navigate_to_hole_objective import SearchAndNavigateToHole
+from Objectives.midway_ball_flow_objective import MissionBallFlowObjective
 from objective import Objective
 
 # Roundabout three-step tuning parameters.
@@ -185,6 +185,8 @@ class CheckNegativeVelocityObjective(Objective):
 
     def stop(self, ctx):
         pass
+
+
 #
 # Add objectives in the list below in the exact order they should execute.
 def build_objectives():
@@ -362,170 +364,7 @@ def build_objectives():
         ###### LOOKING FOR CUBE AFTER KCOKING
         ArmUpObjective(),
         GripperOpenObjective(),
-        #DriveDistanceObjective(target_distance_m=0.010),
-        # DelayObjective(1.0),
-        # SearchAndNavigateToAruco(marker_id=53, fallback_marker_id=20, turn_rate=0.3, search_timeout_s = 2.0, desired_distance=0.38, max_sweep_deg=90, COMPENSATE_PARAMETER = 0), #37
-        #  ArmDownObjective(wait_after_s=2.0),
-        #  DriveDistanceObjective(target_distance_m=0.005),
-        #  DelayObjective(1.0),
-        #  GripperMiddleObjective(),
-    #     DelayObjective(1.0),
-    #     ConditionalArmObjective(),  # Arm UP if fallback used, ARM MIDDLE if primary used
-
-    #  # end region
-     
-    #  # region go to platform drop off location D
-    #      DriveToWaypointObjective(
-    #          waypoint=(1.8,0.7),
-    #          is_local=False,
-    #          print_interval=20,
-    #          relative_heading_deg=165.0,
-    #          nav_mode=WAYPOINT_NAV_MODE,
-    #          ),
-    #         SearchAndNavigateToAruco(marker_id=17,desired_distance=0.35,scan_mode=LookForArucoObjective.SCAN_MODE_SWEEP_90),
-    #         DropTargetObjective(delay_s=1.0),
-    #          DriveTurnAngleObjective(
-    #              angle_deg=180.0,
-    #              linear_cmd=0.0,
-    #              timeout_s=6.0,            
-    #              ),
-    #  # end region
-    #  # region go to platform pick up location again
-    #      DriveToWaypointObjective(
-    #          waypoint=(1.94,0.7),
-    #          is_local=False,
-    #          print_interval=20,
-    #          relative_heading_deg=0.0,
-    #          nav_mode=WAYPOINT_NAV_MODE,
-    #          ),
-    #  # end region
-    #  # region go to platform drop off location A
-    #      DriveToWaypointObjective(
-    #          waypoint=(1.94,1.6),
-    #          is_local=False,
-    #          print_interval=20,
-    #          relative_heading_deg=110.0,
-    #          nav_mode=WAYPOINT_NAV_MODE,
-    #          ),
-    #      DriveToWaypointObjective(
-    #          waypoint=(1.5,1.7),
-    #          is_local=False,
-    #          print_interval=20,
-    #          relative_heading_deg=-90.0,
-    #          nav_mode=WAYPOINT_NAV_MODE,
-    #          ),
-    #          SearchAndNavigateToAruco(marker_id=11,desired_distance=0.35,scan_mode=LookForArucoObjective.SCAN_MODE_SWEEP_90),
-    #          DropTargetObjective(delay_s=1.0),
-    #  #end region
-
-    # DriveToWaypointObjective(
-    #         waypoint=(-0.5, 1.7),
-    #         is_local=False,
-    #         relative_heading_deg=0, #180
-    #         nav_mode=WAYPOINT_NAV_MODE,
-    #     ),
-    # DriveToWaypointObjective(
-    #         waypoint=(0, 0),
-    #         is_local=False,
-    #         relative_heading_deg=0, #180
-    #         nav_mode=WAYPOINT_NAV_MODE,
-    #     ),
-    #           # region Following line
-    #      DelayObjective(1.0),
-    #  # endregion
-    #  # region Following line before knocking down cup
-    #      DriveToLineObjective(
-    #          follow_left=True,
-    #          follow_speed=0.4,
-    #          search_speed=0.25,
-    #          centering_speed=0.2,
-    #          lost_line_timeout_s=0.0,
-    #          max_duration = 0.0,
-    #          max_line_distance_m=0.5,
-    #          ),
-        
-    #      #DelayObjective(2.0),
-    #  # endregion
-    #  # region arm out and knock down cup by turning left 90 degree
-    #      ArmMiddleObjective(),
-    #      DelayObjective(0.4),
-    #      DriveTurnAngleObjective(
-    #          angle_deg=-100,
-    #          linear_cmd=0.0,
-    #          timeout_s=6.0,
-    #      ),
-    #      #DelayObjective(2.0),
-    #      ArmUpObjective(),
-    #      DriveTurnAngleObjective(
-    #          angle_deg=100,
-    #          linear_cmd=0.0,
-    #          timeout_s=6.0,
-    #      ),
-    #  #end region
-    #  # region go to ball pick up location
-    #      DriveToWaypointObjective(
-    #          waypoint=(0.2,0.0),
-    #          is_local=True,
-    #          print_interval=20,
-    #          relative_heading_deg=-0.0,
-    #          nav_mode=WAYPOINT_NAV_MODE,
-    #          ),
-    #      DriveToWaypointObjective(
-    #          waypoint=(0.6,1.2),
-    #          is_local=False,
-    #          print_interval=20,
-    #          relative_heading_deg=-100.0,
-    #          nav_mode=WAYPOINT_NAV_MODE,
-    #          ),
-    #     SearchAndNavigateToRedBall(),
-    #      GrabTargetObjective(nav_mode=WAYPOINT_NAV_MODE),
-    #  # end region
-    #      #DelayObjective(2.0),
-    #  # region go to red ball drop off location
-    #      DriveToWaypointObjective(
-    #          waypoint=(0.9,1.3),
-    #          is_local=False,
-    #          print_interval=20,
-    #          relative_heading_deg=0.0,
-    #          nav_mode=WAYPOINT_NAV_MODE,
-    #          ),
-    #      SearchAndNavigateToAruco(marker_id=12,desired_distance=0.35,scan_mode=LookForArucoObjective.SCAN_MODE_SWEEP_90),
-    #      DropTargetObjective(delay_s=1.0),
-    #      DriveTurnAngleObjective(
-    #          angle_deg=170.0,
-    #          linear_cmd=0.0,
-    #          timeout_s=6.0,
-    #      ),
-    #  # end region
-    #  # region go to ball pick up location
-    #      DriveToWaypointObjective(
-    #          waypoint=(0.5,1.0),
-    #          is_local=False,
-    #          print_interval=20,
-    #          relative_heading_deg=-100.0,
-    #          nav_mode=WAYPOINT_NAV_MODE,
-    #          ),
-    #      SearchAndNavigateToBlueBall(turn_rate=0.3),
-    #     GrabTargetObjective(nav_mode=WAYPOINT_NAV_MODE),
-    #     #DelayObjective(2.0),
-    #  # end region
-    #  # region go to blue ball drop off location
-    #      DriveToWaypointObjective(
-    #          waypoint=(1.35,0.8),
-    #          is_local=False,
-    #          print_interval=20,
-    #          relative_heading_deg=90.0,
-    #          nav_mode=WAYPOINT_NAV_MODE,
-    #          ),
-    #     SearchAndNavigateToAruco(marker_id=15,desired_distance=0.35,scan_mode=LookForArucoObjective.SCAN_MODE_SWEEP_90),
-    #      DropTargetObjective(
-    #          delay_s=1.0),
-    #      DriveTurnAngleObjective(
-    #          angle_deg=-90.0,
-    #          linear_cmd=0.0,
-    #          timeout_s=6.0,
-    #      ),
-    #  # end region
+        MissionBallFlowObjective(waypoint_nav_mode=WAYPOINT_NAV_MODE),
     #  # region go to platform pick up location
     #      #DelayObjective(2.0),
     #      DriveToWaypointObjective(
