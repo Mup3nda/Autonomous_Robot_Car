@@ -6,6 +6,7 @@ import time
 import math
 import time
 
+
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 ROOT_DIR = os.path.dirname(THIS_DIR)
 if THIS_DIR not in sys.path:
@@ -13,6 +14,7 @@ if THIS_DIR not in sys.path:
 if ROOT_DIR not in sys.path:
     sys.path.insert(0, ROOT_DIR)
 
+from Objectives.midway_ball_flow_objective import MissionBallFlowObjective
 from Objectives.search_and_navigate_to_red_ball import SearchAndNavigateToRedBall
 from Objectives.look_for_aruco_objective import LookForArucoObjective
 from uservice import service
@@ -193,116 +195,116 @@ def build_objectives():
         DelayObjective(2.0),
         GripperOpenObjective(),
         ArmUpObjective(),
-     # region Following line approach roundabout
-         DriveToLineObjective(
-             follow_left=True,
-             follow_speed=0.40,
-             search_speed=0.25,
-             centering_speed=0.2,
-             lost_line_timeout_s=0.3,
-             max_line_distance_m=1.77,
-             max_duration=0.0,
-             ),
-         DelayObjective(0.5),
-         DriveDistanceObjective(
-             target_distance_m=0.52,
-             throttle=0.30,
-             timeout_s=8.0,
-             instant_stop=True,
-         ),
-         # region entry turn and align to tangent and drive circle
-         DriveTurnAngleObjective(
-             angle_deg=82.0,
-             linear_cmd=0.0,
-             timeout_s=6.0,
-         ),
+    #  # region Following line approach roundabout
+    #      DriveToLineObjective(
+    #          follow_left=True,
+    #          follow_speed=0.40,
+    #          search_speed=0.25,
+    #          centering_speed=0.2,
+    #          lost_line_timeout_s=0.3,
+    #          max_line_distance_m=1.77,
+    #          max_duration=0.0,
+    #          ),
+    #      DelayObjective(0.5),
+    #      DriveDistanceObjective(
+    #          target_distance_m=0.52,
+    #          throttle=0.30,
+    #          timeout_s=8.0,
+    #          instant_stop=True,
+    #      ),
+    #      # region entry turn and align to tangent and drive circle
+    #      DriveTurnAngleObjective(
+    #          angle_deg=82.0,
+    #          linear_cmd=0.0,
+    #          timeout_s=6.0,
+    #      ),
      
-         DriveCircleObjective(
-             radius_m=CIRCLE_RADIUS_M,
-             revolutions=1.6, # one full circle + half circle
-             forward_cmd=0.28,
-             turn_cmd=CIRCLE_TURN_CMD,
-             turn_rate_scale=CIRCLE_TURN_RATE_SCALE,
-             clockwise=CIRCLE_CLOCKWISE,
-             timeout_s=CIRCLE_TIMEOUT_S,
-         ),
-         DriveTurnAngleObjective(
-             angle_deg=93.0,
-             linear_cmd=0.0,
-             timeout_s=6.0,
-         ),
-        #endregion
-        #region Follow line until extra time
-         DriveToLineObjective(follow_left=LINE_ENTRY_FOLLOW_LEFT,
-                             follow_speed=0.45,
-                             search_speed=LINE_ENTRY_SEARCH_SPEED,
-                             lost_line_timeout_s=LINE_ENTRY_TIMEOUT_S,
-                             max_line_distance_m=4.0,
-                             instant_stop=False),
-         LineRecovery(max_line_distance_m=3.2),
-         DelayObjective(0.3),
-         ResetOriginObjective(), # new 0,0,0 origin after following line end
-         DriveToWaypointObjective(
-              waypoint=(0.4,-1.4),
-              is_local=False,
-              print_interval=20,
-              relative_heading_deg=None,
-              nav_mode=WAYPOINT_NAV_MODE,
-              ),
-         DriveToWaypointObjective(
-              waypoint=(0.0,0.0),
-              is_local=False,
-              print_interval=20,
-              relative_heading_deg=None,
-              nav_mode=WAYPOINT_NAV_MODE,
-              ),
-         #endregion
-         DriveToLineObjective(follow_speed=0.5, stop_after_centering=False, max_line_distance_m=6.0),
-         DriveToLineUntilCurveObjective(curve_detection_delay_s=1.0, follow_speed=0.3),
-         SearchAndNavigateToGolfBall(desired_distance=0.35),
-         GripperOpenObjective(),
-         DelayObjective(1.0),
-         ArmDownObjective(wait_after_s=2.0),
-         DelayObjective(1.0),
-         DriveToWaypointObjective(
-               waypoint=(0.03,0),
-               is_local=True,
-               print_interval=20,
-               relative_heading_deg=0.0,
-               nav_mode=WAYPOINT_NAV_MODE,
-               ),
-         GripperCloseObjective(),
-         DelayObjective(2.0),
-         ArmUpObjective(),
-         DelayObjective(1.0), 
-         DriveTurnAngleObjective(-150.0, linear_cmd=0.01, turn_cmd=0.8, timeout_s=5.0),
-         DriveToWaypointObjective(
-               waypoint=(0.2,0),
-               is_local=True,
-               print_interval=20,
-               relative_heading_deg=0,
-               nav_mode=WAYPOINT_NAV_MODE,
-               ), 
-         DriveTurnAngleObjective(40.0, linear_cmd=0.0, turn_cmd=0.8, timeout_s=5.0),
-         DriveToLineObjective(follow_speed=0.5,max_duration=2.0, stop_after_centering=True),
-         DriveToLineUntilCurveObjective(curve_detection_delay_s=1.0, follow_speed=0.3),
-         DelayObjective(1.0),
-         SearchAndNavigateToHole(desired_distance=0.35),
-         ArmDownObjective(wait_after_s=2.0),
-         DelayObjective(1.0), 
-         GripperOpenObjective(),
-         DelayObjective(1.0), 
-         DriveToWaypointObjective(
-               waypoint=(0.1,0),
-               is_local=True,
-               print_interval=20,
-               relative_heading_deg=0,
-               nav_mode=WAYPOINT_NAV_MODE,
-               ), 
-         DelayObjective(1.0), 
-         ArmUpObjective(),
-         DriveTurnAngleObjective(100.0, linear_cmd=0.01, turn_cmd=0.8, timeout_s=5.0),
-       #region go back to line after ramp and get extra time
+    #      DriveCircleObjective(
+    #          radius_m=CIRCLE_RADIUS_M,
+    #          revolutions=1.6, # one full circle + half circle
+    #          forward_cmd=0.28,
+    #          turn_cmd=CIRCLE_TURN_CMD,
+    #          turn_rate_scale=CIRCLE_TURN_RATE_SCALE,
+    #          clockwise=CIRCLE_CLOCKWISE,
+    #          timeout_s=CIRCLE_TIMEOUT_S,
+    #      ),
+    #      DriveTurnAngleObjective(
+    #          angle_deg=93.0,
+    #          linear_cmd=0.0,
+    #          timeout_s=6.0,
+    #      ),
+    #     #endregion
+    #     #region Follow line until extra time
+    #      DriveToLineObjective(follow_left=LINE_ENTRY_FOLLOW_LEFT,
+    #                          follow_speed=0.45,
+    #                          search_speed=LINE_ENTRY_SEARCH_SPEED,
+    #                          lost_line_timeout_s=LINE_ENTRY_TIMEOUT_S,
+    #                          max_line_distance_m=4.0,
+    #                          instant_stop=False),
+    #      LineRecovery(max_line_distance_m=3.2),
+    #      DelayObjective(0.3),
+    #      ResetOriginObjective(), # new 0,0,0 origin after following line end
+    #      DriveToWaypointObjective(
+    #           waypoint=(0.4,-1.4),
+    #           is_local=False,
+    #           print_interval=20,
+    #           relative_heading_deg=None,
+    #           nav_mode=WAYPOINT_NAV_MODE,
+    #           ),
+    #      DriveToWaypointObjective(
+    #           waypoint=(0.0,0.0),
+    #           is_local=False,
+    #           print_interval=20,
+    #           relative_heading_deg=None,
+    #           nav_mode=WAYPOINT_NAV_MODE,
+    #           ),
+    #      #endregion
+    #      DriveToLineObjective(follow_speed=0.5, stop_after_centering=False, max_line_distance_m=6.0),
+    #      DriveToLineUntilCurveObjective(curve_detection_delay_s=1.0, follow_speed=0.3),
+    #      SearchAndNavigateToGolfBall(desired_distance=0.35),
+    #      GripperOpenObjective(),
+    #      DelayObjective(1.0),
+    #      ArmDownObjective(wait_after_s=2.0),
+    #      DelayObjective(1.0),
+    #      DriveToWaypointObjective(
+    #            waypoint=(0.03,0),
+    #            is_local=True,
+    #            print_interval=20,
+    #            relative_heading_deg=0.0,
+    #            nav_mode=WAYPOINT_NAV_MODE,
+    #            ),
+    #      GripperCloseObjective(),
+    #      DelayObjective(2.0),
+    #      ArmUpObjective(),
+    #      DelayObjective(1.0), 
+    #      DriveTurnAngleObjective(-150.0, linear_cmd=0.01, turn_cmd=0.8, timeout_s=5.0),
+    #      DriveToWaypointObjective(
+    #            waypoint=(0.2,0),
+    #            is_local=True,
+    #            print_interval=20,
+    #            relative_heading_deg=0,
+    #            nav_mode=WAYPOINT_NAV_MODE,
+    #            ), 
+    #      DriveTurnAngleObjective(40.0, linear_cmd=0.0, turn_cmd=0.8, timeout_s=5.0),
+    #      DriveToLineObjective(follow_speed=0.5,max_duration=2.0, stop_after_centering=True),
+    #      DriveToLineUntilCurveObjective(curve_detection_delay_s=1.0, follow_speed=0.3),
+    #      DelayObjective(1.0),
+    #      SearchAndNavigateToHole(desired_distance=0.35),
+    #      ArmDownObjective(wait_after_s=2.0),
+    #      DelayObjective(1.0), 
+    #      GripperOpenObjective(),
+    #      DelayObjective(1.0), 
+    #      DriveToWaypointObjective(
+    #            waypoint=(0.1,0),
+    #            is_local=True,
+    #            print_interval=20,
+    #            relative_heading_deg=0,
+    #            nav_mode=WAYPOINT_NAV_MODE,
+    #            ), 
+    #      DelayObjective(1.0), 
+    #      ArmUpObjective(),
+    #      DriveTurnAngleObjective(100.0, linear_cmd=0.01, turn_cmd=0.8, timeout_s=5.0),
+    #    #region go back to line after ramp and get extra time
         DriveToLineLockStraightHeadingObjective(
             follow_left=LINE_ENTRY_FOLLOW_LEFT,
             follow_speed=0.5,
@@ -312,7 +314,7 @@ def build_objectives():
             heading_tolerance_deg=0.5,
             instant_stop=False,
         ),
-        LineRecovery(),
+        #LineRecovery(),
         DriveBackwardUntilLineStopObjective(
              reverse_speed=-0.2,
              line_found_confidence=2,
@@ -344,32 +346,49 @@ def build_objectives():
          DelayObjective(2.5),
          GripperMiddleObjective(),
          DriveTurnAngleObjective(
-             angle_deg=120.0,
+             angle_deg=70.0,
              linear_cmd=0.0,
              timeout_s=6.0,
          ),
          DelayObjective(1.0),
          ArmUpObjective(),
-
-    DriveToWaypointObjective(
-            waypoint=(0, 0),
-            is_local=False,
-            relative_heading_deg=0, #180
-            nav_mode=WAYPOINT_NAV_MODE,
+         DriveTurnAngleObjective(
+             angle_deg=-100.0,
+             linear_cmd=0.0,
+             timeout_s=6.0,
+         ),
+        DriveDistanceObjective(
+            target_distance_m=0.1,
+            throttle=-0.25,
+            timeout_s=8.0,
+            instant_stop=True,
         ),
-              # region Following line
-         DelayObjective(1.0),
-     # endregion
+     DriveToWaypointObjective(
+             waypoint=(0, 0),
+             is_local=False,
+             relative_heading_deg=-90, #180
+             nav_mode=WAYPOINT_NAV_MODE,
+         ),
+    #           # region Following line
+    #      DelayObjective(1.0),
+    #  # endregion
      # region Following line before knocking down cup
-         DriveToLineObjective(
-             follow_left=True,
-             follow_speed=0.4,
-             search_speed=0.25,
-             centering_speed=0.2,
-             lost_line_timeout_s=0.0,
-             max_duration = 0.0,
-             max_line_distance_m=0.5,
-             ),
+        DriveToLineUntilCurveObjective(
+            follow_left=False,
+            follow_speed=0.5,
+            search_speed=LINE_ENTRY_SEARCH_SPEED,
+            lost_line_timeout_s=LINE_ENTRY_TIMEOUT_S,
+            curve_detection_delay_s=0.5
+        ),
+        #  DriveToLineObjective(
+        #      follow_left=True,
+        #      follow_speed=0.4,
+        #      search_speed=0.25,
+        #      centering_speed=0.2,
+        #      lost_line_timeout_s=0.0,
+        #      max_duration = 0.0,
+        #      max_line_distance_m=0.5,
+        #      ),
         
          #DelayObjective(2.0),
      # endregion
@@ -397,67 +416,8 @@ def build_objectives():
              relative_heading_deg=-0.0,
              nav_mode=WAYPOINT_NAV_MODE,
              ),
-         DriveToWaypointObjective(
-             waypoint=(0.6,1.2),
-             is_local=False,
-             print_interval=20,
-             relative_heading_deg=-100.0,
-             nav_mode=WAYPOINT_NAV_MODE,
-             ),
-         SearchAndNavigateToRedBall(),
-         GrabTargetObjective(nav_mode=WAYPOINT_NAV_MODE),
-     # end region
-         #DelayObjective(2.0),
-     # region go to red ball drop off location
-         DriveToWaypointObjective(
-             waypoint=(0.9,1.3),
-             is_local=False,
-             print_interval=20,
-             relative_heading_deg=0.0,
-             nav_mode=WAYPOINT_NAV_MODE,
-             ),
-         SearchAndNavigateToAruco(marker_id=12,desired_distance=0.35,scan_mode=LookForArucoObjective.SCAN_MODE_SWEEP_90),
-         DropTargetObjective(delay_s=1.0),
-         DriveTurnAngleObjective(
-             angle_deg=170.0,
-             linear_cmd=0.0,
-             timeout_s=6.0,
-         ),
-     # end region
-     # region go to ball pick up location
-         DriveToWaypointObjective(
-             waypoint=(0.5,1.0),
-             is_local=False,
-             print_interval=20,
-             relative_heading_deg=-100.0,
-             nav_mode=WAYPOINT_NAV_MODE,
-             ),
-         SearchAndNavigateToBlueBall(turn_rate=0.3),
-         GrabTargetObjective(nav_mode=WAYPOINT_NAV_MODE),
-        #DelayObjective(2.0),
-     # end region
-     # region go to blue ball drop off location
-         DriveToWaypointObjective(
-             waypoint=(1.35,0.8),
-             is_local=False,
-             print_interval=20,
-             relative_heading_deg=90.0,
-             nav_mode=WAYPOINT_NAV_MODE,
-             ),
-         SearchAndNavigateToAruco(marker_id=15,desired_distance=0.35,scan_mode=LookForArucoObjective.SCAN_MODE_SWEEP_90),
-         DropTargetObjective(
-             delay_s=1.0),
-     #endregion
 
-     # region go to platform pick up location
-         #DelayObjective(2.0),
-         DriveToWaypointObjective(
-             waypoint=(1.94,0.7),
-             is_local=False,
-             print_interval=20,
-             relative_heading_deg=0.0,
-             nav_mode=WAYPOINT_NAV_MODE,
-             ),
+         MissionBallFlowObjective(waypoint_nav_mode=WAYPOINT_NAV_MODE),
     # endregion
     #region get cubes    
         ###### LOOKING FOR CUBE

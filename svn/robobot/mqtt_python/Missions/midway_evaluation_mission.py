@@ -191,10 +191,10 @@ class CheckNegativeVelocityObjective(Objective):
 # Add objectives in the list below in the exact order they should execute.
 def build_objectives():
     objectives = [
-    #     GripperCloseObjective(),
-    #     DelayObjective(2.0),
-    #     GripperOpenObjective(),
-    #     ArmUpObjective(),
+         GripperCloseObjective(),
+         DelayObjective(2.0),
+         GripperOpenObjective(),
+         ArmUpObjective(),
     #  # region Following line approach roundabout
     #      DriveToLineObjective(
     #          follow_left=True,
@@ -305,22 +305,22 @@ def build_objectives():
     #      ArmUpObjective(),
     #      DriveTurnAngleObjective(100.0, linear_cmd=0.01, turn_cmd=0.8, timeout_s=5.0),
     #    #region go back to line after ramp and get extra time
-    #     DriveToLineLockStraightHeadingObjective(
-    #         follow_left=LINE_ENTRY_FOLLOW_LEFT,
-    #         follow_speed=0.5,
-    #         search_speed=LINE_ENTRY_SEARCH_SPEED,
-    #         lost_line_timeout_s=LINE_ENTRY_TIMEOUT_S,
-    #         heading_track_window_s=4.0,
-    #         heading_tolerance_deg=0.5,
-    #         instant_stop=False,
-    #     ),
-    #     LineRecovery(),
-    #     DriveBackwardUntilLineStopObjective(
-    #          reverse_speed=-0.2,
-    #          line_found_confidence=2,
-    #          timeout_s=8.0,
-    #          max_distance_m=1.5,
-    #      ), 
+        DriveToLineLockStraightHeadingObjective(
+            follow_left=LINE_ENTRY_FOLLOW_LEFT,
+            follow_speed=0.5,
+            search_speed=LINE_ENTRY_SEARCH_SPEED,
+            lost_line_timeout_s=LINE_ENTRY_TIMEOUT_S,
+            heading_track_window_s=4.0,
+            heading_tolerance_deg=0.5,
+            instant_stop=False,
+        ),
+        LineRecovery(),
+        DriveBackwardUntilLineStopObjective(
+             reverse_speed=-0.2,
+             line_found_confidence=2,
+             timeout_s=8.0,
+             max_distance_m=1.5,
+         ), 
 
           ResetOriginObjective(), # new 0,0,0 origin after following line end
      #endregion

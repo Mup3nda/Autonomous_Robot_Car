@@ -21,12 +21,12 @@ class DriveToLineLockStraightHeadingObjective(DriveToLineObjective):
 
     def __init__(
         self,
-        heading_track_window_s=0.45,
+        heading_track_window_s=2.0,
         heading_track_confidence=4,
         heading_track_max_turnrate=0.45,
         heading_track_min_samples=6,
-        heading_tolerance_deg=2.5,
-        heading_kp=1.4,
+        heading_tolerance_deg=0.5,
+        heading_kp=1.7,
         heading_max_turn_cmd=0.55,
         heading_min_turn_cmd=0.10,
         heading_align_timeout_s=3.0,
