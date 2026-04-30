@@ -55,6 +55,8 @@ class DriveToLineObjective(Objective):
         instant_stop=True,
         max_duration=0.0,
         stop_after_centering=False,
+        intersection_stop=False,
+        intersection_confidence=2,
         search_timeout_s=SEARCH_TIMEOUT_S,
     ):
         super().__init__()
@@ -67,6 +69,8 @@ class DriveToLineObjective(Objective):
         self.instant_stop = bool(instant_stop)
         self.max_duration = float(max_duration)
         self.stop_after_centering = bool(stop_after_centering)
+        self.intersection_stop = bool(intersection_stop)
+        self.intersection_confidence = int(intersection_confidence)
         self.search_timeout_s = float(search_timeout_s)
 
     def start(self, ctx):
@@ -159,6 +163,14 @@ class DriveToLineObjective(Objective):
             
             if self.max_duration > 0 and (t.time() - self.start_time) > self.max_duration:
                 print(f"DriveToLineObjective: Stopping due to max duration of {self.max_duration:.1f}s reached.")
+                ctx.actions.edge.stop_following()
+                ctx.actions.drive.stop(instant=self.instant_stop)
+                self.state = DriveToLineState.STOPPED
+                return
+
+            # Optionally stop when an intersection is detected
+            if self.intersection_stop and ctx.actions.edge.is_intersection(confidence=self.intersection_confidence):
+                print("DriveToLineObjective: Intersection detected, stopping line follow.")
                 ctx.actions.edge.stop_following()
                 ctx.actions.drive.stop(instant=self.instant_stop)
                 self.state = DriveToLineState.STOPPED

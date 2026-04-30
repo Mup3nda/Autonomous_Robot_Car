@@ -60,6 +60,10 @@ class SEdge:
     lineLastSeenTime = datetime.now() # timestamp of last valid line detection
     crossingLine = False
     crossingLineCnt = 0  # a value up to 20 for most confident crossing line
+    # intersection detection
+    intersection = False
+    intersectionCnt = 0
+    INTERSECTION_MIN_COUNT = 5  # sensors above threshold to consider intersection
     average = 0
     high = 0 # highest reflectivity
     low = 0  # the darkest value found in latest sample
@@ -371,6 +375,12 @@ class SEdge:
       self.average = sum / 8.0;
       # detect if we have a crossing line
       self.crossingLine = self.average >= self.crossingThreshold
+      # detect intersection: many sensors reading high white simultaneously
+      count_high = 0
+      for i in range(8):
+        if self.edge_n[i] >= self.lineValidThreshold:
+          count_high += 1
+      self.intersection = count_high >= self.INTERSECTION_MIN_COUNT
       # is line valid (high above threshold)
       self.lineValid = self.high >= self.lineValidThreshold
       if self.lineValid:
@@ -420,6 +430,13 @@ class SEdge:
         self.crossingLineCnt -= 1
         if self.crossingLineCnt < 0:
           self.crossingLineCnt = 0
+      # update intersection confidence counter
+      if self.intersection and self.intersectionCnt < 20:
+        self.intersectionCnt += 1
+      elif not self.intersection:
+        self.intersectionCnt -= 1
+        if self.intersectionCnt < 0:
+          self.intersectionCnt = 0
       pass
       # print(f"% Edge (sedge.py):: ({self.edge_n[0]} {self.edge_n[1]} {self.edge_n[2]} {self.edge_n[3]} {self.edge_n[4]} {self.edge_n[5]} {self.edge_n[6]}), high={self.high}, left={self.posLeft:.2f}, right={self.posRight:.2f}.")
 

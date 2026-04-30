@@ -375,12 +375,12 @@ def build_objectives():
     #      DelayObjective(1.0),
     #  # endregion
      # region Following line before knocking down cup
-        DriveToLineUntilCurveObjective(
+        DriveToLineObjective(
             follow_left=False,
             follow_speed=0.5,
             search_speed=LINE_ENTRY_SEARCH_SPEED,
             lost_line_timeout_s=LINE_ENTRY_TIMEOUT_S,
-            curve_detection_delay_s=0.5
+            intersection_stop=True,
         ),
         #  DriveToLineObjective(
         #      follow_left=True,

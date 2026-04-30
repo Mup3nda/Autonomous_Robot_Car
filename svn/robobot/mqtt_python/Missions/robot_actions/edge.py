@@ -71,6 +71,16 @@ class EdgeActions:
             bool: True if crossing line is detected
         """
         return self.edge.crossingLineCnt > confidence
+
+    def is_intersection(self, confidence=2):
+        """Check if an intersection is detected with sufficient confidence.
+
+        Args:
+            confidence: Minimum intersectionCnt threshold (0-20, default 2)
+        Returns:
+            bool: True if intersection is detected
+        """
+        return self.edge.intersectionCnt > confidence
     
     def get_line_confidence(self):
         """Get line detection confidence level.
