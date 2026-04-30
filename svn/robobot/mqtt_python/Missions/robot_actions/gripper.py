@@ -40,7 +40,7 @@ class ServoGripActions:
             print(f"[ServoGrip] Warning: [servogrip] section missing from {config_path}, using defaults")
 
         self.servo_idx = config.getint("servogrip", "servo_idx", fallback=2)
-        self.grip_open_pos = config.getint("servogrip", "open_position", fallback=-950)
+        self.grip_open_pos = config.getint("servogrip", "open_position", fallback=-700)
         self.grip_mid_pos = config.getint("servogrip", "mid_position", fallback=-500)
         self.grip_close_pos = config.getint("servogrip", "close_position", fallback=-300)
         self.grip_velocity = config.getint("servogrip", "velocity", fallback=200)
