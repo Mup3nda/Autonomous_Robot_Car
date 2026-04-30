@@ -9,6 +9,7 @@ from Objectives.drive_to_waypoint_objective import DriveToWaypointObjective
 from Objectives.grab_target_objective import GrabArucoObjective, GrabTargetObjective
 from Objectives.drop_target_objective import DropTargetObjective
 from Objectives.drive_distance_objective import DriveDistanceObjective
+from Objectives.navigate_to_aruco_objective import NavigateToArucoObjective
 
 
 class MissionArucoCubeFlowObjective(Objective):
@@ -59,7 +60,14 @@ class MissionArucoCubeFlowObjective(Objective):
             relative_heading_deg=-90.0,
             nav_mode=self.waypoint_nav_mode,
         )
-
+    def _return_to_drop_after_a(self):
+        return DriveToWaypointObjective(
+            waypoint=(2.2, 1.6),
+            is_local=False,
+            print_interval=20,
+            relative_heading_deg=110.0,
+            nav_mode=self.waypoint_nav_mode,
+        )
     def _make_pickup_again_waypoint(self):
         return DriveToWaypointObjective(
             waypoint=(1.94, 0.3),
@@ -78,7 +86,7 @@ class MissionArucoCubeFlowObjective(Objective):
 
     def _make_dropoff_d_waypoint(self):
         return DriveToWaypointObjective(
-            waypoint=(1.8, 0.7),
+            waypoint=(1.90, 1.0),
             is_local=False,
             print_interval=20,
             relative_heading_deg=165.0,
@@ -86,10 +94,14 @@ class MissionArucoCubeFlowObjective(Objective):
         )
 
     def _make_dropoff_d_search(self):
-        return SearchAndNavigateToAruco(
+        return LookForArucoObjective(
             marker_id=17,
-            desired_distance=0.35,
             scan_mode=LookForArucoObjective.SCAN_MODE_SWEEP_90,
+        )
+    def _make_dropoff_d_navigate(self):
+        return NavigateToArucoObjective(
+            marker_id=17,
+            desired_distance=0.35
         )
     def _driveBackwards(self):
         return DriveDistanceObjective(
@@ -117,7 +129,7 @@ class MissionArucoCubeFlowObjective(Objective):
             self.phase_objective.stop(ctx)
         self.cube20_search_failed = True
         print("% Cube 20 not found in time; switching to cube 53 flow")
-        self._start_phase(ctx, "pickup_again_waypoint", self._make_pickup_again_waypoint())
+        self._start_phase(ctx, "cube53_search", self._make_cube53_search())
 
     def _advance_from_cube53_search(self, ctx):
         if self.phase_objective is not None:
@@ -149,7 +161,7 @@ class MissionArucoCubeFlowObjective(Objective):
             self._start_phase(ctx, "drive_backwards_after_dropoff_a", self._driveBackwards())
             return
         if self.phase == "drive_backwards_after_dropoff_a":
-             self._start_phase(ctx, "return_to_dropoff_a", self._make_dropoff_a_waypoint())
+             self._start_phase(ctx, "return_to_dropoff_a", self._return_to_drop_after_a())
              return
         if self.phase == "return_to_dropoff_a":
             self._start_phase(ctx, "pickup_again_waypoint", self._make_pickup_again_waypoint())
@@ -165,14 +177,24 @@ class MissionArucoCubeFlowObjective(Objective):
             return
         if self.phase == "dropoff_d_waypoint":
             if self.cube53_search_failed:
-                self._done = True
+                self._start_phase(ctx, "drive_backwards_after_dropoff_d", self._driveBackwards())
                 return
             self._start_phase(ctx, "dropoff_d_search", self._make_dropoff_d_search())
             return
         if self.phase == "dropoff_d_search":
+            if ctx.memory.get("aruco_found_id") != 17:
+                print("% Drop-off ArUco not found; ending mission at drop-off location")
+                self._start_phase(ctx, "drive_backwards_after_dropoff_d", self._driveBackwards())
+                return
+            self._start_phase(ctx, "dropoff_d_navigate", self._make_dropoff_d_navigate())
+            return
+        if self.phase == "dropoff_d_navigate":
             self._start_phase(ctx, "dropoff_d_drop", DropTargetObjective(delay_s=1.0))
             return
         if self.phase == "dropoff_d_drop":
+            self._start_phase(ctx, "drive_backwards_after_dropoff_d", self._driveBackwards())
+            return
+        if self.phase == "drive_backwards_after_dropoff_d":
             self._done = True
 
     def tick(self, ctx):

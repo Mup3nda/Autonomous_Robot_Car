@@ -29,7 +29,7 @@ class DriveToLineLockStraightHeadingObjective(DriveToLineObjective):
         heading_kp=1.7,
         heading_max_turn_cmd=0.55,
         heading_min_turn_cmd=0.10,
-        heading_align_timeout_s=3.0,
+        heading_align_timeout_s=0.25,
         **kwargs,
     ):
         super().__init__(**kwargs)

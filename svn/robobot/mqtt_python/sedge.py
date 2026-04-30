@@ -594,14 +594,10 @@ class SEdge:
       # Check if we should stop due to intersection detection
       if self.stop_on_intersection and self.intersectionCnt > 2:
         # Stop line following immediately when intersection detected with sufficient confidence
-        self.lineCtrl = False
-        return
-      #
-      # Save error for next iteration
-      if self.stop_on_intersection and self.intersectionCnt > 2:
         self.stop_reason = "intersection"
         self.lineCtrl = False
         return
+      #
       if self.stop_on_left_turn and self.leftTurnCnt > 2:
         self.stop_reason = "left_turn"
         self.lineCtrl = False

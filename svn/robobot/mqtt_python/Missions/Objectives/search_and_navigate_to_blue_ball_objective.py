@@ -17,7 +17,7 @@ class SearchAndNavigateToBlueBall(CompositeObjective):
         turn_rate=0.5,
         min_confidence=1,
         search_print_interval=20,
-        desired_distance=0.41,
+        desired_distance=0.38,
         navigate_print_interval=20,
     ):
         objectives = [

@@ -65,7 +65,7 @@ class NavSmooth:
         self.ultima_vez = time.time()
         self.w_cmd = 0.0
 
-        self.print_every_n_ticks = 1
+        self.print_every_n_ticks = 1000
         self.debug_tick = 0
 
     def start(self):

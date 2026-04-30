@@ -14,7 +14,7 @@ class TargetDetector:
         # Initialize any necessary resources for target detection
         print("% TargetDetector:: Setup complete")
     
-    def get_target(self):
+    def get_target(self) -> dict | None:
         # Placeholder for target detection logic
         # In a real implementation, this would return the detected target's position and confidence
         return None

@@ -53,6 +53,14 @@ class ArucoDetector(TargetDetector):
 
     #ARUCO_DICT = cv2.aruco.DICT_4X4_50
     ARUCO_DICT = cv2.aruco.DICT_4X4_100
+
+    @staticmethod
+    def _normalize_target_ids(target_id):
+        if target_id is None:
+            return None
+        if isinstance(target_id, (list, tuple, set)):
+            return {int(marker_id) for marker_id in target_id}
+        return {int(target_id)}
     
     def __init__(self,
                  cam, 
@@ -72,6 +80,7 @@ class ArucoDetector(TargetDetector):
         self.distance_buffer = deque(maxlen=5)
         self.camera_config = camera_config
         self.target_id = target_id
+        self.target_ids = self._normalize_target_ids(target_id)
         self.last_frame = None
         self.cam = cam
         self.gpio = gpio
@@ -160,6 +169,7 @@ class ArucoDetector(TargetDetector):
       
     def set_target_id(self, target_id):
         self.target_id = target_id
+        self.target_ids = self._normalize_target_ids(target_id)
         
     def parse_arguments(self):
         """Set up command-line argument parser"""
@@ -210,6 +220,7 @@ class ArucoDetector(TargetDetector):
     def detect_aruco(self,frame, detector, camera_matrix, dist_coeffs, target_id=None):
         
         detected_markers = {}
+        target_ids = self._normalize_target_ids(target_id)
         # Detect markers in the frame with detectMarkers method
         corners, marker_ids, _ = detector.detectMarkers(frame)
 
@@ -222,7 +233,7 @@ class ArucoDetector(TargetDetector):
                 
                 current_id = int(marker_id[0])
 
-                if target_id is not None and current_id != target_id:
+                if target_ids is not None and current_id not in target_ids:
                     continue
 
                 if current_id not in self.MARKER_SIZES:
@@ -281,9 +292,14 @@ class ArucoDetector(TargetDetector):
         if not self.detected_markers:
             return None
         
-        if self.target_id is not None:
-            selected_id = self.target_id
-            target = self.detected_markers.get(self.target_id)
+        if self.target_ids is not None:
+            selected_id = None
+            target = None
+            for marker_id, marker_data in self.detected_markers.items():
+                if marker_id in self.target_ids:
+                    selected_id = marker_id
+                    target = marker_data
+                    break
         else:
             selected_id = min(self.detected_markers, key=lambda mid: self.detected_markers[mid]["distance"])
             target = self.detected_markers[selected_id]

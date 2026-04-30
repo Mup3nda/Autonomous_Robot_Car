@@ -20,12 +20,25 @@ class LookForArucoObjective(Objective):
 	SCAN_MODE_SPIN = "spin"
 	SCAN_MODE_SWEEP_90 = "sweep_90"
 
+	@staticmethod
+	def _normalize_marker_ids(marker_id=None, marker_ids=None):
+		if marker_ids is not None:
+			if isinstance(marker_ids, (list, tuple, set)):
+				return list(marker_ids)
+			return [marker_ids]
+		if marker_id is None:
+			return None
+		if isinstance(marker_id, (list, tuple, set)):
+			return list(marker_id)
+		return [marker_id]
+
 	def __init__(
 		self,
 		turn_rate=0.18,
 		min_confidence=1,
 		print_interval=20,
 		marker_id=0,
+		marker_ids=None,
 		fallback_marker_id=None,
 		search_timeout_s=None,
 		max_sweep_deg = 180,
@@ -40,14 +53,15 @@ class LookForArucoObjective(Objective):
 		self.max_sweep_deg = float(max_sweep_deg)
 		self.max_sweep_rad = math.radians(self.max_sweep_deg)
 		self.sweep_sign = 1
-		self.origin_heading = None
+		self.origin_heading = 0.0
   
   
 		self.marker_id = marker_id
+		self.marker_ids = self._normalize_marker_ids(marker_id=marker_id, marker_ids=marker_ids)
 		self.fallback_marker_id = fallback_marker_id
 		self.search_timeout_s = search_timeout_s
-		self.search_start_time = None
-		self.current_target_id = self.marker_id
+		self.search_start_time = 0.0
+		self.current_target_id = self.marker_ids
 		self.fallback_used = False
 		self.scan_mode = str(scan_mode).lower()
 		if self.scan_mode not in (self.SCAN_MODE_SPIN, self.SCAN_MODE_SWEEP_90):
@@ -74,7 +88,7 @@ class LookForArucoObjective(Objective):
 		ctx.memory["last_visible_target"] = None
 		ctx.memory["fallback_flag"] = 0
 		self.search_start_time = time.time()
-		self.current_target_id = self.marker_id
+		self.current_target_id = self.marker_ids
 	
 		# Reset tripAh so we start from a known baseline
 		ctx.pose.tripAreset()
@@ -87,9 +101,10 @@ class LookForArucoObjective(Objective):
   
 		self.detector = ArucoDetector(cam=ctx.cam, gpio=ctx.gpio, service=ctx.service, target_id=self.current_target_id)
 		self.detector.start()
+		target_desc = self.current_target_id if self.current_target_id is not None else "all"
 
 		print(
-			f"% Objective: Look For {self.current_target_id} (turn_rate={self.turn_rate:.2f}, "
+			f"% Objective: Look For {target_desc} (turn_rate={self.turn_rate:.2f}, "
 			f"min_conf={self.min_confidence}, scan_mode={self.scan_mode}, "
 			f"fallback={self.fallback_marker_id}, timeout={self.search_timeout_s})"
 		)
@@ -103,12 +118,12 @@ class LookForArucoObjective(Objective):
 		if self.detector and self.detector.is_target_visible(self.min_confidence):
 			ctx.actions.drive.stop()
 			self.state = LookForArucoState.FOUND
-			self._done = True
 			target = self.detector.get_target()
 			if target is not None:
 				ctx.memory["last_visible_target"] = target
-			ctx.memory["aruco_found_id"] = self.current_target_id
-			print(f"% Look For {self.current_target_id} target detected, stopping rotation")
+			ctx.memory["aruco_found_id"] = target["id"] if target is not None else self.current_target_id
+			print(f"% Look For {ctx.memory['aruco_found_id']} target detected, stopping rotation")
+			self._done = True
 			return
 
 		if (
@@ -119,7 +134,7 @@ class LookForArucoObjective(Objective):
 			elapsed = time.time() - self.search_start_time
 			if elapsed >= self.search_timeout_s:
 				print(
-					f"% Look For {self.marker_id}: timeout after {elapsed:.1f}s, "
+					f"% Look For {self.marker_ids}: timeout after {elapsed:.1f}s, "
 					f"switching to fallback {self.fallback_marker_id}"
 				)
 				self.current_target_id = self.fallback_marker_id
