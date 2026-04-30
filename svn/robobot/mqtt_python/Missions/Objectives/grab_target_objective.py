@@ -1,9 +1,9 @@
 """Composite objective for grabbing a target in front of the robot."""
 
-from Autonomous_Robot_Car.svn.robobot.mqtt_python.Missions.Objectives.arm_middle_objective import ArmMiddleObjective
-from Autonomous_Robot_Car.svn.robobot.mqtt_python.Missions.Objectives.gripper_middle_objective import GripperMiddleObjective
 from objective import CompositeObjective
 
+from Objectives.arm_middle_objective import ArmMiddleObjective
+from Objectives.gripper_middle_objective import GripperMiddleObjective
 from Objectives.arm_down_objective import ArmDownObjective
 from Objectives.arm_up_objective import ArmUpObjective
 from Objectives.delay_objective import DelayObjective
