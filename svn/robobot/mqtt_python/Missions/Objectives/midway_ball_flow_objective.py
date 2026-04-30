@@ -37,7 +37,7 @@ class MissionBallFlowObjective(Objective):
         )
 
     def _make_red_search(self):
-        return SearchAndNavigateToRedBall()
+        return SearchAndNavigateToRedBall(desired_distance=0.35)
 
     def _make_red_dropoff_waypoint(self):
         return DriveToWaypointObjective(
@@ -58,7 +58,7 @@ class MissionBallFlowObjective(Objective):
         )
 
     def _make_blue_search(self):
-        return SearchAndNavigateToBlueBall(turn_rate=0.3)
+        return SearchAndNavigateToBlueBall(turn_rate=0.3, desired_distance=0.35)
 
     def _make_blue_dropoff_waypoint(self):
         return DriveToWaypointObjective(

@@ -231,7 +231,7 @@ def build_objectives():
          ),
          DriveTurnAngleObjective(
              angle_deg=93.0,
-             linear_cmd=0.0,
+             linear_cmd=0.05,
              timeout_s=6.0,
          ),
         #endregion
@@ -293,7 +293,7 @@ def build_objectives():
                relative_heading_deg=0,
                nav_mode=WAYPOINT_NAV_MODE,
                ), 
-         DriveTurnAngleObjective(20.0, linear_cmd=0.0, turn_cmd=0.8, timeout_s=5.0),
+         DriveTurnAngleObjective(15.0, linear_cmd=0.0, turn_cmd=0.8, timeout_s=5.0),
          #DriveToLineObjective(follow_speed=0.5,max_duration=2.0, stop_after_centering=True),
         #  DriveToLineUntilCurveObjective(curve_detection_delay_s=1.0, follow_speed=0.3),
          DelayObjective(1.0),

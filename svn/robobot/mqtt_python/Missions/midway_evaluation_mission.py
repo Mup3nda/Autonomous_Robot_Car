@@ -47,6 +47,8 @@ from Objectives.drop_target_objective import DropTargetObjective
 from Objectives.line_recovery_objective import LineRecovery
 from sodom import odom
 from Objectives.search_and_navigate_to_golf_ball import SearchAndNavigateToGolfBall
+from Objectives.search_and_navigate_to_blue_ball_objective import SearchAndNavigateToBlueBall
+from Objectives.search_and_navigate_to_red_ball import SearchAndNavigateToRedBall
 from Objectives.drive_until_end_ramp import DriveUntilEndRamp
 from Objectives.drive_to_line_objective_ramp_imu import DriveToLineObjectiveIMU
 from Objectives.search_and_navigate_to_hole_objective import SearchAndNavigateToHole
@@ -194,9 +196,16 @@ def build_objectives():
        # GripperOpenObjective(),
        # DelayObjective(2.0),
         #GripperMiddleObjective(),
-        #DelayObjective(2.0),
+        #SearchAndNavigateToAruco(marker_id=20, desired_distance=0.35, COMPENSATE_PARAMETER=0),
+        SearchAndNavigateToRedBall(turn_rate=0.3, desired_distance=0.35),
         GripperOpenObjective(),
+        ArmDownObjective(),
         DelayObjective(2.0),
+        GripperCloseObjective(),
+        DelayObjective(2.0),
+        ArmUpObjective(),
+        DelayObjective(2.0),
+        GripperOpenObjective(),
     #  # region Following line approach roundabout
     #      DriveToLineObjective(
     #          follow_left=True,
