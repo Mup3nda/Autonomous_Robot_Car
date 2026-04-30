@@ -16,7 +16,8 @@ from Objectives.drive_turn_angle_objective import DriveTurnAngleObjective
 class MissionBallFlowObjective(Objective):
     """Mission-specific ball flow with red-first behavior and blue fallback."""
 
-    RED_SEARCH_TIMEOUT_S = 12.0
+    RED_SEARCH_TIMEOUT_S = 10.0
+    BLUE_SEARCH_TIMEOUT_S = 10.0
 
     def __init__(self, waypoint_nav_mode="smooth"):
         super().__init__()
@@ -24,6 +25,7 @@ class MissionBallFlowObjective(Objective):
         self.phase = "idle"
         self.phase_objective = None
         self.phase_started_at = None
+        self.blue_search_failed = False
 
     def _make_red_pickup_waypoint(self):
         return DriveToWaypointObjective(
@@ -98,6 +100,13 @@ class MissionBallFlowObjective(Objective):
         print("% Red ball not found in time; switching to blue ball flow")
         self._start_phase(ctx, "blue_pickup_waypoint", self._make_blue_pickup_waypoint())
 
+    def _advance_from_blue_search(self, ctx):
+        if self.phase_objective is not None:
+            self.phase_objective.stop(ctx)
+        self.blue_search_failed = True
+        print("% Blue ball not found in time; going to blue drop-off location and ending")
+        self._start_phase(ctx, "blue_dropoff_waypoint", self._make_blue_dropoff_waypoint())
+
     def _advance_after_phase(self, ctx):
         if self.phase == "red_pickup_waypoint":
             self._start_phase(ctx, "red_search", self._make_red_search())
@@ -130,6 +139,9 @@ class MissionBallFlowObjective(Objective):
             self._start_phase(ctx, "blue_dropoff_waypoint", self._make_blue_dropoff_waypoint())
             return
         if self.phase == "blue_dropoff_waypoint":
+            if self.blue_search_failed:
+                self._done = True
+                return
             self._start_phase(ctx, "blue_dropoff_aruco", self._make_blue_dropoff_aruco())
             return
         if self.phase == "blue_dropoff_aruco":
@@ -148,6 +160,11 @@ class MissionBallFlowObjective(Objective):
         if self.phase == "red_search" and self.phase_started_at is not None:
             if time.time() - self.phase_started_at > self.RED_SEARCH_TIMEOUT_S:
                 self._advance_from_red_search(ctx)
+                return
+
+        if self.phase == "blue_search" and self.phase_started_at is not None:
+            if time.time() - self.phase_started_at > self.BLUE_SEARCH_TIMEOUT_S:
+                self._advance_from_blue_search(ctx)
                 return
 
         self.phase_objective.tick(ctx)
