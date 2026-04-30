@@ -7,9 +7,9 @@ import time
 from sball_saray import SBall
 
 
-VIDEO_PATH = r"C:\Users\saray\Documents\Master\2_SEM\34755_BDR\project\videos\pi_recording_balls.mp4"
+VIDEO_PATH = r"C:\Users\saray\Documents\Master\2_SEM\34755_BDR\project\videos\2026-04-30 13-56-02\Video Project 5.mp4"
 
-START_COLOR = "red_orange"   # change to: blue / white / all
+START_COLOR = "blue"   # change to: blue / white / all
 
 
 # ======================================
@@ -114,7 +114,7 @@ while True:
 
     cv2.imshow("SBall Debug Video", frame)
 
-    key = cv2.waitKey(200) & 0xFF
+    key = cv2.waitKey(50) & 0xFF
 
     if key == ord('q'):
         break

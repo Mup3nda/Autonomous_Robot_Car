@@ -25,8 +25,8 @@ pts = deque(maxlen=32)
 ball = SBall(cam=None, gpio=None, service=DummyService())
 
 # Choose color here
-#ball.set_detection_color("red")
-ball.set_detection_color("orange")
+ball.set_detection_color("red")
+#ball.set_detection_color("orange")
 #ball.set_detection_color("blue")
 #ball.set_detection_color("white")
 # ball.set_detection_color("all")

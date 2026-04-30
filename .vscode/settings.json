@@ -2,5 +2,12 @@
     "python-envs.defaultEnvManager": "ms-python.python:venv",
     "python-envs.defaultPackageManager": "ms-python.python:pip",
     "python.terminal.activateEnvironment": false,
-    "cmake.sourceDirectory": "/home/local/Autonomous_Robot_Car/svn/robobot/ip_disp"
+    "cmake.sourceDirectory": "/home/local/Autonomous_Robot_Car/svn/robobot/ip_disp",
+    "python-envs.pythonProjects": [
+        {
+            "path": ".",
+            "envManager": "ms-python.python:conda",
+            "packageManager": "ms-python.python:conda"
+        }
+    ]
 }
