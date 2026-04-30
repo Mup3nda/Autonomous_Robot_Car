@@ -6,7 +6,7 @@ from objective import Objective
 from Objectives.look_for_aruco_objective import LookForArucoObjective
 from Objectives.search_and_navigate_to_aruco_objective import SearchAndNavigateToAruco
 from Objectives.drive_to_waypoint_objective import DriveToWaypointObjective
-from Objectives.grab_target_objective import GrabTargetObjective
+from Objectives.grab_target_objective import GrabArucoObjective, GrabTargetObjective
 from Objectives.drop_target_objective import DropTargetObjective
 
 
@@ -123,7 +123,7 @@ class MissionArucoCubeFlowObjective(Objective):
             self._start_phase(ctx, "cube20_search", self._make_cube20_search())
             return
         if self.phase == "cube20_search":
-            self._start_phase(ctx, "cube20_grab", GrabTargetObjective(nav_mode=self.waypoint_nav_mode))
+            self._start_phase(ctx, "cube20_grab", GrabArucoObjective(nav_mode=self.waypoint_nav_mode))
             return
         if self.phase == "cube20_grab":
             self._start_phase(ctx, "dropoff_a_waypoint", self._make_dropoff_a_waypoint())
@@ -144,7 +144,7 @@ class MissionArucoCubeFlowObjective(Objective):
             self._start_phase(ctx, "cube53_search", self._make_cube53_search())
             return
         if self.phase == "cube53_search":
-            self._start_phase(ctx, "cube53_grab", GrabTargetObjective(nav_mode=self.waypoint_nav_mode))
+            self._start_phase(ctx, "cube53_grab", GrabArucoObjective(nav_mode=self.waypoint_nav_mode))
             return
         if self.phase == "cube53_grab":
             self._start_phase(ctx, "dropoff_d_waypoint", self._make_dropoff_d_waypoint())
