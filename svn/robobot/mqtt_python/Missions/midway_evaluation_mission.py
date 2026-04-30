@@ -191,10 +191,12 @@ class CheckNegativeVelocityObjective(Objective):
 # Add objectives in the list below in the exact order they should execute.
 def build_objectives():
     objectives = [
-         GripperCloseObjective(),
-         DelayObjective(2.0),
-         GripperOpenObjective(),
-         ArmUpObjective(),
+       # GripperOpenObjective(),
+       # DelayObjective(2.0),
+        #GripperMiddleObjective(),
+        #DelayObjective(2.0),
+        GripperCloseObjective(),
+        DelayObjective(2.0),
     #  # region Following line approach roundabout
     #      DriveToLineObjective(
     #          follow_left=True,
@@ -305,110 +307,110 @@ def build_objectives():
     #      ArmUpObjective(),
     #      DriveTurnAngleObjective(100.0, linear_cmd=0.01, turn_cmd=0.8, timeout_s=5.0),
     #    #region go back to line after ramp and get extra time
-        DriveToLineLockStraightHeadingObjective(
-            follow_left=LINE_ENTRY_FOLLOW_LEFT,
-            follow_speed=0.5,
-            search_speed=LINE_ENTRY_SEARCH_SPEED,
-            lost_line_timeout_s=LINE_ENTRY_TIMEOUT_S,
-            heading_track_window_s=4.0,
-            heading_tolerance_deg=0.5,
-            instant_stop=False,
-        ),
-        LineRecovery(),
-        DriveBackwardUntilLineStopObjective(
-             reverse_speed=-0.2,
-             line_found_confidence=2,
-             timeout_s=8.0,
-             max_distance_m=1.5,
-         ), 
+    #     DriveToLineLockStraightHeadingObjective(
+    #         follow_left=LINE_ENTRY_FOLLOW_LEFT,
+    #         follow_speed=0.5,
+    #         search_speed=LINE_ENTRY_SEARCH_SPEED,
+    #         lost_line_timeout_s=LINE_ENTRY_TIMEOUT_S,
+    #         heading_track_window_s=4.0,
+    #         heading_tolerance_deg=0.5,
+    #         instant_stop=False,
+    #     ),
+    #     LineRecovery(),
+    #     DriveBackwardUntilLineStopObjective(
+    #          reverse_speed=-0.2,
+    #          line_found_confidence=2,
+    #          timeout_s=8.0,
+    #          max_distance_m=1.5,
+    #      ), 
 
-          ResetOriginObjective(), # new 0,0,0 origin after following line end
-     #endregion
+    #       ResetOriginObjective(), # new 0,0,0 origin after following line end
+    #  #endregion
 
-         DelayObjective(1.0),
+    #      DelayObjective(1.0),
 
-     # region Following line before knocking down cup
-         DriveToLineObjective(
-             follow_left=True,
-             follow_speed=0.4,
-             search_speed=0.25,
-             centering_speed=0.2,
-             lost_line_timeout_s=0.0,
-             max_duration = 0.0,
-             max_line_distance_m=0.5,
-             ),
-        
-         #DelayObjective(2.0),
-     # endregion
-     # region arm out and knock down cup by turning left 90 degree
-         ArmMiddleObjective(),
-         DelayObjective(0.4),
-         DriveTurnAngleObjective(
-             angle_deg=-100,
-             linear_cmd=0.0,
-             timeout_s=6.0,
-         ),
-         #DelayObjective(2.0),
-         ArmUpObjective(),
-         DriveTurnAngleObjective(
-             angle_deg=100,
-             linear_cmd=0.0,
-             timeout_s=6.0,
-         ),
-     #end region
-     # region go to ball pick up location
-         DriveToWaypointObjective(
-             waypoint=(0.2,0.0),
-             is_local=True,
-             print_interval=20,
-             relative_heading_deg=-0.0,
-             nav_mode=WAYPOINT_NAV_MODE,
-             ),
-        MissionBallFlowObjective(waypoint_nav_mode=WAYPOINT_NAV_MODE),
-    #  # region go to platform pick up location
-    #      #DelayObjective(2.0),
-    #      DriveToWaypointObjective(
-    #          waypoint=(1.94,0.7),
-    #          is_local=False,
-    #          print_interval=20,
-    #          relative_heading_deg=0.0,
-    #          nav_mode=WAYPOINT_NAV_MODE,
-    #          ),
-    #  # region return to finish line
-    #      #DelayObjective(2.0),
-    #      DriveToWaypointObjective(
-    #          waypoint=(1.850,1.6),
-    #          is_local=False,
-    #          print_interval=20,
-    #          relative_heading_deg=0.0,
-    #          nav_mode=WAYPOINT_NAV_MODE,
-    #          ),
-    #      DriveToWaypointUntilLineCountObjective(
-    #          waypoint=(1.5,5.0),
-    #          is_local=False,
-    #          print_interval=20,
-    #          nav_mode=WAYPOINT_NAV_MODE,
-    #          line_detect_confidence=4,
-    #          line_clear_confidence=1,
-    #          stop_line_count=2,
-    #          ),
-    #  # end region
-    #  # region go to line and follow to end
-    #      DriveTurnAngleObjective(
-    #          angle_deg=90.0,
-    #          linear_cmd=0.0,
-    #          timeout_s=6.0,
-    #      ),
+    #  # region Following line before knocking down cup
     #      DriveToLineObjective(
-    #          follow_left=False,
-    #          follow_speed=0.5,
+    #          follow_left=True,
+    #          follow_speed=0.4,
     #          search_speed=0.25,
     #          centering_speed=0.2,
     #          lost_line_timeout_s=0.0,
     #          max_duration = 0.0,
-    #          max_line_distance_m=2.0,
-    #          instant_stop=True,
+    #          max_line_distance_m=0.5,
     #          ),
+        
+    #      #DelayObjective(2.0),
+    #  # endregion
+    #  # region arm out and knock down cup by turning left 90 degree
+    #      ArmMiddleObjective(),
+    #      DelayObjective(0.4),
+    #      DriveTurnAngleObjective(
+    #          angle_deg=-100,
+    #          linear_cmd=0.0,
+    #          timeout_s=6.0,
+    #      ),
+    #      #DelayObjective(2.0),
+    #      ArmUpObjective(),
+    #      DriveTurnAngleObjective(
+    #          angle_deg=100,
+    #          linear_cmd=0.0,
+    #          timeout_s=6.0,
+    #      ),
+    #  #end region
+    #  # region go to ball pick up location
+    #      DriveToWaypointObjective(
+    #          waypoint=(0.2,0.0),
+    #          is_local=True,
+    #          print_interval=20,
+    #          relative_heading_deg=-0.0,
+    #          nav_mode=WAYPOINT_NAV_MODE,
+    #          ),
+    #     MissionBallFlowObjective(waypoint_nav_mode=WAYPOINT_NAV_MODE),
+    # #  # region go to platform pick up location
+    # #      #DelayObjective(2.0),
+    # #      DriveToWaypointObjective(
+    # #          waypoint=(1.94,0.7),
+    # #          is_local=False,
+    # #          print_interval=20,
+    # #          relative_heading_deg=0.0,
+    # #          nav_mode=WAYPOINT_NAV_MODE,
+    # #          ),
+    # #  # region return to finish line
+    # #      #DelayObjective(2.0),
+    # #      DriveToWaypointObjective(
+    # #          waypoint=(1.850,1.6),
+    # #          is_local=False,
+    # #          print_interval=20,
+    # #          relative_heading_deg=0.0,
+    # #          nav_mode=WAYPOINT_NAV_MODE,
+    # #          ),
+    # #      DriveToWaypointUntilLineCountObjective(
+    # #          waypoint=(1.5,5.0),
+    # #          is_local=False,
+    # #          print_interval=20,
+    # #          nav_mode=WAYPOINT_NAV_MODE,
+    # #          line_detect_confidence=4,
+    # #          line_clear_confidence=1,
+    # #          stop_line_count=2,
+    # #          ),
+    # #  # end region
+    # #  # region go to line and follow to end
+    # #      DriveTurnAngleObjective(
+    # #          angle_deg=90.0,
+    # #          linear_cmd=0.0,
+    # #          timeout_s=6.0,
+    # #      ),
+    # #      DriveToLineObjective(
+    # #          follow_left=False,
+    # #          follow_speed=0.5,
+    # #          search_speed=0.25,
+    # #          centering_speed=0.2,
+    # #          lost_line_timeout_s=0.0,
+    # #          max_duration = 0.0,
+    # #          max_line_distance_m=2.0,
+    # #          instant_stop=True,
+    # #          ),
         
         ]
     return objectives
