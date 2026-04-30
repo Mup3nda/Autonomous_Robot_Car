@@ -105,7 +105,7 @@ class MissionBallFlowObjective(Objective):
             self.phase_objective.stop(ctx)
         self.blue_search_failed = True
         print("% Blue ball not found in time; going to blue drop-off location and ending")
-        self._start_phase(ctx, "blue_dropoff_waypoint", self._make_blue_dropoff_waypoint())
+        self._done = True;
 
     def _advance_after_phase(self, ctx):
         if self.phase == "red_pickup_waypoint":

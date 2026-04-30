@@ -8,6 +8,7 @@ from Objectives.search_and_navigate_to_aruco_objective import SearchAndNavigateT
 from Objectives.drive_to_waypoint_objective import DriveToWaypointObjective
 from Objectives.grab_target_objective import GrabArucoObjective, GrabTargetObjective
 from Objectives.drop_target_objective import DropTargetObjective
+from Objectives.drive_distance_objective import DriveDistanceObjective
 
 
 class MissionArucoCubeFlowObjective(Objective):
@@ -90,6 +91,13 @@ class MissionArucoCubeFlowObjective(Objective):
             desired_distance=0.35,
             scan_mode=LookForArucoObjective.SCAN_MODE_SWEEP_90,
         )
+    def _driveBackwards(self):
+        return DriveDistanceObjective(
+            target_distance_m=0.2,
+            throttle=-0.25,
+            timeout_s=8.0,
+            instant_stop=True,
+        )
 
     def _start_phase(self, ctx, phase, objective=None):
         self.phase = phase
@@ -138,6 +146,12 @@ class MissionArucoCubeFlowObjective(Objective):
             self._start_phase(ctx, "dropoff_a_drop", DropTargetObjective(delay_s=1.0))
             return
         if self.phase == "dropoff_a_drop":
+            self._start_phase(ctx, "drive_backwards_after_dropoff_a", self._driveBackwards())
+            return
+        if self.phase == "drive_backwards_after_dropoff_a":
+             self._start_phase(ctx, "return_to_dropoff_a", self._make_dropoff_a_waypoint())
+             return
+        if self.phase == "return_to_dropoff_a":
             self._start_phase(ctx, "pickup_again_waypoint", self._make_pickup_again_waypoint())
             return
         if self.phase == "pickup_again_waypoint":

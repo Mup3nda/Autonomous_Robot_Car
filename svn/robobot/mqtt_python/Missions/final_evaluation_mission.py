@@ -336,16 +336,23 @@ def build_objectives():
              nav_mode=WAYPOINT_NAV_MODE,
          ),
          ######### DETECT ARUCO PLATFORM 
-         DriveTurnAngleObjective(
-                 angle_deg=30.0,
-                 linear_cmd=0.0,
-                 timeout_s=6.0,
-             ),
+        #  DriveTurnAngleObjective(
+        #          angle_deg=30.0,
+        #          linear_cmd=0.0,
+        #          timeout_s=6.0,
+        #      ),
+        DriveToWaypointObjective(
+             waypoint=(0.26, 0),
+             is_local=True,
+             relative_heading_deg=0, 
+             nav_mode=WAYPOINT_NAV_MODE,
+         ),
          ArmUpObjective(),
          GripperOpenObjective(),
-         SearchAndNavigateToPlatform(marker_id=5),
          ArmMiddleObjective(),
-         DelayObjective(2.5),
+         LookForArucoObjective(marker_id=53, search_timeout_s=8.0,turn_rate=0),
+         #SearchAndNavigateToPlatform(marker_id=5),
+         DelayObjective(1.5),
          GripperMiddleObjective(),
          DriveTurnAngleObjective(
              angle_deg=70.0,
@@ -365,12 +372,22 @@ def build_objectives():
             timeout_s=8.0,
             instant_stop=True,
         ),
-     DriveToWaypointObjective(
-             waypoint=(0, 0),
+    #  DriveToWaypointObjective(
+    #          waypoint=(0, 0),
+    #          is_local=False,
+    #          relative_heading_deg=90, #180
+    #          nav_mode=WAYPOINT_NAV_MODE,
+    #      ),
+         DriveToWaypointUntilLineCountObjective(
+             waypoint=(-0.5,0),
              is_local=False,
-             relative_heading_deg=90, #180
+             print_interval=20,
              nav_mode=WAYPOINT_NAV_MODE,
-         ),
+             line_detect_confidence=4,
+             line_clear_confidence=1,
+             stop_line_count=1,
+             ),
+             DriveTurnAngleObjective(-90.0, linear_cmd=0.0, turn_cmd=0.8, timeout_s=5.0),
               # region Following line
          DelayObjective(1.0),
      # endregion
