@@ -64,6 +64,11 @@ class SEdge:
     intersection = False
     intersectionCnt = 0
     INTERSECTION_MIN_COUNT = 5  # sensors above threshold to consider intersection
+    # left-turn detection
+    leftTurn = False
+    leftTurnCnt = 0
+    LEFT_TURN_MIN_LEFT_COUNT = 3
+    LEFT_TURN_MAX_RIGHT_COUNT = 1
     average = 0
     high = 0 # highest reflectivity
     low = 0  # the darkest value found in latest sample
@@ -74,6 +79,8 @@ class SEdge:
     # follow line controller
     lineCtrl = False # private
     stop_on_intersection = False  # if True, stop line following when intersection detected
+    stop_on_left_turn = False  # if True, stop line following when left turn detected
+    stop_reason = None
     # Motor velocity limits
     wheelbase = 0.23  # Distance between wheels (m)
     maxWheelVel = 1.3  # Maximum wheel velocity (m/s)
@@ -378,10 +385,17 @@ class SEdge:
       self.crossingLine = self.average >= self.crossingThreshold
       # detect intersection: many sensors reading high white simultaneously
       count_high = 0
+      left_count_high = 0
+      right_count_high = 0
       for i in range(8):
         if self.edge_n[i] >= self.lineValidThreshold:
           count_high += 1
+          if i < 4:
+            left_count_high += 1
+          else:
+            right_count_high += 1
       self.intersection = count_high >= self.INTERSECTION_MIN_COUNT
+      self.leftTurn = left_count_high >= self.LEFT_TURN_MIN_LEFT_COUNT and right_count_high <= self.LEFT_TURN_MAX_RIGHT_COUNT
       # is line valid (high above threshold)
       self.lineValid = self.high >= self.lineValidThreshold
       if self.lineValid:
@@ -438,6 +452,12 @@ class SEdge:
         self.intersectionCnt -= 1
         if self.intersectionCnt < 0:
           self.intersectionCnt = 0
+      if self.leftTurn and self.leftTurnCnt < 20:
+        self.leftTurnCnt += 1
+      elif not self.leftTurn:
+        self.leftTurnCnt -= 1
+        if self.leftTurnCnt < 0:
+          self.leftTurnCnt = 0
       pass
       # print(f"% Edge (sedge.py):: ({self.edge_n[0]} {self.edge_n[1]} {self.edge_n[2]} {self.edge_n[3]} {self.edge_n[4]} {self.edge_n[5]} {self.edge_n[6]}), high={self.high}, left={self.posLeft:.2f}, right={self.posRight:.2f}.")
 
@@ -468,11 +488,13 @@ class SEdge:
 
     ##########################################################
 
-    def lineControl(self, velocity, followLeft = True, refPosition = 0, stop_on_intersection = False):
+    def lineControl(self, velocity, followLeft = True, refPosition = 0, stop_on_intersection = False, stop_on_left_turn = False):
       self.targetVelocity = max(0.0, velocity)
       self.followLeft = followLeft
       self.refPosition = refPosition
       self.stop_on_intersection = bool(stop_on_intersection)
+      self.stop_on_left_turn = bool(stop_on_left_turn)
+      self.stop_reason = None
       # velocity 0 (or negative) is turning off line control
       wasActive = self.lineCtrl
       self.lineCtrl = self.targetVelocity > 0.001
@@ -576,6 +598,14 @@ class SEdge:
         return
       #
       # Save error for next iteration
+      if self.stop_on_intersection and self.intersectionCnt > 2:
+        self.stop_reason = "intersection"
+        self.lineCtrl = False
+        return
+      if self.stop_on_left_turn and self.leftTurnCnt > 2:
+        self.stop_reason = "left_turn"
+        self.lineCtrl = False
+        return
       self.lineE0 = e
       # Save PID tuning telemetry per active profile
       self.logPIDSample(dt, e, P, I, D)

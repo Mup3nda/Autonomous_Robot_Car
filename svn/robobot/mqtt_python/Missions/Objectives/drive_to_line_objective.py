@@ -57,6 +57,7 @@ class DriveToLineObjective(Objective):
         stop_after_centering=False,
         intersection_stop=False,
         intersection_confidence=2,
+        left_turn_stop=False,
         search_timeout_s=SEARCH_TIMEOUT_S,
     ):
         super().__init__()
@@ -71,6 +72,7 @@ class DriveToLineObjective(Objective):
         self.stop_after_centering = bool(stop_after_centering)
         self.intersection_stop = bool(intersection_stop)
         self.intersection_confidence = int(intersection_confidence)
+        self.left_turn_stop = bool(left_turn_stop)
         self.search_timeout_s = float(search_timeout_s)
 
     def start(self, ctx):
@@ -118,7 +120,7 @@ class DriveToLineObjective(Objective):
             if ctx.actions.edge.is_line_valid(confidence=LINE_FOUND_CONFIDENCE):
                 # Line detected! Switch to centering mode at low speed
                 ctx.memory["line_failed"] = False
-                ctx.actions.edge.start_following(velocity=self.centering_speed, follow_left=self.follow_left, stop_on_intersection=False)
+                ctx.actions.edge.start_following(velocity=self.centering_speed, follow_left=self.follow_left, stop_on_intersection=False, stop_on_left_turn=False)
                 self.dist_to_line = search_dist  # Record distance to line
                 ctx.start_local_progress(self.ALONG_LINE_PROGRESS_KEY)
                 self.along_line_started = True
@@ -138,7 +140,12 @@ class DriveToLineObjective(Objective):
                     ctx.actions.drive.stop(instant=self.instant_stop)
                     self.state = DriveToLineState.DONE
                 else:
-                    ctx.actions.edge.start_following(velocity=self.follow_speed, follow_left=self.follow_left, stop_on_intersection=self.intersection_stop)
+                    ctx.actions.edge.start_following(
+                        velocity=self.follow_speed,
+                        follow_left=self.follow_left,
+                        stop_on_intersection=self.intersection_stop,
+                        stop_on_left_turn=self.left_turn_stop,
+                    )
                     self.state = DriveToLineState.LINE_FOLLOWING
         elif self.state == DriveToLineState.STOPPED:
             # State 2: Stopped after timeout - wait for robot to settle
@@ -170,8 +177,15 @@ class DriveToLineObjective(Objective):
 
             # Optionally stop when sedge detects an intersection
             # (sedge stops line control immediately; objective detects it here)
-            if self.intersection_stop and not ctx.actions.edge.is_line_control_active():
+            if self.intersection_stop and ctx.actions.edge.get_line_control_stop_reason() == "intersection":
                 print("DriveToLineObjective: Intersection detected by sedge, stopping.")
+                ctx.actions.edge.stop_following()
+                ctx.actions.drive.stop(instant=self.instant_stop)
+                self.state = DriveToLineState.STOPPED
+                return
+
+            if self.left_turn_stop and ctx.actions.edge.get_line_control_stop_reason() == "left_turn":
+                print("DriveToLineObjective: Left turn detected by sedge, stopping.")
                 ctx.actions.edge.stop_following()
                 ctx.actions.drive.stop(instant=self.instant_stop)
                 self.state = DriveToLineState.STOPPED
