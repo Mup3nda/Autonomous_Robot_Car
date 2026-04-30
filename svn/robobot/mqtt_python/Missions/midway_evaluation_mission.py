@@ -195,7 +195,7 @@ def build_objectives():
        # DelayObjective(2.0),
         #GripperMiddleObjective(),
         #DelayObjective(2.0),
-        GripperCloseObjective(),
+        GripperOpenObjective(),
         DelayObjective(2.0),
     #  # region Following line approach roundabout
     #      DriveToLineObjective(

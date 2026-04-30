@@ -252,6 +252,12 @@ def build_objectives():
               relative_heading_deg=None,
               nav_mode=WAYPOINT_NAV_MODE,
               ),
+         DriveDistanceObjective(
+             target_distance_m=0.1,
+             throttle=-0.1,
+             timeout_s=8.0,
+             instant_stop=True,
+         ),
          DriveToWaypointObjective(
               waypoint=(0.0,0.0),
               is_local=False,
@@ -263,7 +269,7 @@ def build_objectives():
          DriveToLineObjective(follow_speed=0.5, stop_after_centering=False, max_line_distance_m=6.2),
          DriveToLineUntilCurveObjective(curve_detection_delay_s=2.0, follow_speed=0.3),
           DriveTurnAngleObjective(80.0, linear_cmd=0.0, turn_cmd=0.8, timeout_s=5.0),
-         SearchAndNavigateToGolfBall(desired_distance=0.34),
+         SearchAndNavigateToGolfBall(desired_distance=0.355),
          GripperOpenObjective(),
          DelayObjective(1.0),
          ArmDownObjective(wait_after_s=2.0),
