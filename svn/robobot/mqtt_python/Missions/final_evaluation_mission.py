@@ -314,6 +314,7 @@ def build_objectives():
             lost_line_timeout_s=0.5,
             heading_track_window_s=4.0,
             heading_tolerance_deg=0.5,
+            left_turn_stop=True,
             instant_stop=False,
         ),
         #LineRecovery(),
