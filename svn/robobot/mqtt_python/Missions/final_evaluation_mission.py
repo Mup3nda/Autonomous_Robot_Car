@@ -15,6 +15,7 @@ if ROOT_DIR not in sys.path:
     sys.path.insert(0, ROOT_DIR)
 
 from Objectives.midway_ball_flow_objective import MissionBallFlowObjective
+from Objectives.midway_aruco_cube_flow_objective import MissionArucoCubeFlowObjective
 from Objectives.search_and_navigate_to_red_ball import SearchAndNavigateToRedBall
 from Objectives.look_for_aruco_objective import LookForArucoObjective
 from uservice import service
@@ -421,51 +422,7 @@ def build_objectives():
     # endregion
     #region get cubes    
         ###### LOOKING FOR CUBE
-         ArmUpObjective(),
-         GripperOpenObjective(),
-         SearchAndNavigateToAruco(marker_id=20, fallback_marker_id=53, turn_rate=0.3, search_timeout_s = 2.0, desired_distance=0.38, max_sweep_deg=90, COMPENSATE_PARAMETER = 0), #37
-         ArmDownObjective(wait_after_s=2.0),
-         DriveDistanceObjective(target_distance_m=0.005),
-         GripperMiddleObjective(),
-        #region go to platform drop off location A
-            DriveToWaypointObjective(
-                waypoint=(1.94,1.6),
-                is_local=False,
-                print_interval=20,
-                relative_heading_deg=110.0,
-                nav_mode=WAYPOINT_NAV_MODE,
-                ),
-            DriveToWaypointObjective(
-                waypoint=(1.5,1.7),
-                is_local=False,
-                print_interval=20,
-                relative_heading_deg=-90.0,
-                nav_mode=WAYPOINT_NAV_MODE,
-                ),
-            SearchAndNavigateToAruco(marker_id=11,desired_distance=0.35,scan_mode=LookForArucoObjective.SCAN_MODE_SWEEP_90),
-            DropTargetObjective(delay_s=1.0),
-        #endregion
-     
-      #region go to platform pick up location again
-         DriveToWaypointObjective(
-             waypoint=(1.94,0.7),
-             is_local=False,
-             print_interval=20,
-             relative_heading_deg=0.0,
-             nav_mode=WAYPOINT_NAV_MODE,
-             ),
-      #end region
-
-      #region go to platform drop off location D
-         DriveToWaypointObjective(
-             waypoint=(1.8,0.7),
-             is_local=False,
-             print_interval=20,
-             relative_heading_deg=165.0,
-             nav_mode=WAYPOINT_NAV_MODE,
-             ),
-         SearchAndNavigateToAruco(marker_id=17,desired_distance=0.35,scan_mode=LookForArucoObjective.SCAN_MODE_SWEEP_90),
-         DropTargetObjective(delay_s=1.0),
+         MissionArucoCubeFlowObjective(waypoint_nav_mode=WAYPOINT_NAV_MODE),
          DriveTurnAngleObjective(
              angle_deg=180.0,
              linear_cmd=0.0,
