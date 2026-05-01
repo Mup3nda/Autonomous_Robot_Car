@@ -23,10 +23,18 @@
 
 ## function to handle ctrl-C and reasonable shutdown
 def signal_handler(sig, frame):
-    print('UService:: You pressed Ctrl+C!')
+  # Avoid print() in signal context; it can re-enter buffered stdout.
+  try:
+    os.write(2, b'UService:: You pressed Ctrl+C!\n')
+  except Exception:
+    pass
+  try:
     service.stop = True
+  except Exception:
+    pass
 
 import signal
+import os
 import argparse
 import time as t
 import random
@@ -39,11 +47,13 @@ from simu import imu
 from spose import pose
 from sir import ir
 from srobot import robot
-from scam import cam
+#from scam import cam
+from scam_usb import cam_usb as cam
 from sedge import edge
 from sgpio import gpio
 from ulog import flog
 import psutil
+
 
 class UService:
   host = 'IP-setup'
@@ -96,8 +106,19 @@ class UService:
                 help='Turn 180 degrees (Pi) and stop')
     self.parser.add_argument('-e', '--edge', action='store_true',
                 help='Find line and follow the left edge')
+    self.parser.add_argument('--SearchAndNavBlueball', action='store_true',
+                help='Find and approach blue ball')
+    self.parser.add_argument('--look-ball', action='store_true',
+                help='Rotate to find ball in camera view')
+    self.parser.add_argument('--nav-ball', action='store_true',
+                help='Navigate to the blue ball target')
+    self.parser.add_argument('--nav-golf-ball', action='store_true',
+                help='Navigate to the golf ball target')
+    self.parser.add_argument('--square-world', action='store_true',
+          help='Drive a square using world-point navigation')
     self.parser.add_argument('-u', '--usestate', type=int, default = 0,
                 help='set mission state to this value')
+    
     self.args = self.parser.parse_args()
     # if not isinstance(self.args.usestate, int):
     #   self.args.usestate = int(0)
@@ -125,6 +146,7 @@ class UService:
     imu.setup()
     cam.setup()
     edge.setup()
+  
     print(f"% (uservice.py) Setup finished with connected={self.connected}")
     if self.args.level:
       print(f"% Command line argument '--level'={self.args.level} but not implemented")
@@ -268,6 +290,9 @@ class UService:
           print("% I am not robot master, quitting!")
         # print(f"% got master {msg} my ID is {str(self.startTime)}")
         pass
+      elif subtopic.endswith("/svo"):
+        # Servo status stream is expected; ignore to avoid log spam.
+        pass
       else:
         used = False
     if not used:
@@ -276,7 +301,7 @@ class UService:
 
   def send(self, topic, param):
     # print(self.startTime.strftime("At %Y-%m-%d %H:%M:%S.%f"))
-    print(f"% {self.startTime.strftime("At %Y-%m-%d %H:%M:%S.%f")}: sending: '{topic}' with '{param}' len(param)={len(param)}, not master {self.confirmedNotMaster}, master {self.confirmedMaster}")
+    #print(f"% {self.startTime.strftime('At %Y-%m-%d %H:%M:%S.%f')}: sending: '{topic}' with '{param}' len(param)={len(param)}, not master {self.confirmedNotMaster}, master {self.confirmedMaster}")
     if self.confirmedNotMaster:
       # self.terminate()
       self.stop = True
@@ -354,6 +379,7 @@ class UService:
     cam.terminate()
     gpio.terminate()
     flog.terminate()
+    
     self.startTime = datetime.now()
     print(self.startTime.strftime("Ended at %Y-%m-%d %H:%M:%S.%f"))
 

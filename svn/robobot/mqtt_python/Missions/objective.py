@@ -42,3 +42,8 @@ class CompositeObjective(Objective):
                 return
 
             self.objectives[self.index].start(ctx)
+
+    def stop(self, ctx):
+        # Propagate stop to the currently active child objective.
+        if 0 <= self.index < len(self.objectives):
+            self.objectives[self.index].stop(ctx)

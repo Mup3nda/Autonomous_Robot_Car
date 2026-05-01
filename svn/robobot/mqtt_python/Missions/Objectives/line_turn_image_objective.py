@@ -13,6 +13,7 @@ from objective import Objective
 from robot_actions import RobotActions
 from mission_context import MissionContext
 from datetime import datetime
+import time as t
 import numpy as np
 
 
@@ -24,6 +25,8 @@ class LineTurnImageState(IntEnum):
 
 class LineTurnImageObjective(Objective):
     name = "line_turn_image"
+    DRIVE_PROGRESS_KEY = "line_turn_image_drive"
+    TURN_PROGRESS_KEY = "line_turn_image_turn"
 
     def start(self, ctx):
         """Initialize mission: disable initial line control, set yellow LED."""
@@ -53,20 +56,26 @@ class LineTurnImageObjective(Objective):
                 ctx.actions.drive.leds(0, 0, 30)  # Blue LED
                 ctx.actions.drive.rc(0.25, 0.0)  # 25% throttle forward, straight
                 ctx.actions.drive.servo(1, 100, 300)  # Servo position
-                ctx.pose.tripBreset()  # Reset distance counter
+                ctx.start_local_progress(self.DRIVE_PROGRESS_KEY)
                 self._set_state(LineTurnImageState.DRIVE_FORWARD)  # Move to driving state
         elif self.state == LineTurnImageState.DRIVE_FORWARD:
             # State 12: Drive forward ~0.5m
-            if ctx.pose.tripB > 0.5 or ctx.pose.tripBtimePassed() > 10:
+            drive_marker = ctx.memory["_local_progress"][self.DRIVE_PROGRESS_KEY]
+            driven = ctx.distance_since_start(self.DRIVE_PROGRESS_KEY)
+            drive_elapsed = t.time() - drive_marker["time_s"]
+            if driven > 0.5 or drive_elapsed > 10:
                 # Driven enough or timeout - transition to turning
                 ctx.actions.edge.stop_following()  # Disable line control
-                ctx.pose.tripBreset()  # Reset for angle tracking
+                ctx.start_local_progress(self.TURN_PROGRESS_KEY)
                 ctx.actions.drive.rc(0.1, 0.5)  # Slow forward + rotation
                 ctx.actions.drive.servo(1, -800, 1000)  # Servo for rotation
                 self._set_state(LineTurnImageState.TURN_90_DEG)  # Move to turning state
         elif self.state == LineTurnImageState.TURN_90_DEG:
             # State 14: Rotate 90 degrees (π/2 radians)
-            if ctx.pose.tripBh > np.pi / 2 or ctx.pose.tripBtimePassed() > 10:
+            turn_marker = ctx.memory["_local_progress"][self.TURN_PROGRESS_KEY]
+            turned = abs(ctx.pose.tripAh - turn_marker["tripAh"])
+            turn_elapsed = t.time() - turn_marker["time_s"]
+            if turned > np.pi / 2 or turn_elapsed > 10:
                 # Rotated enough or timeout - transition to image capture
                 ctx.actions.drive.stop()  # Stop all movement
                 ctx.actions.drive.servo(1, 0, 1000)  # Center servo

@@ -57,10 +57,10 @@ RM = /usr/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/local/svn/robobot/teensy_interface
+CMAKE_SOURCE_DIR = /home/local/Autonomous_Robot_Car/svn/robobot/teensy_interface
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/local/svn/robobot/teensy_interface/build
+CMAKE_BINARY_DIR = /home/local/Autonomous_Robot_Car/svn/robobot/teensy_interface/build
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -87,9 +87,9 @@ rebuild_cache/fast: rebuild_cache
 
 # The main all target
 all: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/local/svn/robobot/teensy_interface/build/CMakeFiles /home/local/svn/robobot/teensy_interface/build//CMakeFiles/progress.marks
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/local/Autonomous_Robot_Car/svn/robobot/teensy_interface/build/CMakeFiles /home/local/Autonomous_Robot_Car/svn/robobot/teensy_interface/build//CMakeFiles/progress.marks
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/local/svn/robobot/teensy_interface/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/local/Autonomous_Robot_Car/svn/robobot/teensy_interface/build/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
@@ -200,6 +200,54 @@ src/cservo.s: src/cservo.cpp.s
 src/cservo.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/teensy_interface.dir/build.make CMakeFiles/teensy_interface.dir/src/cservo.cpp.s
 .PHONY : src/cservo.cpp.s
+
+src/cservoarm.o: src/cservoarm.cpp.o
+.PHONY : src/cservoarm.o
+
+# target to build an object file
+src/cservoarm.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/teensy_interface.dir/build.make CMakeFiles/teensy_interface.dir/src/cservoarm.cpp.o
+.PHONY : src/cservoarm.cpp.o
+
+src/cservoarm.i: src/cservoarm.cpp.i
+.PHONY : src/cservoarm.i
+
+# target to preprocess a source file
+src/cservoarm.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/teensy_interface.dir/build.make CMakeFiles/teensy_interface.dir/src/cservoarm.cpp.i
+.PHONY : src/cservoarm.cpp.i
+
+src/cservoarm.s: src/cservoarm.cpp.s
+.PHONY : src/cservoarm.s
+
+# target to generate assembly for a file
+src/cservoarm.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/teensy_interface.dir/build.make CMakeFiles/teensy_interface.dir/src/cservoarm.cpp.s
+.PHONY : src/cservoarm.cpp.s
+
+src/cservogrip.o: src/cservogrip.cpp.o
+.PHONY : src/cservogrip.o
+
+# target to build an object file
+src/cservogrip.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/teensy_interface.dir/build.make CMakeFiles/teensy_interface.dir/src/cservogrip.cpp.o
+.PHONY : src/cservogrip.cpp.o
+
+src/cservogrip.i: src/cservogrip.cpp.i
+.PHONY : src/cservogrip.i
+
+# target to preprocess a source file
+src/cservogrip.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/teensy_interface.dir/build.make CMakeFiles/teensy_interface.dir/src/cservogrip.cpp.i
+.PHONY : src/cservogrip.cpp.i
+
+src/cservogrip.s: src/cservogrip.cpp.s
+.PHONY : src/cservogrip.s
+
+# target to generate assembly for a file
+src/cservogrip.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/teensy_interface.dir/build.make CMakeFiles/teensy_interface.dir/src/cservogrip.cpp.s
+.PHONY : src/cservogrip.cpp.s
 
 src/main.o: src/main.cpp.o
 .PHONY : src/main.o
@@ -489,6 +537,54 @@ src/steensy.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/teensy_interface.dir/build.make CMakeFiles/teensy_interface.dir/src/steensy.cpp.s
 .PHONY : src/steensy.cpp.s
 
+src/test_servo_arm.o: src/test_servo_arm.cpp.o
+.PHONY : src/test_servo_arm.o
+
+# target to build an object file
+src/test_servo_arm.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/teensy_interface.dir/build.make CMakeFiles/teensy_interface.dir/src/test_servo_arm.cpp.o
+.PHONY : src/test_servo_arm.cpp.o
+
+src/test_servo_arm.i: src/test_servo_arm.cpp.i
+.PHONY : src/test_servo_arm.i
+
+# target to preprocess a source file
+src/test_servo_arm.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/teensy_interface.dir/build.make CMakeFiles/teensy_interface.dir/src/test_servo_arm.cpp.i
+.PHONY : src/test_servo_arm.cpp.i
+
+src/test_servo_arm.s: src/test_servo_arm.cpp.s
+.PHONY : src/test_servo_arm.s
+
+# target to generate assembly for a file
+src/test_servo_arm.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/teensy_interface.dir/build.make CMakeFiles/teensy_interface.dir/src/test_servo_arm.cpp.s
+.PHONY : src/test_servo_arm.cpp.s
+
+src/test_servo_grip.o: src/test_servo_grip.cpp.o
+.PHONY : src/test_servo_grip.o
+
+# target to build an object file
+src/test_servo_grip.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/teensy_interface.dir/build.make CMakeFiles/teensy_interface.dir/src/test_servo_grip.cpp.o
+.PHONY : src/test_servo_grip.cpp.o
+
+src/test_servo_grip.i: src/test_servo_grip.cpp.i
+.PHONY : src/test_servo_grip.i
+
+# target to preprocess a source file
+src/test_servo_grip.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/teensy_interface.dir/build.make CMakeFiles/teensy_interface.dir/src/test_servo_grip.cpp.i
+.PHONY : src/test_servo_grip.cpp.i
+
+src/test_servo_grip.s: src/test_servo_grip.cpp.s
+.PHONY : src/test_servo_grip.s
+
+# target to generate assembly for a file
+src/test_servo_grip.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/teensy_interface.dir/build.make CMakeFiles/teensy_interface.dir/src/test_servo_grip.cpp.s
+.PHONY : src/test_servo_grip.cpp.s
+
 src/umqtt.o: src/umqtt.cpp.o
 .PHONY : src/umqtt.o
 
@@ -627,6 +723,12 @@ help:
 	@echo "... src/cservo.o"
 	@echo "... src/cservo.i"
 	@echo "... src/cservo.s"
+	@echo "... src/cservoarm.o"
+	@echo "... src/cservoarm.i"
+	@echo "... src/cservoarm.s"
+	@echo "... src/cservogrip.o"
+	@echo "... src/cservogrip.i"
+	@echo "... src/cservogrip.s"
 	@echo "... src/main.o"
 	@echo "... src/main.i"
 	@echo "... src/main.s"
@@ -663,6 +765,12 @@ help:
 	@echo "... src/steensy.o"
 	@echo "... src/steensy.i"
 	@echo "... src/steensy.s"
+	@echo "... src/test_servo_arm.o"
+	@echo "... src/test_servo_arm.i"
+	@echo "... src/test_servo_arm.s"
+	@echo "... src/test_servo_grip.o"
+	@echo "... src/test_servo_grip.i"
+	@echo "... src/test_servo_grip.s"
 	@echo "... src/umqtt.o"
 	@echo "... src/umqtt.i"
 	@echo "... src/umqtt.s"

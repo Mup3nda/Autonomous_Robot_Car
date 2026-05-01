@@ -79,7 +79,7 @@ class SCam:
   def run(self):
     from uservice import service
     # print("% camera thread running")
-    cnt = 0;
+    cnt = 0
     first = True
     ret = False
     while self.cap.isOpened() and not service.stop:
