@@ -1,3 +1,5 @@
+import csv
+import os
 import threading
 import time
 import scam as cam
@@ -33,7 +35,7 @@ class Nav:
         self.K_BEARING = 0.75
         
         # 1. Ajuste de distancias para evitar choques
-        self.DESIRED_DISTANCE = 0.33 # Distancia del punto fantasma (Carrot point)
+        self.DESIRED_DISTANCE = 0.32 # Distancia del punto fantasma (Carrot point)
         self.SAFE_STOP_DISTANCE = 0.31# Freno de emergencia absoluto (30cm de la plataforma)
         
         # FIX: Tolerancia en Radianes (0.2 rad ~= 11.5 grados)
@@ -65,6 +67,8 @@ class Nav:
 
         self.kf_X = None  
         self.kf_P = None  
+        self.last_innovation_x = None
+        self.last_innovation_z = None
         
         self.kf_H = np.array([
             [1, 0, 0, 0],
@@ -93,6 +97,108 @@ class Nav:
         self.negative_vx_start_time = None
         self.NEGATIVE_VX_THRESHOLD = 1.0  # 1 second
 
+        self.kalman_log_fp = None
+        self.kalman_log_writer = None
+        self.kalman_log_file = None
+
+    def _init_kalman_log(self):
+        log_dir = os.path.join(os.path.dirname(__file__), "Missions", "MissionLogs")
+        os.makedirs(log_dir, exist_ok=True)
+        self.kalman_log_file = os.path.join(log_dir, "nav_platform_kalman_log.csv")
+        self.kalman_log_fp = open(self.kalman_log_file, "w", newline="", encoding="utf-8")
+        self.kalman_log_writer = csv.writer(self.kalman_log_fp)
+        self.kalman_log_writer.writerow([
+            "timestamp_s",
+            "state_machine",
+            "target_visible",
+            "target_time_s",
+            "meas_local_x_m",
+            "meas_local_z_m",
+            "meas_global_x_m",
+            "meas_global_z_m",
+            "kf_x_m",
+            "kf_z_m",
+            "kf_vx_mps",
+            "kf_vz_mps",
+            "future_global_x_m",
+            "future_global_z_m",
+            "blended_global_x_m",
+            "blended_global_z_m",
+            "drive_distance_m",
+            "drive_bearing_rad",
+            "real_distance_to_platform_m",
+            "linear_cmd_mps",
+            "angular_cmd_radps",
+            "robot_x_m",
+            "robot_z_m",
+            "robot_theta_rad",
+            "innovation_x_m",
+            "innovation_z_m",
+            "negative_velocity_flag",
+        ])
+        self.kalman_log_fp.flush()
+
+    def _write_kalman_log_row(
+        self,
+        system_now,
+        target_visible,
+        target_time=None,
+        meas_local_x=None,
+        meas_local_z=None,
+        meas_global_x=None,
+        meas_global_z=None,
+        future_global_x=None,
+        future_global_z=None,
+        blended_global_x=None,
+        blended_global_z=None,
+        drive_distance=None,
+        drive_bearing=None,
+        real_distance_to_platform=None,
+        linear_cmd=None,
+        angular_cmd=None,
+    ):
+        if self.kalman_log_writer is None:
+            return
+
+        kf_x = None if self.kf_X is None else float(self.kf_X[0, 0])
+        kf_z = None if self.kf_X is None else float(self.kf_X[1, 0])
+        kf_vx = None if self.kf_X is None else float(self.kf_X[2, 0])
+        kf_vz = None if self.kf_X is None else float(self.kf_X[3, 0])
+
+        def fmt(value):
+            return "" if value is None else f"{float(value):.6f}"
+
+        self.kalman_log_writer.writerow([
+            f"{float(system_now):.6f}",
+            str(self.kf_state_machine),
+            "1" if target_visible else "0",
+            fmt(target_time),
+            fmt(meas_local_x),
+            fmt(meas_local_z),
+            fmt(meas_global_x),
+            fmt(meas_global_z),
+            fmt(kf_x),
+            fmt(kf_z),
+            fmt(kf_vx),
+            fmt(kf_vz),
+            fmt(future_global_x),
+            fmt(future_global_z),
+            fmt(blended_global_x),
+            fmt(blended_global_z),
+            fmt(drive_distance),
+            fmt(drive_bearing),
+            fmt(real_distance_to_platform),
+            fmt(linear_cmd),
+            fmt(angular_cmd),
+            fmt(self.robot_x),
+            fmt(self.robot_z),
+            fmt(self.robot_theta),
+            fmt(self.last_innovation_x),
+            fmt(self.last_innovation_z),
+            str(int(self.ctx.memory.get("negative_velocity_flag", 0))),
+        ])
+        self.kalman_log_fp.flush()
+
     def _init_kalman(self, init_x, init_z, init_vx, init_vz):
         self.kf_X = np.array([[init_x], [init_z], [init_vx], [init_vz]], dtype=float)
         self.kf_P = np.eye(4) * 1.0
@@ -113,6 +219,9 @@ class Nav:
         S = np.dot(self.kf_H, np.dot(self.kf_P, self.kf_H.T)) + self.kf_R
         K = np.dot(self.kf_P, np.dot(self.kf_H.T, np.linalg.inv(S)))
 
+        self.last_innovation_x = float(Y[0, 0])
+        self.last_innovation_z = float(Y[1, 0])
+
         self.kf_X = self.kf_X + np.dot(K, Y)
         I = np.eye(4)
         self.kf_P = np.dot((I - np.dot(K, self.kf_H)), self.kf_P)
@@ -129,8 +238,15 @@ class Nav:
         self.is_running = True
         self.hasReachedTarget = False
         self.last_loop_time = time.time()
+        self._init_kalman_log()
         self.nav_thread = threading.Thread(target=self.go_to_target, daemon=True)
         self.nav_thread.start()
+
+    def _close_kalman_log(self):
+        if self.kalman_log_fp is not None:
+            self.kalman_log_fp.close()
+            self.kalman_log_fp = None
+            self.kalman_log_writer = None
 
     def go_to_target(self):
         print("% Starting tracking with 45-deg approach & collision avoidance")
@@ -184,6 +300,15 @@ class Nav:
                         drive_bearing = math.atan2(local_x, local_z)
                         
                         # Le pasamos también la distancia real para el freno de emergencia
+                        self._write_kalman_log_row(
+                            system_now,
+                            target_visible=False,
+                            drive_distance=drive_distance,
+                            drive_bearing=drive_bearing,
+                            real_distance_to_platform=real_dist_to_platform,
+                            linear_cmd=self.current_linear_v,
+                            angular_cmd=self.current_angular_v,
+                        )
                         self.follow_platform(drive_distance, drive_bearing, real_dist_to_platform)
                         time.sleep(0.034)
                         continue
@@ -193,6 +318,7 @@ class Nav:
                         self.current_angular_v = 0.0
                         if self.kf_state_machine != 'WAIT_FIRST':
                             self.kf_state_machine = 'WAIT_FIRST'
+                        self._write_kalman_log_row(system_now, target_visible=False)
                         time.sleep(0.05)
                         continue
 
@@ -224,6 +350,15 @@ class Nav:
                     self.first_pos = (meas_global_x, meas_global_z)
                     self.first_time = target_time
                     self.kf_state_machine = 'WAIT_HALF_SEC'
+                    self._write_kalman_log_row(
+                        system_now,
+                        target_visible=True,
+                        target_time=target_time,
+                        meas_local_x=meas_local_x,
+                        meas_local_z=meas_local_z,
+                        meas_global_x=meas_global_x,
+                        meas_global_z=meas_global_z,
+                    )
 
                 elif self.kf_state_machine == 'WAIT_HALF_SEC':
                     self.ctx.actions.drive.rc(0, 0)
@@ -237,6 +372,15 @@ class Nav:
                         self._init_kalman(meas_global_x, meas_global_z, vx, vz)
                         self.last_kf_time = system_now 
                         self.kf_state_machine = 'TRACKING'
+                    self._write_kalman_log_row(
+                        system_now,
+                        target_visible=True,
+                        target_time=target_time,
+                        meas_local_x=meas_local_x,
+                        meas_local_z=meas_local_z,
+                        meas_global_x=meas_global_x,
+                        meas_global_z=meas_global_z,
+                    )
 
                 elif self.kf_state_machine == 'TRACKING':
                     dt = system_now - self.last_kf_time
@@ -295,6 +439,24 @@ class Nav:
                     if should_log:
                         print(f"Tracking 45° -> Dist Punto: {drive_distance:.2f}m | Dist Real: {real_dist_to_platform:.2f}m")
                 
+                    self._write_kalman_log_row(
+                        system_now,
+                        target_visible=True,
+                        target_time=target_time,
+                        meas_local_x=meas_local_x,
+                        meas_local_z=meas_local_z,
+                        meas_global_x=meas_global_x,
+                        meas_global_z=meas_global_z,
+                        future_global_x=future_global_x,
+                        future_global_z=future_global_z,
+                        blended_global_x=blended_global_x,
+                        blended_global_z=blended_global_z,
+                        drive_distance=drive_distance,
+                        drive_bearing=drive_bearing,
+                        real_distance_to_platform=real_dist_to_platform,
+                        linear_cmd=self.current_linear_v,
+                        angular_cmd=self.current_angular_v,
+                    )
                     self.follow_platform(drive_distance, drive_bearing, real_dist_to_platform) 
                 
                 time.sleep(0.034)
@@ -308,6 +470,7 @@ class Nav:
         self.current_linear_v = 0.0
         self.current_angular_v = 0.0
         self.ctx.actions.drive.stop()
+        self._close_kalman_log()
 
         if self.nav_thread and self.nav_thread.is_alive():
             self.nav_thread.join(timeout=1.0)

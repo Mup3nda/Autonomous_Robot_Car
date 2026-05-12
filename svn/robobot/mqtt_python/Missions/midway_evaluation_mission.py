@@ -185,6 +185,63 @@ class CheckNegativeVelocityObjective(Objective):
 # Add objectives in the list below in the exact order they should execute.
 def build_objectives():
     objectives = [
+
+            ########## DETECT ARUCO PLATFORM 
+            ArmUpObjective(),
+            DriveTurnAngleObjective(
+                angle_deg=30.0,
+                linear_cmd=0.0,
+                timeout_s=6.0,
+            ),
+            GripperMiddleObjective(),
+            SearchAndNavigateToPlatform(marker_id=5),
+            ArmMiddleObjective(),
+            DelayObjective(2.5),
+            GripperMiddleObjective(),
+            DriveTurnAngleObjective(
+                angle_deg=120.0,
+                linear_cmd=0.0,
+                timeout_s=6.0,
+            ),
+            DelayObjective(1.0),
+            ArmUpObjective(),
+            # DriveToWaypointObjective(
+            #     waypoint=(0.8, 0),
+            #     is_local=True,
+            #     print_interval=20,
+            #     relative_heading_deg=180.0, #180
+            #     nav_mode=WAYPOINT_NAV_MODE,
+            # ),
+        
+        # ###### LOOKING FOR CUBE AFTER KCOKING
+        # GripperOpenObjective(),
+        # #DriveDistanceObjective(target_distance_m=0.010),
+        # DelayObjective(1.0),
+        # SearchAndNavigateToAruco(marker_id=53, fallback_marker_id=20, turn_rate=0.3, search_timeout_s = 10.0, desired_distance=0.42, max_sweep_deg=90), #37
+        # CheckNegativeVelocityObjective(),  # End mission immediately if navigation saw negative x velocity
+        # CheckFallbackObjective(),
+        # ArmDownObjective(wait_after_s=2.0),
+        # DriveDistanceObjective(target_distance_m=0.005),
+        # DelayObjective(1.0),
+        # GripperMiddleObjective(),
+        # DelayObjective(1.0),
+        # ConditionalArmObjective(),  # Arm UP if fallback used, ARM MIDDLE if primary used
+        
+        # ## TEST GRABBING ARUCO
+        # ArmUpObjective(),
+        # GripperOpenObjective(),
+        # SearchAndNavigateToAruco(marker_id=53,turn_rate=0.4, desired_distance=0.35),
+        # ArmDownObjective(),
+        # DelayObjective(2.0),
+        # DriveDistanceObjective(target_distance_m=0.2),
+        # DelayObjective(1.0),
+        # GripperCloseObjective(),
+        # DelayObjective(1.0),
+        # GripperCloseObjective(),
+        # DelayObjective(1.0),
+        # ArmUpObjective(),
+        
+        
         # ## GRIPPER TEST
         # ArmUpObjective(),
         # GripperOpenObjective(),
@@ -211,19 +268,7 @@ def build_objectives():
         # DelayObjective(1.0),
         # ArmUpObjective(),      
         
-        # ## TEST GRABBING ARUCO
-        # ArmUpObjective(),
-        # GripperOpenObjective(),
-        # SearchAndNavigateToAruco(marker_id=53,turn_rate=0.4, desired_distance=0.35),
-        # ArmDownObjective(),
-        # DelayObjective(2.0),
-        # DriveDistanceObjective(target_distance_m=0.2),
-        # DelayObjective(1.0),
-        # GripperCloseObjective(),
-        # DelayObjective(1.0),
-        # GripperCloseObjective(),
-        # DelayObjective(1.0),
-        # ArmUpObjective(),
+
 
     # ##DRIVE FROM THE LINE TO THE TIMER
     #     ArmUpObjective(),
@@ -255,49 +300,9 @@ def build_objectives():
     #     DelayObjective(1.0),
     #     SearchAndNavigateToPlatform(marker_id=5, turn_rate=0.18),
    
-    #     ########## DETECT ARUCO PLATFORM 
-    #     DriveTurnAngleObjective(
-    #         angle_deg=30.0,
-    #         linear_cmd=0.0,
-    #         timeout_s=6.0,
-    #     ),
-    #     ArmUpObjective(),
-    #     GripperOpenObjective(),
-    #     SearchAndNavigateToPlatform(marker_id=5),
-    #     ArmMiddleObjective(),
-    #     DelayObjective(2.5),
-    #     GripperMiddleObjective(),
-    #     DriveTurnAngleObjective(
-    #         angle_deg=120.0,
-    #         linear_cmd=0.0,
-    #         timeout_s=6.0,
-    #     ),
-    #     DelayObjective(1.0),
-    #     ArmUpObjective(),
-    #     DriveToWaypointObjective(
-    #         waypoint=(0.8, 0),
-    #         is_local=True,
-    #         print_interval=20,
-    #         relative_heading_deg=180.0, #180
-    #         nav_mode=WAYPOINT_NAV_MODE,
-    #     ),
         
-        # ###### LOOKING FOR CUBE AFTER KCOKING
         # GripperOpenObjective(),
-        # #DriveDistanceObjective(target_distance_m=0.010),
-        # DelayObjective(1.0),
-        # SearchAndNavigateToAruco(marker_id=53, fallback_marker_id=20, turn_rate=0.3, search_timeout_s = 10.0, desired_distance=0.42, max_sweep_deg=90), #37
-        # CheckNegativeVelocityObjective(),  # End mission immediately if navigation saw negative x velocity
-        # CheckFallbackObjective(),
-        # ArmDownObjective(wait_after_s=2.0),
-        # DriveDistanceObjective(target_distance_m=0.005),
-        # DelayObjective(1.0),
-        # GripperMiddleObjective(),
-        # DelayObjective(1.0),
-        # ConditionalArmObjective(),  # Arm UP if fallback used, ARM MIDDLE if primary used
-        
-        GripperOpenObjective(),
-        DriveDistanceObjective(target_distance_m=10.10),
+        # DriveDistanceObjective(target_distance_m=10.10),
         # GripperOpenObjective(),
         # ArmUpObjective(),
         # DelayObjective(2.0),

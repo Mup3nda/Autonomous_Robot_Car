@@ -14,6 +14,9 @@ class DriveActions:
         self.gpio = gpio
         self.current_v = 0.0
         self.current_w = 0.0
+        self._last_send_time = 0.0
+        self._send_min_dt = 0.05
+        self._deadband = 0.005
 
     def rc(self, v, w):
         """Send motor command to robot.
@@ -22,9 +25,21 @@ class DriveActions:
             v: Forward/backward throttle (-1.0 to 1.0, where 0.2 = 20% forward)
             w: Rotation rate (-1.0 to 1.0, where 0.5 = rotation direction)
         """
-        self.current_v = v
-        self.current_w = w
-        self.service.send("robobot/cmd/ti", f"rc {v} {w}")
+        now = time.time()
+        # ensure floats
+        v = float(v)
+        w = float(w)
+
+        # send only if values changed beyond deadband or enough time passed
+        changed = (abs(v - self.current_v) > self._deadband) or (abs(w - self.current_w) > self._deadband)
+        time_ok = (now - self._last_send_time) >= self._send_min_dt
+
+        if changed or time_ok:
+            self.current_v = v
+            self.current_w = w
+            payload = f"rc {v:.3f} {w:.3f}"
+            self.service.send("robobot/cmd/ti", payload)
+            self._last_send_time = now
     
     def ramp_to(self, target_v, target_w, steps=10):
         start_v = self.current_v
