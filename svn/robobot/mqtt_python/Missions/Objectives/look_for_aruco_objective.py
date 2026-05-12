@@ -41,7 +41,7 @@ class LookForArucoObjective(Objective):
 		marker_ids=None,
 		fallback_marker_id=None,
 		search_timeout_s=None,
-		max_sweep_deg = 180,
+		max_sweep_deg = 120,
 		scan_mode=SCAN_MODE_SPIN,
 		heading_tolerance_deg=4.0,
 	  	):

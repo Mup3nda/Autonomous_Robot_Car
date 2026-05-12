@@ -193,19 +193,30 @@ class CheckNegativeVelocityObjective(Objective):
 # Add objectives in the list below in the exact order they should execute.
 def build_objectives():
     objectives = [
-       # GripperOpenObjective(),
-       # DelayObjective(2.0),
-        #GripperMiddleObjective(),
-        #SearchAndNavigateToAruco(marker_id=20, desired_distance=0.35, COMPENSATE_PARAMETER=0),
-        SearchAndNavigateToRedBall(turn_rate=0.3, desired_distance=0.35),
         GripperOpenObjective(),
-        ArmDownObjective(),
-        DelayObjective(2.0),
-        GripperCloseObjective(),
-        DelayObjective(2.0),
         ArmUpObjective(),
-        DelayObjective(2.0),
         GripperOpenObjective(),
+        DelayObjective(2.0),
+        #SearchAndNavigateToAruco(marker_id=20, turn_rate=0.4, desired_distance=0.35),
+        SearchAndNavigateToPlatform(marker_id=5, turn_rate=0.1, desired_distance=0.2),
+        DelayObjective(0.5),
+        ArmMiddleObjective(),
+        DelayObjective(0.5),
+        DriveTurnAngleObjective(
+            angle_deg=90.0,
+            linear_cmd=0.0,
+            timeout_s=6.0,
+        ),
+        
+        # SearchAndNavigateToRedBall(turn_rate=0.3, desired_distance=0.35),
+        # GripperOpenObjective(),
+        # ArmDownObjective(),
+        # DelayObjective(2.0),
+        # GripperCloseObjective(),
+        # DelayObjective(2.0),
+        # ArmUpObjective(),
+        # DelayObjective(2.0),
+        # GripperOpenObjective(),
     #  # region Following line approach roundabout
     #      DriveToLineObjective(
     #          follow_left=True,
